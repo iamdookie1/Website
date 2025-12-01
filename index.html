@@ -171,12 +171,12 @@ const morseMap = {
     "6":"-....","7":"--...","8":"---..","9":"----.",
     " ":"/",
     ".":".-.-.-",",":"--..--","?":"..--..","!":"-.-.--","/":"-..-.","@":".--.-.",
-    "(":"-.--.",")":"-.--.-",":":"---...",";":"-.-.-.","=":"-...-","+":".-.-.",
+    "(":"-.--.",")":"-.--.-",":":"---...", ";":"-.-.-.","=":"-...-","+":".-.-.",
     "-":"-....-","_":"..--.-","\"":".-..-.","$":"...-..-","&":".-...", "'":".----."
 };
 
 const reverseMorse = {};
-Object.keys(morseMap).forEach(k => reverseMorse[morseMap[k]] = k);
+Object.keys(morseMap).forEach(k => reverseMorse[morseMap[k]] = k.toLowerCase());
 
 let mode = "eng";
 
@@ -200,8 +200,8 @@ function runTranslate() {
 
     if (mode === "eng") {
         for (let c of input) {
-            const up = c.toUpperCase();
-            out += morseMap[up] ? morseMap[up] + " " : "";
+            const upper = c.toUpperCase();
+            out += morseMap[upper] ? morseMap[upper] + " " : "";
         }
     } else {
         const parts = input.trim().split(" ");
