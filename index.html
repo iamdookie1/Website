@@ -2,116 +2,210 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Morse Decoder</title>
+<title>Morse UI</title>
 <style>
 body {
-    background: #000;
-    color: #fff;
-    font-family: Arial, sans-serif;
     margin: 0;
+    background: linear-gradient(160deg, #000 0%, #050505 100%);
+    font-family: Arial, sans-serif;
+    color: #fff;
     padding: 40px;
 }
-.container {
-    max-width: 700px;
+
+.center {
+    max-width: 800px;
     margin: auto;
-    text-align: center;
 }
-button, input {
-    background: #111;
-    color: #fff;
-    border: 1px solid #444;
-    padding: 12px 20px;
-    margin: 10px;
+
+.glass {
+    backdrop-filter: blur(14px);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.toggle-wrap {
+    width: 300px;
+    margin: auto;
+    margin-bottom: 25px;
+}
+
+.toggle {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    backdrop-filter: blur(12px);
+    background: rgba(255,255,255,0.10);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
     cursor: pointer;
 }
-button:hover, input:hover {
-    background: #222;
+
+.toggle span {
+    width: 50%;
+    text-align: center;
+    padding: 10px 0;
+    border-radius: 14px;
+    transition: 0.2s;
 }
-#output {
-    margin-top: 30px;
-    font-size: 20px;
+
+.active {
+    background: rgba(255,255,255,0.22);
+}
+
+.input {
+    width: 100%;
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 18px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    outline: none;
+    margin-bottom: 20px;
+}
+
+.output {
+    font-size: 22px;
+    min-height: 80px;
     word-wrap: break-word;
+}
+
+.button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 16px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+.button:hover {
+    background: rgba(255,255,255,0.18);
+}
+
+.showtable-wrap {
+    margin-top: 30px;
+}
+
+.showtable-toggle {
+    width: 260px;
+    margin: auto;
+}
+
+#table {
+    margin-top: 20px;
+    font-size: 16px;
+    line-height: 28px;
+    display: none;
+    white-space: pre-wrap;
 }
 </style>
 </head>
 <body>
-<div class="container">
-    <h1>Morse Code Image Decoder</h1>
 
-    <button id="translateUI">Translate UI</button>
-    <input type="file" id="imageInput" accept="image/*">
-    <div id="output"></div>
+<div class="center">
+
+    <div class="toggle-wrap">
+        <div id="modeToggle" class="toggle glass">
+            <span id="left" class="active">English to Morse</span>
+            <span id="right">Morse to English</span>
+        </div>
+    </div>
+
+    <input id="inputBox" class="input glass" placeholder="Enter text...">
+
+    <div class="glass">
+        <div id="outputBox" class="output"></div>
+    </div>
+
+    <button id="copyBtn" class="button glass">Copy</button>
+
+    <div class="showtable-wrap">
+        <div id="tableToggle" class="toggle glass showtable-toggle">
+            <span id="showtableLeft" class="active">Show Morse Table</span>
+            <span id="showtableRight">Hide</span>
+        </div>
+
+        <div id="table" class="glass"></div>
+    </div>
+
 </div>
 
-<canvas id="canvas" style="display:none;"></canvas>
-
 <script>
-const uiStrings = {
-    en: { title: "Morse Code Image Decoder", translate: "Translate UI", result: "Decoded Text:" },
-    es: { title: "Decodificador de Código Morse", translate: "Traducir Interfaz", result: "Texto Decodificado:" }
+const morseMap = {
+    "A":".-","B":"-...","C":"-.-.","D":"-..","E":".","F":"..-.","G":"--.","H":"....",
+    "I":"..","J":".---","K":"-.-","L":".-..","M":"--","N":"-.","O":"---","P":".--.",
+    "Q":"--.-","R":".-.","S":"...","T":"-","U":"..-","V":"...-","W":".--","X":"-..-",
+    "Y":"-.--","Z":"--..",
+    "0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....",
+    "6":"-....","7":"--...","8":"---..","9":"----.",
+    ".":".-.-.-",",":"--..--","?":"..--..","!":"-.-.--","/":"-..-.","@":".--.-.",
+    "(":"-.--.",")":"-.--.-",":":"---...",";":"-.-.-.","=":"-...-","+":".-.-.",
+    "-":"-....-","_":"..--.-","\"":".-..-.","$":"...-..-","&":".-...", "'":".----."
 };
 
-let currentLang = "en";
+const reverseMorse = {};
+Object.keys(morseMap).forEach(k => reverseMorse[morseMap[k]] = k);
 
-document.getElementById("translateUI").onclick = () => {
-    currentLang = currentLang === "en" ? "es" : "en";
-    document.querySelector("h1").textContent = uiStrings[currentLang].title;
-    document.getElementById("translateUI").textContent = uiStrings[currentLang].translate;
-};
+let mode = "eng";
 
-document.getElementById("imageInput").onchange = async e => {
-    const file = e.target.files[0];
-    if (!file) return;
+document.getElementById("left").onclick = () => setMode("eng");
+document.getElementById("right").onclick = () => setMode("morse");
 
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => processImage(img);
-};
+function setMode(m) {
+    mode = m;
+    document.getElementById("left").classList.remove("active");
+    document.getElementById("right").classList.remove("active");
+    if (m === "eng") document.getElementById("left").classList.add("active");
+    else document.getElementById("right").classList.add("active");
+    runTranslate();
+}
 
-function processImage(img) {
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+document.getElementById("inputBox").oninput = () => runTranslate();
 
-    canvas.width = img.width;
-    canvas.height = img.height;
+function runTranslate() {
+    const input = document.getElementById("inputBox").value.trim();
+    let out = "";
 
-    ctx.drawImage(img, 0, 0);
-
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-
-    let morse = "";
-
-    for (let i = 0; i < data.length; i += 4) {
-        const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
-
-        if (brightness > 200) morse += ".";
-        else if (brightness < 50) morse += "-";
-        else morse += " ";
+    if (mode === "eng") {
+        for (let c of input.toUpperCase()) {
+            out += morseMap[c] ? morseMap[c] + " " : "";
+        }
+    } else {
+        out = input.split(" ").map(x => reverseMorse[x] || "").join("");
     }
 
-    morse = morse.replace(/ +/g, "   ");
+    document.getElementById("outputBox").textContent = out.trim();
+}
 
-    const morseMap = {
-        ".-":"A","-...":"B","-.-.":"C","-..":"D",".":"E","..-.":"F","--.":"G","....":"H","..":"I",
-        ".---":"J","-.-":"K",".-..":"L","--":"M","-.":"N","---":"O",".--.":"P","--.-":"Q",".-.":"R",
-        "...":"S","-":"T","..-":"U","...-":"V",".--":"W","-..-":"X","-.--":"Y","--..":"Z",
-        "-----":"0",".----":"1","..---":"2","...--":"3","....-":"4",".....":"5","-....":"6",
-        "--...":"7","---..":"8","----.":"9",
-        "-..-.":"/"
-    };
+document.getElementById("copyBtn").onclick = () => {
+    navigator.clipboard.writeText(document.getElementById("outputBox").textContent);
+};
 
-    const words = morse.trim().split("   ");
-    let decoded = "";
+document.getElementById("showtableLeft").onclick = () => showTable(true);
+document.getElementById("showtableRight").onclick = () => showTable(false);
 
-    for (const word of words) {
-        const letters = word.split(" ");
-        for (const l of letters) decoded += morseMap[l] || "";
-        decoded += " ";
+function showTable(show) {
+    document.getElementById("showtableLeft").classList.remove("active");
+    document.getElementById("showtableRight").classList.remove("active");
+
+    if (show) {
+        document.getElementById("showtableLeft").classList.add("active");
+        document.getElementById("table").style.display = "block";
+        const lines = [];
+        for (let k of Object.keys(morseMap)) lines.push(k + " : " + morseMap[k]);
+        document.getElementById("table").textContent = lines.join("\n");
+    } else {
+        document.getElementById("showtableRight").classList.add("active");
+        document.getElementById("table").style.display = "none";
     }
-
-    document.getElementById("output").textContent =
-        uiStrings[currentLang].result + " " + decoded.trim();
 }
 </script>
+
 </body>
 </html>
