@@ -6,7 +6,7 @@
 <style>
 body {
     margin: 0;
-    background: linear-gradient(160deg, #000 0%, #050505 100%);
+    background: linear-gradient(160deg, #000 0%, #0a0a0a 100%);
     font-family: Arial, sans-serif;
     color: #fff;
     padding: 40px;
@@ -15,6 +15,12 @@ body {
 .center {
     max-width: 800px;
     margin: auto;
+    animation: fadein 0.35s ease-out;
+}
+
+@keyframes fadein {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .glass {
@@ -23,12 +29,19 @@ body {
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: 12px;
     padding: 20px;
+    animation: glassPop 0.3s ease-out;
+}
+
+@keyframes glassPop {
+    from { transform: scale(0.96); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
 
 .toggle-wrap {
     width: 300px;
     margin: auto;
     margin-bottom: 25px;
+    animation: slideIn 0.3s ease-out;
 }
 
 .toggle {
@@ -40,6 +53,7 @@ body {
     border-radius: 20px;
     border: 1px solid rgba(255,255,255,0.15);
     cursor: pointer;
+    animation: glassPop 0.3s ease-out;
 }
 
 .toggle span {
@@ -47,11 +61,16 @@ body {
     text-align: center;
     padding: 10px 0;
     border-radius: 14px;
-    transition: 0.2s;
 }
 
 .active {
     background: rgba(255,255,255,0.22);
+    animation: glowPulse 0.4s ease-out;
+}
+
+@keyframes glowPulse {
+    0% { box-shadow: 0 0 0px rgba(255,255,255,0.4); }
+    100% { box-shadow: 0 0 10px rgba(255,255,255,0.4); }
 }
 
 .input {
@@ -64,12 +83,14 @@ body {
     color: #fff;
     outline: none;
     margin-bottom: 20px;
+    animation: glassPop 0.3s ease-out;
 }
 
 .output {
     font-size: 22px;
     min-height: 80px;
     word-wrap: break-word;
+    animation: fadein 0.25s ease-out;
 }
 
 .button {
@@ -82,19 +103,22 @@ body {
     border-radius: 10px;
     cursor: pointer;
     font-size: 18px;
+    animation: glassPop 0.3s ease-out;
 }
 
-.button:hover {
-    background: rgba(255,255,255,0.18);
+.button:active {
+    transform: scale(0.96);
 }
 
 .showtable-wrap {
     margin-top: 30px;
+    animation: fadein 0.3s ease-out;
 }
 
 .showtable-toggle {
     width: 260px;
     margin: auto;
+    animation: glassPop 0.3s ease-out;
 }
 
 #table {
@@ -103,6 +127,7 @@ body {
     line-height: 28px;
     display: none;
     white-space: pre-wrap;
+    animation: fadein 0.25s ease-out;
 }
 </style>
 </head>
@@ -144,6 +169,7 @@ const morseMap = {
     "Y":"-.--","Z":"--..",
     "0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....",
     "6":"-....","7":"--...","8":"---..","9":"----.",
+    " ":"/",
     ".":".-.-.-",",":"--..--","?":"..--..","!":"-.-.--","/":"-..-.","@":".--.-.",
     "(":"-.--.",")":"-.--.-",":":"---...",";":"-.-.-.","=":"-...-","+":".-.-.",
     "-":"-....-","_":"..--.-","\"":".-..-.","$":"...-..-","&":".-...", "'":".----."
@@ -169,15 +195,17 @@ function setMode(m) {
 document.getElementById("inputBox").oninput = () => runTranslate();
 
 function runTranslate() {
-    const input = document.getElementById("inputBox").value.trim();
+    const input = document.getElementById("inputBox").value;
     let out = "";
 
     if (mode === "eng") {
-        for (let c of input.toUpperCase()) {
-            out += morseMap[c] ? morseMap[c] + " " : "";
+        for (let c of input) {
+            const up = c.toUpperCase();
+            out += morseMap[up] ? morseMap[up] + " " : "";
         }
     } else {
-        out = input.split(" ").map(x => reverseMorse[x] || "").join("");
+        const parts = input.trim().split(" ");
+        out = parts.map(x => reverseMorse[x] || "").join("");
     }
 
     document.getElementById("outputBox").textContent = out.trim();
