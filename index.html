@@ -1,51 +1,105 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>Video Description Fetch</title>
+<meta charset="UTF-8">
+<title>Morse Decoder</title>
 <style>
-  body{margin:0;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;font-family:Arial;color:#fff;gap:20px}
-  input{width:320px;padding:12px;border:none;border-radius:6px;font-size:16px;outline:none}
-  button{padding:12px 20px;border:none;border-radius:6px;font-size:16px;cursor:pointer}
-  #out{max-width:600px;white-space:pre-wrap;font-size:16px}
+body {
+    background: #000;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 40px;
+}
+.container {
+    max-width: 700px;
+    margin: auto;
+    text-align: center;
+}
+button, input {
+    background: #111;
+    color: #fff;
+    border: 1px solid #444;
+    padding: 12px 20px;
+    margin: 10px;
+    cursor: pointer;
+}
+button:hover, input:hover {
+    background: #222;
+}
+#output {
+    margin-top: 30px;
+    font-size: 20px;
+    word-wrap: break-word;
+}
 </style>
 </head>
 <body>
-<input id="vid" placeholder="YouTube link…" />
-<button id="btn">Get Description</button>
-<div id="out"></div>
+<div class="container">
+    <h1>Morse Code Image Decoder</h1>
+
+    <button id="translateUI">Translate UI</button>
+    <input type="file" id="imageInput" accept="image/*">
+    <div id="output"></div>
+</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
 
 <script>
-function extractId(url){
-  try{
-    const u=new URL(url)
+const uiStrings = {
+    en: { title: "Morse Code Image Decoder", translate: "Translate UI", result: "Decoded Text:" },
+    es: { title: "Decodificador de Código Morse", translate: "Traducir Interfaz", result: "Texto Decodificado:" }
+};
 
-    if(u.searchParams.get("v")) return u.searchParams.get("v")
+let currentLang = "en";
 
-    if(u.hostname==="youtu.be"){
-      return u.pathname.replace("/","").split("?")[0]
+document.getElementById("translateUI").onclick = () => {
+    currentLang = currentLang === "en" ? "es" : "en";
+    document.querySelector("h1").textContent = uiStrings[currentLang].title;
+    document.getElementById("translateUI").textContent = uiStrings[currentLang].translate;
+};
+
+document.getElementById("imageInput").onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => processImage(img);
+};
+
+function processImage(img) {
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    ctx.drawImage(img, 0, 0);
+
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let morse = "";
+
+    for (let i = 0; i < data.length; i += 4) {
+        const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
+        if (brightness > 200) morse += ".";
+        else if (brightness < 50) morse += "-";
     }
 
-    if(u.pathname.startsWith("/shorts/")){
-      return u.pathname.split("/")[2]
-    }
+    morse = morse.replace(/\.{3,}/g, " ").replace(/\-{3,}/g, " / ");
 
-    return null
-  }catch(e){return null}
-}
+    const morseMap = {
+        ".-":"A","-...":"B","-.-.":"C","-..":"D",".":"E","..-.":"F","--.":"G","....":"H","..":"I",
+        ".---":"J","-.-":"K",".-..":"L","--":"M","-.":"N","---":"O",".--.":"P","--.-":"Q",".-.":"R",
+        "...":"S","-":"T","..-":"U","...-":"V",".--":"W","-..-":"X","-.--":"Y","--..":"Z",
+        "-----":"0",".----":"1","..---":"2","...--":"3","....-":"4",".....":"5","-....":"6",
+        "--...":"7","---..":"8","----.":"9"
+    };
 
-btn.onclick=async()=>{
-  const id=extractId(vid.value.trim())
-  if(!id){out.textContent="Invalid link";return}
-  out.textContent="Fetching…"
-  try{
-    const r=await fetch(`https://yt.lemnoslife.com/noKey/videos?part=snippet&id=${id}`)
-    const j=await r.json()
-    const d=j.items?.[0]?.snippet?.description||"No description"
-    out.textContent=d
-  }catch(e){
-    out.textContent="Failed to fetch"
-  }
+    const decoded = morse.trim().split(" ").map(c => morseMap[c] || "").join("");
+
+    document.getElementById("output").textContent =
+        uiStrings[currentLang].result + " " + decoded;
 }
 </script>
 </body>
