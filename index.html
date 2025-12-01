@@ -179,6 +179,8 @@ const reverseMorse = {};
 Object.keys(morseMap).forEach(k => reverseMorse[morseMap[k]] = k.toLowerCase());
 
 let mode = "eng";
+let pending = false;
+let lastInput = "";
 
 document.getElementById("left").onclick = () => setMode("eng");
 document.getElementById("right").onclick = () => setMode("morse");
@@ -189,13 +191,24 @@ function setMode(m) {
     document.getElementById("right").classList.remove("active");
     if (m === "eng") document.getElementById("left").classList.add("active");
     else document.getElementById("right").classList.add("active");
-    runTranslate();
+    scheduleUpdate();
 }
 
-document.getElementById("inputBox").oninput = () => runTranslate();
+document.getElementById("inputBox").addEventListener("input", () => {
+    lastInput = document.getElementById("inputBox").value;
+    scheduleUpdate();
+});
 
-function runTranslate() {
-    const input = document.getElementById("inputBox").value;
+function scheduleUpdate() {
+    if (pending) return;
+    pending = true;
+    requestAnimationFrame(() => {
+        pending = false;
+        runTranslate(lastInput);
+    });
+}
+
+function runTranslate(input) {
     let out = "";
 
     if (mode === "eng") {
