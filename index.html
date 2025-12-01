@@ -78,6 +78,7 @@ function processImage(img) {
     ctx.drawImage(img, 0, 0);
 
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
     let morse = "";
 
     for (let i = 0; i < data.length; i += 4) {
@@ -85,10 +86,10 @@ function processImage(img) {
 
         if (brightness > 200) morse += ".";
         else if (brightness < 50) morse += "-";
-        else morse += "/";
+        else morse += " ";
     }
 
-    morse = morse.replace(/\/+/g, " / ");
+    morse = morse.replace(/ +/g, "   ");
 
     const morseMap = {
         ".-":"A","-...":"B","-.-.":"C","-..":"D",".":"E","..-.":"F","--.":"G","....":"H","..":"I",
@@ -99,10 +100,17 @@ function processImage(img) {
         "-..-.":"/"
     };
 
-    const decoded = morse.trim().split(" ").map(c => morseMap[c] || "").join("");
+    const words = morse.trim().split("   ");
+    let decoded = "";
+
+    for (const word of words) {
+        const letters = word.split(" ");
+        for (const l of letters) decoded += morseMap[l] || "";
+        decoded += " ";
+    }
 
     document.getElementById("output").textContent =
-        uiStrings[currentLang].result + " " + decoded;
+        uiStrings[currentLang].result + " " + decoded.trim();
 }
 </script>
 </body>
