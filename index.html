@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advanced Audio Editor</title>
+<title>Audio Cut Editor</title>
 
 <style>
 :root{
@@ -38,7 +38,7 @@ text-align:center;
 cursor:pointer
 }
 .import input{display:none}
-.controls,.advanced{display:none}
+.controls,.cuts{display:none}
 .row{margin-bottom:18px}
 label{display:flex;justify-content:space-between;color:var(--muted)}
 input[type=range]{width:100%}
@@ -56,92 +56,21 @@ background:transparent;
 border:1px solid rgba(212,175,55,.35);
 color:var(--gold)
 }
-.segment{
+.cut{
 border:1px solid rgba(212,175,55,.35);
 border-radius:12px;
 padding:14px;
 margin-bottom:14px
 }
-.segment.min .body{display:none}
-.segment header{
+.cut header{
 display:flex;
 justify-content:space-between;
 align-items:center
 }
 small{color:var(--muted)}
-select{
-background:#000;
-color:var(--text);
-border:1px solid rgba(212,175,55,.3);
-border-radius:6px;
-padding:6px
-}
-
-/* hamburger */
-.hamburger{
-position:fixed;
-top:18px;
-right:18px;
-width:26px;
-cursor:pointer;
-z-index:1000
-}
-.hamburger span{
-display:block;
-height:3px;
-background:var(--gold);
-margin:5px 0
-}
-
-/* side menu */
-.side{
-position:fixed;
-top:0;
-right:-320px;
-width:300px;
-height:100%;
-background:#0e0e0e;
-border-left:1px solid rgba(212,175,55,.3);
-padding:20px;
-transition:.3s;
-z-index:999
-}
-.side.open{right:0}
-.side h2{color:var(--gold)}
-.side button{width:100%;margin-bottom:10px}
-
-/* dialog */
-.dialog{
-position:fixed;
-inset:0;
-background:rgba(0,0,0,.6);
-display:none;
-align-items:center;
-justify-content:center;
-z-index:2000
-}
-.dialog .box{
-background:#111;
-border:1px solid rgba(212,175,55,.4);
-border-radius:16px;
-padding:24px;
-width:320px
-}
-.dialog button{width:100%;margin-top:10px}
 </style>
 </head>
 <body>
-
-<div class="hamburger" onclick="toggleSide()">
-<span></span><span></span><span></span>
-</div>
-
-<div class="side" id="side">
-<h2>Menu</h2>
-<button class="secondary" onclick="openLoad()">Load Saves</button>
-<button class="secondary" onclick="saveProject()">Save</button>
-<button class="secondary" onclick="toggleSide()">Close</button>
-</div>
 
 <div class="wrapper">
 
@@ -157,187 +86,151 @@ Click to import audio
 <h1>Editor</h1>
 
 <div class="row">
-<label>Start <span id="sv"></span></label>
+<label>Cut Start <span id="sv"></span></label>
 <input type="range" id="start" step="0.01">
 </div>
 
 <div class="row">
-<label>End <span id="ev"></span></label>
+<label>Cut End <span id="ev"></span></label>
 <input type="range" id="end" step="0.01">
 </div>
 
 <div class="row">
-<label>Speed <span id="spv"></span></label>
-<input type="range" id="speed" min=".5" max="2" step=".01" value="1">
+<label>Fade Over Cut <span id="fv"></span></label>
+<input type="range" id="fade" min="0" max="3" step="0.05" value="0">
 </div>
 
 <div class="buttons">
-<button class="primary" onclick="play()">Play</button>
+<button class="secondary" onclick="addCut()">Add Cut</button>
+<button class="primary" onclick="play()">Preview</button>
 <button class="secondary" onclick="stop()">Stop</button>
-<button class="secondary" onclick="addSeg()">Add Section</button>
-<button class="secondary" onclick="adv()">Advanced</button>
 <button class="primary" onclick="download()">Download</button>
 </div>
 </div>
 
-<div class="panel advanced" id="advanced">
-<h1>Sections</h1>
-<div id="segments"></div>
+<div class="panel cuts" id="cutsPanel">
+<h1>Removed Parts</h1>
+<div id="cuts"></div>
 </div>
 
-</div>
-
-<div class="dialog" id="dialog">
-<div class="box" id="dialogBox"></div>
 </div>
 
 <script>
 let ctx,buffer,src;
-let segments=[];
-let audioData=null;
+let cuts=[];
 
 const file=document.getElementById("file");
 const editor=document.getElementById("editor");
-const advPanel=document.getElementById("advanced");
+const cutsPanel=document.getElementById("cutsPanel");
 
 const start=document.getElementById("start");
 const end=document.getElementById("end");
-const speed=document.getElementById("speed");
+const fade=document.getElementById("fade");
 const sv=document.getElementById("sv");
 const ev=document.getElementById("ev");
-const spv=document.getElementById("spv");
+const fv=document.getElementById("fv");
 
-[file,start,end,speed].forEach(i=>i.oninput=upd);
+[start,end,fade].forEach(i=>i.oninput=updateVals);
 
-function upd(){
+function updateVals(){
 sv.textContent=(+start.value).toFixed(2)+"s";
 ev.textContent=(+end.value).toFixed(2)+"s";
-spv.textContent=(+speed.value).toFixed(2)+"×";
-}
-
-function stop(){if(src){src.stop();src=null}}
-
-function play(){
-stop();
-src=ctx.createBufferSource();
-src.buffer=buffer;
-src.playbackRate.value=speed.value;
-src.connect(ctx.destination);
-src.start(0,start.value,end.value-start.value);
+fv.textContent=(+fade.value).toFixed(2)+"s";
 }
 
 file.onchange=async e=>{
-if(buffer){importDialog(e.target.files[0]);return}
-loadFile(e.target.files[0])
-}
-
-async function loadFile(f){
 ctx=new AudioContext();
-audioData=await f.arrayBuffer();
-buffer=await ctx.decodeAudioData(audioData.slice(0));
+buffer=await ctx.decodeAudioData(await e.target.files[0].arrayBuffer());
 start.max=end.max=buffer.duration;
 end.value=buffer.duration;
-upd();
+updateVals();
 editor.style.display="block";
+cutsPanel.style.display="block";
 }
 
-function importDialog(newFile){
-showDialog([
-["Switch audio",()=>{clearProject();loadFile(newFile)}],
-["Switch but save current",()=>{saveProject();clearProject();loadFile(newFile)}],
-["Save and close this menu",()=>{saveProject();closeDialog()}],
-["Close menu",closeDialog]
-])
+function stop(){
+if(src){src.stop();src=null}
 }
 
-function addSeg(){
-segments.push({start:+start.value,end:+end.value,fade:0,mode:"after",min:false});
-render();
+function addCut(){
+if(start.value>=end.value)return;
+cuts.push({
+start:+start.value,
+end:+end.value,
+fade:+fade.value
+});
+cuts.sort((a,b)=>a.start-b.start);
+renderCuts();
 }
 
-function render(){
-const c=document.getElementById("segments");
+function renderCuts(){
+const c=document.getElementById("cuts");
 c.innerHTML="";
-segments.forEach((s,i)=>{
+cuts.forEach((cut,i)=>{
 const d=document.createElement("div");
-d.className="segment"+(s.min?" min":"");
+d.className="cut";
 d.innerHTML=`
 <header>
-<b>Section ${i+1}</b>
-<div>
-<button class="secondary" onclick="segments[${i}].min=!segments[${i}].min;render()">▾</button>
-<button class="secondary" onclick="segments.splice(${i},1);render()">✕</button>
-</div>
+<b>Cut ${i+1}</b>
+<button class="secondary" onclick="cuts.splice(${i},1);renderCuts()">Delete</button>
 </header>
-<div class="body">
-<small>${s.start.toFixed(2)}s → ${s.end.toFixed(2)}s</small><br>
-<select onchange="segments[${i}].mode=this.value">
-<option value="after">After</option>
-<option value="cross">Crossfade</option>
-</select>
-<input type="range" min="0" max="3" step=".05" value="${s.fade}"
-oninput="segments[${i}].fade=this.value">
-</div>`;
+<small>${cut.start.toFixed(2)}s → ${cut.end.toFixed(2)}s | Fade ${cut.fade.toFixed(2)}s</small>
+`;
 c.appendChild(d);
-})
+});
 }
 
-function adv(){advPanel.style.display=advPanel.style.display?"":"block"}
+function buildTimeline(ctx){
+let time=0;
+const off=new OfflineAudioContext(buffer.numberOfChannels,buffer.length,buffer.sampleRate);
+let cursor=0;
 
-function saveProject(){
-if(!audioData)return;
-const id=Date.now();
-localStorage.setItem("save-"+id,JSON.stringify({
-audio:Array.from(new Uint8Array(audioData)),
-segments
-}));
+cuts.forEach(cut=>{
+if(cut.start>cursor){
+const s=off.createBufferSource();
+const g=off.createGain();
+s.buffer=buffer;
+s.connect(g).connect(off.destination);
+s.start(time,cursor,cut.start-cursor);
+time+=cut.start-cursor;
 }
 
-function openLoad(){
-const keys=Object.keys(localStorage).filter(k=>k.startsWith("save-"));
-if(buffer){
-showDialog([
-["Load anyway",()=>{loadSave(keys[0])}],
-["Cancel",closeDialog]
-]);
-}else loadSave(keys[0]);
+if(cut.fade>0 && time>0){
+const g=off.createGain();
+g.gain.setValueAtTime(1,time-cut.fade);
+g.gain.linearRampToValueAtTime(0,time);
 }
 
-async function loadSave(k){
-const s=JSON.parse(localStorage.getItem(k));
-ctx=new AudioContext();
-audioData=new Uint8Array(s.audio).buffer;
-buffer=await ctx.decodeAudioData(audioData.slice(0));
-segments=s.segments;
-start.max=end.max=buffer.duration;
-end.value=buffer.duration;
-upd();
-editor.style.display="block";
-render();
-closeDialog();
+cursor=cut.end;
+});
+
+if(cursor<buffer.duration){
+const s=off.createBufferSource();
+s.buffer=buffer;
+s.connect(off.destination);
+s.start(time,cursor,buffer.duration-cursor);
+}
+
+return off.startRendering();
+}
+
+function play(){
+stop();
+buildTimeline(ctx).then(b=>{
+src=ctx.createBufferSource();
+src.buffer=b;
+src.connect(ctx.destination);
+src.start();
+});
 }
 
 function download(){
-if(!segments.length)return;
-let len=0;
-segments.forEach((s,i)=>{len+=s.end-s.start;if(i&&s.mode==="cross")len-=s.fade});
-const off=new OfflineAudioContext(buffer.numberOfChannels,len*buffer.sampleRate,buffer.sampleRate);
-let t=0;
-segments.forEach((s,i)=>{
-const src=off.createBufferSource();
-const g=off.createGain();
-src.buffer=buffer;
-src.connect(g).connect(off.destination);
-if(i&&s.mode==="cross"){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(1,t+s.fade);t-=s.fade}
-src.start(t,s.start,s.end-s.start);
-t+=s.end-s.start;
-});
-off.startRendering().then(r=>{
+buildTimeline(ctx).then(b=>{
 const a=document.createElement("a");
-a.href=URL.createObjectURL(new Blob([encode(r)],{type:"audio/wav"}));
-a.download="final.wav";
+a.href=URL.createObjectURL(new Blob([encode(b)],{type:"audio/wav"}));
+a.download="edited.wav";
 a.click();
-})
+});
 }
 
 function encode(b){
@@ -356,33 +249,7 @@ for(let c=0;c<b.numberOfChannels;c++){
 let s=b.getChannelData(c)[i];
 v.setInt16(o,Math.max(-1,Math.min(1,s))*32767,true);o+=2
 }
-return v.buffer
-}
-
-function toggleSide(){document.getElementById("side").classList.toggle("open")}
-
-function showDialog(opts){
-const d=document.getElementById("dialog");
-const b=document.getElementById("dialogBox");
-b.innerHTML="";
-opts.forEach(o=>{
-const btn=document.createElement("button");
-btn.className="secondary";
-btn.textContent=o[0];
-btn.onclick=o[1];
-b.appendChild(btn);
-});
-d.style.display="flex";
-}
-
-function closeDialog(){document.getElementById("dialog").style.display="none"}
-
-function clearProject(){
-stop();
-buffer=null;
-segments=[];
-editor.style.display="none";
-advPanel.style.display="none";
+return v.buffer;
 }
 </script>
 </body>
