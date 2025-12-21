@@ -3,325 +3,167 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advanced Audio Cut Editor</title>
-
+<title>Modern Website</title>
 <style>
-:root{
---bg:radial-gradient(circle at top,#1c1c1c,#000);
---gold:#d4af37;
---panel:rgba(18,18,18,.95);
---text:#f3f3f3;
---muted:#9a9a9a;
+:root {
+    --bg: #0b0f14;
+    --card: #121821;
+    --accent: #4f9cff;
+    --text: #e6eaf0;
+    --muted: #9aa4b2;
 }
-*{box-sizing:border-box}
-body{
-margin:0;
-min-height:100vh;
-background:var(--bg);
-font-family:system-ui,sans-serif;
-color:var(--text);
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
-.wrapper{max-width:1200px;margin:auto;padding:40px}
-.panel{
-background:var(--panel);
-border:1px solid rgba(212,175,55,.25);
-border-radius:18px;
-padding:28px;
-margin-bottom:28px;
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(180deg, #0b0f14, #0e141c);
+    color: var(--text);
+    min-height: 100vh;
 }
-h1{text-align:center;color:var(--gold)}
-.import{
-border:2px dashed rgba(212,175,55,.35);
-padding:50px;
-border-radius:14px;
-text-align:center;
-cursor:pointer
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    background: rgba(18, 24, 33, 0.8);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
-.import input{display:none}
-.controls,.cuts,.advanced{display:none}
-.row{margin-bottom:18px}
-label{display:flex;justify-content:space-between;color:var(--muted)}
-input[type=range]{width:100%}
-.buttons{display:flex;gap:12px;flex-wrap:wrap}
-button{
-padding:14px;
-border-radius:12px;
-border:none;
-font-weight:600;
-cursor:pointer
+header h1 {
+    font-size: 20px;
+    font-weight: 600;
 }
-.primary{background:linear-gradient(135deg,#b8962e,#f0d57a);color:#000}
-.secondary{
-background:transparent;
-border:1px solid rgba(212,175,55,.35);
-color:var(--gold)
+nav a {
+    margin-left: 24px;
+    text-decoration: none;
+    color: var(--muted);
+    font-weight: 500;
 }
-.cut{
-border:1px solid rgba(212,175,55,.35);
-border-radius:12px;
-padding:14px;
-margin-bottom:14px
+nav a:hover {
+    color: var(--accent);
 }
-.cut header{
-display:flex;
-justify-content:space-between;
-align-items:center
+main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 40px;
 }
-small{color:var(--muted)}
-.time{
-text-align:center;
-margin-top:10px;
-font-size:15px;
-color:var(--gold)
+.hero {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 60px;
+    align-items: center;
+}
+.hero h2 {
+    font-size: 48px;
+    line-height: 1.1;
+    margin-bottom: 20px;
+}
+.hero p {
+    font-size: 18px;
+    color: var(--muted);
+    margin-bottom: 32px;
+}
+.hero button {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.hero button:hover {
+    opacity: 0.9;
+}
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 24px;
+    margin-top: 80px;
+}
+.card {
+    background: var(--card);
+    padding: 28px;
+    border-radius: 12px;
+}
+.card h3 {
+    margin-bottom: 12px;
+    font-size: 18px;
+}
+.card p {
+    color: var(--muted);
+    font-size: 15px;
+}
+footer {
+    text-align: center;
+    padding: 40px;
+    color: var(--muted);
+    font-size: 14px;
+}
+@media (max-width: 900px) {
+    .hero {
+        grid-template-columns: 1fr;
+    }
+    .hero h2 {
+        font-size: 36px;
+    }
 }
 </style>
 </head>
 <body>
+<header>
+    <h1>My Website</h1>
+    <nav>
+        <a href="#">Home</a>
+        <a href="#">Features</a>
+        <a href="#">Contact</a>
+    </nav>
+</header>
 
-<div class="wrapper">
+<main>
+    <section class="hero">
+        <div>
+            <h2>Build Fast. Look Clean. Stay Modern.</h2>
+            <p>This is a lightweight, high-performance website template using modern layout, zero dependencies, and clean design.</p>
+            <button onclick="handleClick()">Get Started</button>
+        </div>
+        <div class="card">
+            <h3>Status</h3>
+            <p id="status">Idle</p>
+        </div>
+    </section>
 
-<div class="panel">
-<h1>Import File</h1>
-<label class="import">
-<input type="file" id="file" accept="audio/*">
-Click to import audio
-</label>
-</div>
+    <section class="card-grid">
+        <div class="card">
+            <h3>Speed</h3>
+            <p>Optimized for instant load and minimal overhead.</p>
+        </div>
+        <div class="card">
+            <h3>Responsive</h3>
+            <p>Works on desktop, tablet, and mobile without changes.</p>
+        </div>
+        <div class="card">
+            <h3>Modern</h3>
+            <p>Uses current standards and clean UI patterns.</p>
+        </div>
+    </section>
+</main>
 
-<div class="panel controls" id="editor">
-<h1>Cut Editor</h1>
-
-<div class="row">
-<label>Cut Start <span id="sv"></span></label>
-<input type="range" id="start" step="0.01">
-</div>
-
-<div class="row">
-<label>Cut End <span id="ev"></span></label>
-<input type="range" id="end" step="0.01">
-</div>
-
-<div class="row">
-<label>Fade Over Cut <span id="fv"></span></label>
-<input type="range" id="fade" min="0" max="3" step="0.05" value="0">
-</div>
-
-<div class="buttons">
-<button class="secondary" onclick="addCut()">Add Cut</button>
-<button class="secondary" onclick="toggleAdvanced()">Advanced</button>
-<button class="primary" onclick="play()">Preview</button>
-<button class="secondary" onclick="stop()">Stop</button>
-<button class="primary" onclick="download()">Download</button>
-</div>
-
-<div class="time" id="timeDisplay">00:00 / 00:00</div>
-</div>
-
-<div class="panel advanced" id="advanced">
-<h1>Advanced Tools</h1>
-
-<div class="row">
-<label>Playback Speed <span id="speedVal"></span></label>
-<input type="range" id="speed" min="0.5" max="2" step="0.01" value="1">
-</div>
-
-<div class="row">
-<label>Volume <span id="volVal"></span></label>
-<input type="range" id="volume" min="0" max="2" step="0.01" value="1">
-</div>
-
-<div class="row">
-<label>Bass Boost <span id="bassVal"></span></label>
-<input type="range" id="bass" min="0" max="20" step="0.5" value="0">
-</div>
-
-<div class="row">
-<label>Silence Start <span id="ssVal"></span></label>
-<input type="range" id="silenceStart" step="0.01" value="0">
-</div>
-
-<div class="row">
-<label>Silence End <span id="seVal"></span></label>
-<input type="range" id="silenceEnd" step="0.01" value="0">
-</div>
-</div>
-
-<div class="panel cuts" id="cutsPanel">
-<h1>Removed Parts</h1>
-<div id="cuts"></div>
-</div>
-
-</div>
+<footer>
+    © 2025 My Website
+</footer>
 
 <script>
-let ctx,buffer,src,startTime,raf;
-let cuts=[];
-
-const timeDisplay=document.getElementById("timeDisplay");
-
-const file=document.getElementById("file");
-const editor=document.getElementById("editor");
-const cutsPanel=document.getElementById("cutsPanel");
-const advanced=document.getElementById("advanced");
-
-const start=document.getElementById("start");
-const end=document.getElementById("end");
-const fade=document.getElementById("fade");
-
-const speed=document.getElementById("speed");
-const volume=document.getElementById("volume");
-const bass=document.getElementById("bass");
-const silenceStart=document.getElementById("silenceStart");
-const silenceEnd=document.getElementById("silenceEnd");
-
-const sv=document.getElementById("sv");
-const ev=document.getElementById("ev");
-const fv=document.getElementById("fv");
-const speedVal=document.getElementById("speedVal");
-const volVal=document.getElementById("volVal");
-const bassVal=document.getElementById("bassVal");
-const ssVal=document.getElementById("ssVal");
-const seVal=document.getElementById("seVal");
-
-[start,end,fade,speed,volume,bass,silenceStart,silenceEnd].forEach(i=>i.oninput=updateVals);
-
-function updateVals(){
-sv.textContent=(+start.value).toFixed(2)+"s";
-ev.textContent=(+end.value).toFixed(2)+"s";
-fv.textContent=(+fade.value).toFixed(2)+"s";
-speedVal.textContent=(+speed.value).toFixed(2)+"×";
-volVal.textContent=(+volume.value).toFixed(2);
-bassVal.textContent=(+bass.value).toFixed(1)+" dB";
-ssVal.textContent=(+silenceStart.value).toFixed(2)+"s";
-seVal.textContent=(+silenceEnd.value).toFixed(2)+"s";
-}
-
-file.onchange=async e=>{
-ctx=new AudioContext();
-buffer=await ctx.decodeAudioData(await e.target.files[0].arrayBuffer());
-start.max=end.max=silenceStart.max=silenceEnd.max=buffer.duration;
-end.value=silenceEnd.value=buffer.duration;
-updateVals();
-editor.style.display="block";
-cutsPanel.style.display="block";
-timeDisplay.textContent=`00:00 / ${fmt(buffer.duration)}`;
-}
-
-function toggleAdvanced(){
-advanced.style.display=advanced.style.display?"":"block";
-}
-
-function stop(){
-if(src){src.stop();src=null}
-cancelAnimationFrame(raf);
-}
-
-function addCut(){
-if(start.value>=end.value)return;
-cuts.push({start:+start.value,end:+end.value,fade:+fade.value});
-cuts.sort((a,b)=>a.start-b.start);
-renderCuts();
-}
-
-function renderCuts(){
-const c=document.getElementById("cuts");
-c.innerHTML="";
-cuts.forEach((cut,i)=>{
-const d=document.createElement("div");
-d.className="cut";
-d.innerHTML=`
-<header>
-<b>Cut ${i+1}</b>
-<button class="secondary" onclick="cuts.splice(${i},1);renderCuts()">Delete</button>
-</header>
-<small>${cut.start.toFixed(2)}s → ${cut.end.toFixed(2)}s</small>
-`;
-c.appendChild(d);
-});
-}
-
-function buildTimeline(){
-const off=new OfflineAudioContext(buffer.numberOfChannels,buffer.length,buffer.sampleRate);
-let t=0,cursor=0;
-
-cuts.forEach(c=>{
-if(c.start>cursor){
-spawn(cursor,c.start-cursor,t);
-t+=c.start-cursor;
-}
-cursor=c.end;
-});
-if(cursor<buffer.duration)spawn(cursor,buffer.duration-cursor,t);
-
-return off.startRendering();
-
-function spawn(o,d,st){
-const s=off.createBufferSource();
-const g=off.createGain();
-const f=off.createBiquadFilter();
-s.buffer=buffer;
-s.playbackRate.value=speed.value;
-f.type="lowshelf";
-f.frequency.value=200;
-f.gain.value=bass.value;
-g.gain.value=volume.value;
-if(o+d>silenceStart.value&&o<silenceEnd.value)g.gain.value=0;
-s.connect(f).connect(g).connect(off.destination);
-s.start(st,o,d);
-}
-}
-
-function play(){
-stop();
-buildTimeline().then(b=>{
-src=ctx.createBufferSource();
-src.buffer=b;
-src.connect(ctx.destination);
-startTime=ctx.currentTime;
-src.start();
-tick(b.duration);
-});
-}
-
-function tick(dur){
-const now=ctx.currentTime-startTime;
-timeDisplay.textContent=`${fmt(now)} / ${fmt(dur)}`;
-if(now<dur)raf=requestAnimationFrame(()=>tick(dur));
-}
-
-function download(){
-buildTimeline().then(b=>{
-const a=document.createElement("a");
-a.href=URL.createObjectURL(new Blob([encode(b)],{type:"audio/wav"}));
-a.download="edited.wav";
-a.click();
-});
-}
-
-function fmt(t){
-t=Math.max(0,t);
-const m=Math.floor(t/60);
-const s=Math.floor(t%60).toString().padStart(2,"0");
-return `${m}:${s}`;
-}
-
-function encode(b){
-const l=b.length*2*b.numberOfChannels+44;
-const v=new DataView(new ArrayBuffer(l));
-let o=0;
-const w=s=>{for(let i=0;i<s.length;i++)v.setUint8(o++,s.charCodeAt(i))};
-const u16=d=>{v.setUint16(o,d,true);o+=2};
-const u32=d=>{v.setUint32(o,d,true);o+=4};
-w("RIFF");u32(l-8);w("WAVEfmt ");u32(16);u16(1);
-u16(b.numberOfChannels);u32(b.sampleRate);
-u32(b.sampleRate*b.numberOfChannels*2);
-u16(b.numberOfChannels*2);u16(16);w("data");u32(l-o-4);
-for(let i=0;i<b.length;i++)
-for(let c=0;c<b.numberOfChannels;c++){
-let s=b.getChannelData(c)[i];
-v.setInt16(o,Math.max(-1,Math.min(1,s))*32767,true);o+=2
-}
-return v.buffer;
+function handleClick() {
+    const status = document.getElementById("status");
+    status.textContent = "Running";
+    status.style.color = "#4f9cff";
 }
 </script>
 </body>
