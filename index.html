@@ -1,252 +1,291 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Morse UI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Audio Trimmer</title>
 <style>
+:root {
+    --bg: radial-gradient(circle at top, #1a1a1a, #000000);
+    --gold: #d4af37;
+    --gold-soft: rgba(212,175,55,0.15);
+    --panel: rgba(20,20,20,0.9);
+    --text: #f5f5f5;
+    --muted: #999;
+}
+* {
+    box-sizing: border-box;
+}
 body {
     margin: 0;
-    background: linear-gradient(160deg, #000 0%, #0a0a0a 100%);
-    font-family: Arial, sans-serif;
-    color: #fff;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.container {
+    width: 100%;
+    max-width: 700px;
     padding: 40px;
 }
-
-.center {
-    max-width: 800px;
-    margin: auto;
-    animation: fadein 0.35s ease-out;
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--gold-soft);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 0 60px rgba(212,175,55,0.08);
 }
-
-@keyframes fadein {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+.panel + .panel {
+    margin-top: 24px;
 }
-
-.glass {
-    backdrop-filter: blur(14px);
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 12px;
-    padding: 20px;
-    animation: glassPop 0.3s ease-out;
-}
-
-@keyframes glassPop {
-    from { transform: scale(0.96); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-}
-
-.toggle-wrap {
-    width: 300px;
-    margin: auto;
-    margin-bottom: 25px;
-    animation: slideIn 0.3s ease-out;
-}
-
-.toggle {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px;
-    backdrop-filter: blur(12px);
-    background: rgba(255,255,255,0.10);
-    border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.15);
-    cursor: pointer;
-    animation: glassPop 0.3s ease-out;
-}
-
-.toggle span {
-    width: 50%;
+h1 {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--gold);
     text-align: center;
-    padding: 10px 0;
-    border-radius: 14px;
 }
-
-.active {
-    background: rgba(255,255,255,0.22);
-    animation: glowPulse 0.4s ease-out;
-}
-
-@keyframes glowPulse {
-    0% { box-shadow: 0 0 0px rgba(255,255,255,0.4); }
-    100% { box-shadow: 0 0 10px rgba(255,255,255,0.4); }
-}
-
-.input {
-    width: 100%;
-    padding: 18px;
+.import-box {
+    border: 2px dashed var(--gold-soft);
     border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.import-box:hover {
+    border-color: var(--gold);
+}
+.import-box input {
+    display: none;
+}
+.import-box span {
     font-size: 18px;
-    border: 1px solid rgba(255,255,255,0.18);
-    background: rgba(255,255,255,0.12);
-    color: #fff;
-    outline: none;
+    color: var(--muted);
+}
+.controls {
+    display: none;
+}
+.control-row {
     margin-bottom: 20px;
-    animation: glassPop 0.3s ease-out;
 }
-
-.output {
-    font-size: 22px;
-    min-height: 80px;
-    word-wrap: break-word;
-    animation: fadein 0.25s ease-out;
+label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: var(--muted);
 }
-
-.button {
-    margin-top: 20px;
+input[type="range"] {
     width: 100%;
-    padding: 16px;
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: #fff;
+}
+.buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+button {
+    flex: 1;
+    background: linear-gradient(135deg, #b8962e, #f0d57a);
+    border: none;
+    color: #000;
+    font-weight: 600;
+    padding: 14px;
     border-radius: 10px;
     cursor: pointer;
-    font-size: 18px;
-    animation: glassPop 0.3s ease-out;
 }
-
-.button:active {
-    transform: scale(0.96);
+button.secondary {
+    background: transparent;
+    color: var(--gold);
+    border: 1px solid var(--gold-soft);
 }
-
-.showtable-wrap {
-    margin-top: 30px;
-    animation: fadein 0.3s ease-out;
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
-
-.showtable-toggle {
-    width: 260px;
-    margin: auto;
-    animation: glassPop 0.3s ease-out;
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
 }
-
-#table {
-    margin-top: 20px;
-    font-size: 16px;
-    line-height: 28px;
-    display: none;
-    white-space: pre-wrap;
-    animation: fadein 0.25s ease-out;
+.toggle input {
+    width: 18px;
+    height: 18px;
+}
+.time {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
 }
 </style>
 </head>
 <body>
-
-<div class="center">
-
-    <div class="toggle-wrap">
-        <div id="modeToggle" class="toggle glass">
-            <span id="left" class="active">English to Morse</span>
-            <span id="right">Morse to English</span>
-        </div>
+<div class="container">
+    <div class="panel">
+        <h1>Import File</h1>
+        <label class="import-box">
+            <input type="file" id="fileInput" accept="audio/*">
+            <span>Click to import an audio file</span>
+        </label>
     </div>
 
-    <input id="inputBox" class="input glass" placeholder="Enter text...">
+    <div class="panel controls" id="editor">
+        <h1>Trim Audio</h1>
 
-    <div class="glass">
-        <div id="outputBox" class="output"></div>
-    </div>
-
-    <button id="copyBtn" class="button glass">Copy</button>
-
-    <div class="showtable-wrap">
-        <div id="tableToggle" class="toggle glass showtable-toggle">
-            <span id="showtableLeft" class="active">Show Morse Table</span>
-            <span id="showtableRight">Hide</span>
+        <div class="toggle">
+            <input type="checkbox" id="previewToggle">
+            <label for="previewToggle">Preview trimmed section only</label>
         </div>
 
-        <div id="table" class="glass"></div>
-    </div>
+        <div class="control-row">
+            <label>Start</label>
+            <input type="range" id="startRange" min="0" step="0.01">
+        </div>
 
+        <div class="control-row">
+            <label>End</label>
+            <input type="range" id="endRange" min="0" step="0.01">
+        </div>
+
+        <div class="time">
+            <span id="startTime">0.00s</span>
+            <span id="endTime">0.00s</span>
+        </div>
+
+        <div class="buttons">
+            <button id="playBtn">Play</button>
+            <button class="secondary" id="downloadBtn">Download</button>
+        </div>
+    </div>
 </div>
 
 <script>
-const morseMap = {
-    "A":".-","B":"-...","C":"-.-.","D":"-..","E":".","F":"..-.","G":"--.","H":"....",
-    "I":"..","J":".---","K":"-.-","L":".-..","M":"--","N":"-.","O":"---","P":".--.",
-    "Q":"--.-","R":".-.","S":"...","T":"-","U":"..-","V":"...-","W":".--","X":"-..-",
-    "Y":"-.--","Z":"--..",
-    "0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....",
-    "6":"-....","7":"--...","8":"---..","9":"----.",
-    " ":"/",
-    ".":".-.-.-",",":"--..--","?":"..--..","!":"-.-.--","/":"-..-.","@":".--.-.",
-    "(":"-.--.",")":"-.--.-",":":"---...", ";":"-.-.-.","=":"-...-","+":".-.-.",
-    "-":"-....-","_":"..--.-","\"":".-..-.","$":"...-..-","&":".-...", "'":".----."
+let audioBuffer;
+let audioContext;
+let source;
+let duration = 0;
+
+const fileInput = document.getElementById("fileInput");
+const editor = document.getElementById("editor");
+const startRange = document.getElementById("startRange");
+const endRange = document.getElementById("endRange");
+const startTime = document.getElementById("startTime");
+const endTime = document.getElementById("endTime");
+const playBtn = document.getElementById("playBtn");
+const downloadBtn = document.getElementById("downloadBtn");
+const previewToggle = document.getElementById("previewToggle");
+
+fileInput.onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    audioContext = new AudioContext();
+    const arrayBuffer = await file.arrayBuffer();
+    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    duration = audioBuffer.duration;
+
+    startRange.max = duration;
+    endRange.max = duration;
+    endRange.value = duration;
+
+    updateTimes();
+    editor.style.display = "block";
 };
 
-const reverseMorse = {};
-Object.keys(morseMap).forEach(k => reverseMorse[morseMap[k]] = k.toLowerCase());
-
-let mode = "eng";
-let pending = false;
-let lastInput = "";
-
-document.getElementById("left").onclick = () => setMode("eng");
-document.getElementById("right").onclick = () => setMode("morse");
-
-function setMode(m) {
-    mode = m;
-    document.getElementById("left").classList.remove("active");
-    document.getElementById("right").classList.remove("active");
-    if (m === "eng") document.getElementById("left").classList.add("active");
-    else document.getElementById("right").classList.add("active");
-    scheduleUpdate();
+function updateTimes() {
+    startTime.textContent = Number(startRange.value).toFixed(2) + "s";
+    endTime.textContent = Number(endRange.value).toFixed(2) + "s";
 }
 
-document.getElementById("inputBox").addEventListener("input", () => {
-    lastInput = document.getElementById("inputBox").value;
-    scheduleUpdate();
-});
+startRange.oninput = () => {
+    if (Number(startRange.value) >= Number(endRange.value)) {
+        startRange.value = endRange.value - 0.01;
+    }
+    updateTimes();
+};
 
-function scheduleUpdate() {
-    if (pending) return;
-    pending = true;
-    requestAnimationFrame(() => {
-        pending = false;
-        runTranslate(lastInput);
-    });
-}
+endRange.oninput = () => {
+    if (Number(endRange.value) <= Number(startRange.value)) {
+        endRange.value = Number(startRange.value) + 0.01;
+    }
+    updateTimes();
+};
 
-function runTranslate(input) {
-    let out = "";
+playBtn.onclick = () => {
+    if (!audioBuffer) return;
+    if (source) source.stop();
 
-    if (mode === "eng") {
-        for (let c of input) {
-            const upper = c.toUpperCase();
-            out += morseMap[upper] ? morseMap[upper] + " " : "";
+    source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioContext.destination);
+
+    const start = Number(startRange.value);
+    const end = Number(endRange.value);
+
+    if (previewToggle.checked) {
+        source.start(0, start, end - start);
+    } else {
+        source.start(0);
+    }
+};
+
+downloadBtn.onclick = async () => {
+    const start = Number(startRange.value);
+    const end = Number(endRange.value);
+    const length = (end - start) * audioBuffer.sampleRate;
+
+    const offline = new OfflineAudioContext(
+        audioBuffer.numberOfChannels,
+        length,
+        audioBuffer.sampleRate
+    );
+
+    const trimmed = offline.createBufferSource();
+    trimmed.buffer = audioBuffer;
+    trimmed.connect(offline.destination);
+    trimmed.start(0, start, end - start);
+
+    const rendered = await offline.startRendering();
+    const wav = encodeWAV(rendered);
+    const blob = new Blob([wav], { type: "audio/wav" });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "trimmed_audio.wav";
+    a.click();
+};
+
+function encodeWAV(buffer) {
+    const channels = buffer.numberOfChannels;
+    const length = buffer.length * channels * 2 + 44;
+    const view = new DataView(new ArrayBuffer(length));
+    let offset = 0;
+
+    const write = s => { for (let i = 0; i < s.length; i++) view.setUint8(offset++, s.charCodeAt(i)); };
+    const write16 = d => { view.setUint16(offset, d, true); offset += 2; };
+    const write32 = d => { view.setUint32(offset, d, true); offset += 4; };
+
+    write("RIFF"); write32(length - 8); write("WAVE");
+    write("fmt "); write32(16); write16(1);
+    write16(channels); write32(buffer.sampleRate);
+    write32(buffer.sampleRate * channels * 2);
+    write16(channels * 2); write16(16);
+    write("data"); write32(length - offset - 4);
+
+    for (let i = 0; i < buffer.length; i++) {
+        for (let c = 0; c < channels; c++) {
+            let sample = buffer.getChannelData(c)[i];
+            sample = Math.max(-1, Math.min(1, sample));
+            view.setInt16(offset, sample * 32767, true);
+            offset += 2;
         }
-    } else {
-        const parts = input.trim().split(" ");
-        out = parts.map(x => reverseMorse[x] || "").join("");
     }
-
-    document.getElementById("outputBox").textContent = out.trim();
-}
-
-document.getElementById("copyBtn").onclick = () => {
-    navigator.clipboard.writeText(document.getElementById("outputBox").textContent);
-};
-
-document.getElementById("showtableLeft").onclick = () => showTable(true);
-document.getElementById("showtableRight").onclick = () => showTable(false);
-
-function showTable(show) {
-    document.getElementById("showtableLeft").classList.remove("active");
-    document.getElementById("showtableRight").classList.remove("active");
-
-    if (show) {
-        document.getElementById("showtableLeft").classList.add("active");
-        document.getElementById("table").style.display = "block";
-        const lines = [];
-        for (let k of Object.keys(morseMap)) lines.push(k + " : " + morseMap[k]);
-        document.getElementById("table").textContent = lines.join("\n");
-    } else {
-        document.getElementById("showtableRight").classList.add("active");
-        document.getElementById("table").style.display = "none";
-    }
+    return view.buffer;
 }
 </script>
-
 </body>
 </html>
