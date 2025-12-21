@@ -6,11 +6,11 @@
 <title>Advanced Audio Editor</title>
 <style>
 :root {
-    --bg: radial-gradient(circle at top, #1b1b1b, #000);
+    --bg: radial-gradient(circle at top, #1c1c1c, #000);
     --gold: #d4af37;
-    --panel: rgba(18,18,18,0.92);
-    --muted: #888;
-    --text: #f2f2f2;
+    --panel: rgba(18,18,18,0.95);
+    --text: #f3f3f3;
+    --muted: #9a9a9a;
 }
 * { box-sizing: border-box; }
 body {
@@ -19,47 +19,56 @@ body {
     background: var(--bg);
     font-family: system-ui, sans-serif;
     color: var(--text);
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
-.container {
-    width: 100%;
-    max-width: 760px;
+.wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
     padding: 40px;
 }
 .panel {
     background: var(--panel);
-    border: 1px solid rgba(212,175,55,0.2);
-    border-radius: 16px;
+    border: 1px solid rgba(212,175,55,0.25);
+    border-radius: 18px;
     padding: 28px;
-    box-shadow: 0 0 50px rgba(212,175,55,0.08);
+    margin-bottom: 28px;
 }
-.panel + .panel { margin-top: 24px; }
 h1 {
     margin: 0 0 20px;
-    text-align: center;
     color: var(--gold);
-    font-size: 26px;
+    text-align: center;
 }
 .import {
-    border: 2px dashed rgba(212,175,55,0.3);
-    padding: 40px;
-    border-radius: 12px;
+    border: 2px dashed rgba(212,175,55,0.35);
+    padding: 50px;
+    border-radius: 14px;
     text-align: center;
     cursor: pointer;
 }
 .import input { display: none; }
 .controls, .advanced { display: none; }
-.row { margin-bottom: 16px; }
-label { font-size: 13px; color: var(--muted); }
-input[type=range] { width: 100%; }
+.row {
+    margin-bottom: 18px;
+}
+label {
+    font-size: 14px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+}
+input[type=range] {
+    width: 100%;
+}
+.buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
 button {
-    padding: 12px;
-    border-radius: 10px;
+    padding: 14px;
+    border-radius: 12px;
     border: none;
-    cursor: pointer;
     font-weight: 600;
+    cursor: pointer;
 }
 .primary {
     background: linear-gradient(135deg,#b8962e,#f0d57a);
@@ -67,188 +76,200 @@ button {
 }
 .secondary {
     background: transparent;
-    border: 1px solid rgba(212,175,55,0.3);
+    border: 1px solid rgba(212,175,55,0.35);
     color: var(--gold);
 }
-.buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
 .segment {
-    border: 1px solid rgba(212,175,55,0.25);
-    border-radius: 10px;
-    padding: 12px;
-    margin-bottom: 10px;
+    border: 1px solid rgba(212,175,55,0.35);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 14px;
 }
-.segment-controls {
-    display: flex;
-    gap: 6px;
-    margin-top: 8px;
+.segment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
+    gap: 12px;
 }
-.small {
-    flex: 1;
+.segment small {
+    color: var(--muted);
+}
+select {
+    background: #000;
+    color: var(--text);
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 6px;
     padding: 6px;
-    font-size: 12px;
 }
 </style>
 </head>
 <body>
-<div class="container">
+
+<div class="wrapper">
 
 <div class="panel">
     <h1>Import File</h1>
     <label class="import">
-        <input type="file" id="fileInput" accept="audio/*">
+        <input type="file" id="file" accept="audio/*">
         Click to import audio
     </label>
 </div>
 
-<div class="panel controls" id="basic">
+<div class="panel controls" id="editor">
     <h1>Editor</h1>
 
     <div class="row">
-        <label>Start</label>
+        <label>Start <span id="startVal">0.00s</span></label>
         <input type="range" id="start" step="0.01">
     </div>
 
     <div class="row">
-        <label>End</label>
+        <label>End <span id="endVal">0.00s</span></label>
         <input type="range" id="end" step="0.01">
     </div>
 
     <div class="row">
-        <label>Playback Speed</label>
+        <label>Playback Speed <span id="speedVal">1.00×</span></label>
         <input type="range" id="speed" min="0.5" max="2" step="0.01" value="1">
-    </div>
-
-    <div class="row">
-        <label><input type="checkbox" id="loop"> Loop Preview</label>
     </div>
 
     <div class="buttons">
         <button class="primary" id="play">Play</button>
         <button class="secondary" id="stop">Stop</button>
-        <button class="secondary" id="addSegment">Add Section</button>
-        <button class="secondary" id="toggleAdvanced">Advanced</button>
+        <button class="secondary" id="add">Add Section</button>
+        <button class="secondary" id="toggle">Advanced</button>
         <button class="primary" id="download">Download</button>
     </div>
 </div>
 
 <div class="panel advanced" id="advanced">
-    <h1>Advanced Sections</h1>
+    <h1>Sections</h1>
     <div id="segments"></div>
 </div>
 
 </div>
 
 <script>
-let ctx, buffer, source;
+let ctx, buffer, src;
 let segments = [];
 
-const fileInput = document.getElementById("fileInput");
-const basic = document.getElementById("basic");
+const file = document.getElementById("file");
+const editor = document.getElementById("editor");
 const advanced = document.getElementById("advanced");
+
 const start = document.getElementById("start");
 const end = document.getElementById("end");
 const speed = document.getElementById("speed");
-const loop = document.getElementById("loop");
 
-fileInput.onchange = async e => {
-    const file = e.target.files[0];
+const startVal = document.getElementById("startVal");
+const endVal = document.getElementById("endVal");
+const speedVal = document.getElementById("speedVal");
+
+file.onchange = async e => {
     ctx = new AudioContext();
-    buffer = await ctx.decodeAudioData(await file.arrayBuffer());
+    buffer = await ctx.decodeAudioData(await e.target.files[0].arrayBuffer());
     start.max = end.max = buffer.duration;
     end.value = buffer.duration;
-    basic.style.display = "block";
+    updateVals();
+    editor.style.display = "block";
 };
 
-function stopAudio() {
-    if (source) {
-        source.stop();
-        source.disconnect();
-        source = null;
+function updateVals() {
+    startVal.textContent = (+start.value).toFixed(2) + "s";
+    endVal.textContent = (+end.value).toFixed(2) + "s";
+    speedVal.textContent = (+speed.value).toFixed(2) + "×";
+}
+
+[start,end,speed].forEach(i=>i.oninput=updateVals);
+
+function stop() {
+    if (src) {
+        src.stop();
+        src.disconnect();
+        src = null;
     }
 }
 
 document.getElementById("play").onclick = () => {
-    stopAudio();
-    source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.playbackRate.value = speed.value;
-    source.loop = loop.checked;
-    source.connect(ctx.destination);
-    source.start(0, start.value, end.value - start.value);
+    stop();
+    src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.playbackRate.value = speed.value;
+    src.connect(ctx.destination);
+    src.start(0, start.value, end.value - start.value);
 };
 
-document.getElementById("stop").onclick = stopAudio;
+document.getElementById("stop").onclick = stop;
 
-document.getElementById("addSegment").onclick = () => {
+document.getElementById("add").onclick = () => {
     segments.push({
-        start: Number(start.value),
-        end: Number(end.value),
-        fadeIn: 0,
-        fadeOut: 0
+        start:+start.value,
+        end:+end.value,
+        fade:+0,
+        mode:"after"
     });
     renderSegments();
 };
 
-document.getElementById("toggleAdvanced").onclick = () => {
-    advanced.style.display = advanced.style.display === "block" ? "none" : "block";
+document.getElementById("toggle").onclick = () => {
+    advanced.style.display = advanced.style.display==="block"?"none":"block";
 };
 
 function renderSegments() {
-    const container = document.getElementById("segments");
-    container.innerHTML = "";
-    segments.forEach((s, i) => {
-        const div = document.createElement("div");
-        div.className = "segment";
-        div.innerHTML = `
-            Section ${i + 1}<br>
-            Start: ${s.start.toFixed(2)}s | End: ${s.end.toFixed(2)}s
-            <div class="segment-controls">
-                <button class="secondary small" onclick="move(${i},-1)">↑</button>
-                <button class="secondary small" onclick="move(${i},1)">↓</button>
-                <button class="secondary small" onclick="removeSeg(${i})">✕</button>
+    const c = document.getElementById("segments");
+    c.innerHTML = "";
+    segments.forEach((s,i)=>{
+        const d=document.createElement("div");
+        d.className="segment";
+        d.innerHTML=`
+        <strong>Section ${i+1}</strong>
+        <div class="segment-grid">
+            <small>Start ${s.start.toFixed(2)}s</small>
+            <small>End ${s.end.toFixed(2)}s</small>
+            <div>
+                <small>Placement</small><br>
+                <select onchange="segments[${i}].mode=this.value">
+                    <option value="after" ${s.mode==="after"?"selected":""}>After</option>
+                    <option value="cross" ${s.mode==="cross"?"selected":""}>Crossfade</option>
+                </select>
             </div>
+            <div>
+                <small>Fade (s)</small><br>
+                <input type="range" min="0" max="3" step="0.05" value="${s.fade}"
+                 oninput="segments[${i}].fade=this.value">
+            </div>
+        </div>
         `;
-        container.appendChild(div);
+        c.appendChild(d);
     });
 }
 
-window.move = (i,d) => {
-    const j = i + d;
-    if (j < 0 || j >= segments.length) return;
-    [segments[i], segments[j]] = [segments[j], segments[i]];
-    renderSegments();
-};
-
-window.removeSeg = i => {
-    segments.splice(i,1);
-    renderSegments();
-};
-
 document.getElementById("download").onclick = async () => {
-    if (!segments.length) segments.push({start:+start.value,end:+end.value});
-    let total = segments.reduce((a,s)=>a+(s.end-s.start),0);
-    const off = new OfflineAudioContext(
-        buffer.numberOfChannels,
-        total * buffer.sampleRate,
-        buffer.sampleRate
-    );
-    let t = 0;
-    segments.forEach(s => {
-        const src = off.createBufferSource();
-        src.buffer = buffer;
-        src.connect(off.destination);
-        src.start(t, s.start, s.end - s.start);
-        t += s.end - s.start;
+    if (!segments.length) return;
+    let length = 0;
+    segments.forEach((s,i)=>{
+        length += s.end - s.start;
+        if (i && s.mode==="cross") length -= s.fade;
     });
-    const rendered = await off.startRendering();
-    const wav = encode(rendered);
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([wav],{type:"audio/wav"}));
-    a.download = "edited.wav";
+    const off = new OfflineAudioContext(buffer.numberOfChannels, length*buffer.sampleRate, buffer.sampleRate);
+    let t=0;
+    segments.forEach((s,i)=>{
+        const src=off.createBufferSource();
+        const gain=off.createGain();
+        src.buffer=buffer;
+        src.connect(gain).connect(off.destination);
+        if (i && s.mode==="cross") {
+            gain.gain.setValueAtTime(0,t);
+            gain.gain.linearRampToValueAtTime(1,t+s.fade);
+            t-=s.fade;
+        }
+        src.start(t,s.start,s.end-s.start);
+        t+=s.end-s.start;
+    });
+    const r=await off.startRendering();
+    const wav=encode(r);
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([wav],{type:"audio/wav"}));
+    a.download="final.wav";
     a.click();
 };
 
