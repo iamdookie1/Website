@@ -3,288 +3,273 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audio Trimmer</title>
+<title>Advanced Audio Editor</title>
 <style>
 :root {
-    --bg: radial-gradient(circle at top, #1a1a1a, #000000);
+    --bg: radial-gradient(circle at top, #1b1b1b, #000);
     --gold: #d4af37;
-    --gold-soft: rgba(212,175,55,0.15);
-    --panel: rgba(20,20,20,0.9);
-    --text: #f5f5f5;
-    --muted: #999;
+    --panel: rgba(18,18,18,0.92);
+    --muted: #888;
+    --text: #f2f2f2;
 }
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 body {
     margin: 0;
     min-height: 100vh;
     background: var(--bg);
+    font-family: system-ui, sans-serif;
     color: var(--text);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
 }
 .container {
     width: 100%;
-    max-width: 700px;
+    max-width: 760px;
     padding: 40px;
 }
 .panel {
     background: var(--panel);
-    border: 1px solid var(--gold-soft);
+    border: 1px solid rgba(212,175,55,0.2);
     border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 0 60px rgba(212,175,55,0.08);
+    padding: 28px;
+    box-shadow: 0 0 50px rgba(212,175,55,0.08);
 }
-.panel + .panel {
-    margin-top: 24px;
-}
+.panel + .panel { margin-top: 24px; }
 h1 {
-    font-size: 28px;
-    font-weight: 600;
-    margin-bottom: 24px;
-    color: var(--gold);
+    margin: 0 0 20px;
     text-align: center;
+    color: var(--gold);
+    font-size: 26px;
 }
-.import-box {
-    border: 2px dashed var(--gold-soft);
-    border-radius: 12px;
+.import {
+    border: 2px dashed rgba(212,175,55,0.3);
     padding: 40px;
+    border-radius: 12px;
     text-align: center;
     cursor: pointer;
-    transition: border-color 0.2s;
 }
-.import-box:hover {
-    border-color: var(--gold);
+.import input { display: none; }
+.controls, .advanced { display: none; }
+.row { margin-bottom: 16px; }
+label { font-size: 13px; color: var(--muted); }
+input[type=range] { width: 100%; }
+button {
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
 }
-.import-box input {
-    display: none;
+.primary {
+    background: linear-gradient(135deg,#b8962e,#f0d57a);
+    color: #000;
 }
-.import-box span {
-    font-size: 18px;
-    color: var(--muted);
-}
-.controls {
-    display: none;
-}
-.control-row {
-    margin-bottom: 20px;
-}
-label {
-    display: block;
-    font-size: 14px;
-    margin-bottom: 6px;
-    color: var(--muted);
-}
-input[type="range"] {
-    width: 100%;
+.secondary {
+    background: transparent;
+    border: 1px solid rgba(212,175,55,0.3);
+    color: var(--gold);
 }
 .buttons {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
 }
-button {
-    flex: 1;
-    background: linear-gradient(135deg, #b8962e, #f0d57a);
-    border: none;
-    color: #000;
-    font-weight: 600;
-    padding: 14px;
+.segment {
+    border: 1px solid rgba(212,175,55,0.25);
     border-radius: 10px;
-    cursor: pointer;
+    padding: 12px;
+    margin-bottom: 10px;
 }
-button.secondary {
-    background: transparent;
-    color: var(--gold);
-    border: 1px solid var(--gold-soft);
-}
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.toggle {
+.segment-controls {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 6px;
+    margin-top: 8px;
 }
-.toggle input {
-    width: 18px;
-    height: 18px;
-}
-.time {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: var(--muted);
+.small {
+    flex: 1;
+    padding: 6px;
+    font-size: 12px;
 }
 </style>
 </head>
 <body>
 <div class="container">
-    <div class="panel">
-        <h1>Import File</h1>
-        <label class="import-box">
-            <input type="file" id="fileInput" accept="audio/*">
-            <span>Click to import an audio file</span>
-        </label>
+
+<div class="panel">
+    <h1>Import File</h1>
+    <label class="import">
+        <input type="file" id="fileInput" accept="audio/*">
+        Click to import audio
+    </label>
+</div>
+
+<div class="panel controls" id="basic">
+    <h1>Editor</h1>
+
+    <div class="row">
+        <label>Start</label>
+        <input type="range" id="start" step="0.01">
     </div>
 
-    <div class="panel controls" id="editor">
-        <h1>Trim Audio</h1>
+    <div class="row">
+        <label>End</label>
+        <input type="range" id="end" step="0.01">
+    </div>
 
-        <div class="toggle">
-            <input type="checkbox" id="previewToggle">
-            <label for="previewToggle">Preview trimmed section only</label>
-        </div>
+    <div class="row">
+        <label>Playback Speed</label>
+        <input type="range" id="speed" min="0.5" max="2" step="0.01" value="1">
+    </div>
 
-        <div class="control-row">
-            <label>Start</label>
-            <input type="range" id="startRange" min="0" step="0.01">
-        </div>
+    <div class="row">
+        <label><input type="checkbox" id="loop"> Loop Preview</label>
+    </div>
 
-        <div class="control-row">
-            <label>End</label>
-            <input type="range" id="endRange" min="0" step="0.01">
-        </div>
-
-        <div class="time">
-            <span id="startTime">0.00s</span>
-            <span id="endTime">0.00s</span>
-        </div>
-
-        <div class="buttons">
-            <button id="playBtn">Play</button>
-            <button class="secondary" id="downloadBtn">Download</button>
-        </div>
+    <div class="buttons">
+        <button class="primary" id="play">Play</button>
+        <button class="secondary" id="stop">Stop</button>
+        <button class="secondary" id="addSegment">Add Section</button>
+        <button class="secondary" id="toggleAdvanced">Advanced</button>
+        <button class="primary" id="download">Download</button>
     </div>
 </div>
 
+<div class="panel advanced" id="advanced">
+    <h1>Advanced Sections</h1>
+    <div id="segments"></div>
+</div>
+
+</div>
+
 <script>
-let audioBuffer;
-let audioContext;
-let source;
-let duration = 0;
+let ctx, buffer, source;
+let segments = [];
 
 const fileInput = document.getElementById("fileInput");
-const editor = document.getElementById("editor");
-const startRange = document.getElementById("startRange");
-const endRange = document.getElementById("endRange");
-const startTime = document.getElementById("startTime");
-const endTime = document.getElementById("endTime");
-const playBtn = document.getElementById("playBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-const previewToggle = document.getElementById("previewToggle");
+const basic = document.getElementById("basic");
+const advanced = document.getElementById("advanced");
+const start = document.getElementById("start");
+const end = document.getElementById("end");
+const speed = document.getElementById("speed");
+const loop = document.getElementById("loop");
 
 fileInput.onchange = async e => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    audioContext = new AudioContext();
-    const arrayBuffer = await file.arrayBuffer();
-    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    duration = audioBuffer.duration;
-
-    startRange.max = duration;
-    endRange.max = duration;
-    endRange.value = duration;
-
-    updateTimes();
-    editor.style.display = "block";
+    ctx = new AudioContext();
+    buffer = await ctx.decodeAudioData(await file.arrayBuffer());
+    start.max = end.max = buffer.duration;
+    end.value = buffer.duration;
+    basic.style.display = "block";
 };
 
-function updateTimes() {
-    startTime.textContent = Number(startRange.value).toFixed(2) + "s";
-    endTime.textContent = Number(endRange.value).toFixed(2) + "s";
+function stopAudio() {
+    if (source) {
+        source.stop();
+        source.disconnect();
+        source = null;
+    }
 }
 
-startRange.oninput = () => {
-    if (Number(startRange.value) >= Number(endRange.value)) {
-        startRange.value = endRange.value - 0.01;
-    }
-    updateTimes();
+document.getElementById("play").onclick = () => {
+    stopAudio();
+    source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = speed.value;
+    source.loop = loop.checked;
+    source.connect(ctx.destination);
+    source.start(0, start.value, end.value - start.value);
 };
 
-endRange.oninput = () => {
-    if (Number(endRange.value) <= Number(startRange.value)) {
-        endRange.value = Number(startRange.value) + 0.01;
-    }
-    updateTimes();
+document.getElementById("stop").onclick = stopAudio;
+
+document.getElementById("addSegment").onclick = () => {
+    segments.push({
+        start: Number(start.value),
+        end: Number(end.value),
+        fadeIn: 0,
+        fadeOut: 0
+    });
+    renderSegments();
 };
 
-playBtn.onclick = () => {
-    if (!audioBuffer) return;
-    if (source) source.stop();
-
-    source = audioContext.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(audioContext.destination);
-
-    const start = Number(startRange.value);
-    const end = Number(endRange.value);
-
-    if (previewToggle.checked) {
-        source.start(0, start, end - start);
-    } else {
-        source.start(0);
-    }
+document.getElementById("toggleAdvanced").onclick = () => {
+    advanced.style.display = advanced.style.display === "block" ? "none" : "block";
 };
 
-downloadBtn.onclick = async () => {
-    const start = Number(startRange.value);
-    const end = Number(endRange.value);
-    const length = (end - start) * audioBuffer.sampleRate;
+function renderSegments() {
+    const container = document.getElementById("segments");
+    container.innerHTML = "";
+    segments.forEach((s, i) => {
+        const div = document.createElement("div");
+        div.className = "segment";
+        div.innerHTML = `
+            Section ${i + 1}<br>
+            Start: ${s.start.toFixed(2)}s | End: ${s.end.toFixed(2)}s
+            <div class="segment-controls">
+                <button class="secondary small" onclick="move(${i},-1)">↑</button>
+                <button class="secondary small" onclick="move(${i},1)">↓</button>
+                <button class="secondary small" onclick="removeSeg(${i})">✕</button>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
 
-    const offline = new OfflineAudioContext(
-        audioBuffer.numberOfChannels,
-        length,
-        audioBuffer.sampleRate
+window.move = (i,d) => {
+    const j = i + d;
+    if (j < 0 || j >= segments.length) return;
+    [segments[i], segments[j]] = [segments[j], segments[i]];
+    renderSegments();
+};
+
+window.removeSeg = i => {
+    segments.splice(i,1);
+    renderSegments();
+};
+
+document.getElementById("download").onclick = async () => {
+    if (!segments.length) segments.push({start:+start.value,end:+end.value});
+    let total = segments.reduce((a,s)=>a+(s.end-s.start),0);
+    const off = new OfflineAudioContext(
+        buffer.numberOfChannels,
+        total * buffer.sampleRate,
+        buffer.sampleRate
     );
-
-    const trimmed = offline.createBufferSource();
-    trimmed.buffer = audioBuffer;
-    trimmed.connect(offline.destination);
-    trimmed.start(0, start, end - start);
-
-    const rendered = await offline.startRendering();
-    const wav = encodeWAV(rendered);
-    const blob = new Blob([wav], { type: "audio/wav" });
-
+    let t = 0;
+    segments.forEach(s => {
+        const src = off.createBufferSource();
+        src.buffer = buffer;
+        src.connect(off.destination);
+        src.start(t, s.start, s.end - s.start);
+        t += s.end - s.start;
+    });
+    const rendered = await off.startRendering();
+    const wav = encode(rendered);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "trimmed_audio.wav";
+    a.href = URL.createObjectURL(new Blob([wav],{type:"audio/wav"}));
+    a.download = "edited.wav";
     a.click();
 };
 
-function encodeWAV(buffer) {
-    const channels = buffer.numberOfChannels;
-    const length = buffer.length * channels * 2 + 44;
-    const view = new DataView(new ArrayBuffer(length));
-    let offset = 0;
-
-    const write = s => { for (let i = 0; i < s.length; i++) view.setUint8(offset++, s.charCodeAt(i)); };
-    const write16 = d => { view.setUint16(offset, d, true); offset += 2; };
-    const write32 = d => { view.setUint32(offset, d, true); offset += 4; };
-
-    write("RIFF"); write32(length - 8); write("WAVE");
-    write("fmt "); write32(16); write16(1);
-    write16(channels); write32(buffer.sampleRate);
-    write32(buffer.sampleRate * channels * 2);
-    write16(channels * 2); write16(16);
-    write("data"); write32(length - offset - 4);
-
-    for (let i = 0; i < buffer.length; i++) {
-        for (let c = 0; c < channels; c++) {
-            let sample = buffer.getChannelData(c)[i];
-            sample = Math.max(-1, Math.min(1, sample));
-            view.setInt16(offset, sample * 32767, true);
-            offset += 2;
+function encode(b){
+    const l=b.length*2*b.numberOfChannels+44;
+    const v=new DataView(new ArrayBuffer(l));
+    let o=0;
+    const w=s=>{for(let i=0;i<s.length;i++)v.setUint8(o++,s.charCodeAt(i));};
+    const u16=d=>{v.setUint16(o,d,true);o+=2;};
+    const u32=d=>{v.setUint32(o,d,true);o+=4;};
+    w("RIFF");u32(l-8);w("WAVEfmt ");u32(16);u16(1);
+    u16(b.numberOfChannels);u32(b.sampleRate);
+    u32(b.sampleRate*b.numberOfChannels*2);
+    u16(b.numberOfChannels*2);u16(16);w("data");u32(l-o-4);
+    for(let i=0;i<b.length;i++)
+        for(let c=0;c<b.numberOfChannels;c++){
+            let s=b.getChannelData(c)[i];
+            s=Math.max(-1,Math.min(1,s));
+            v.setInt16(o,s*32767,true);o+=2;
         }
-    }
-    return view.buffer;
+    return v.buffer;
 }
 </script>
 </body>
