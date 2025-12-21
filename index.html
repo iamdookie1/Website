@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audio Cut Editor</title>
+<title>Advanced Audio Cut Editor</title>
 
 <style>
 :root{
@@ -38,7 +38,7 @@ text-align:center;
 cursor:pointer
 }
 .import input{display:none}
-.controls,.cuts{display:none}
+.controls,.cuts,.advanced{display:none}
 .row{margin-bottom:18px}
 label{display:flex;justify-content:space-between;color:var(--muted)}
 input[type=range]{width:100%}
@@ -83,7 +83,7 @@ Click to import audio
 </div>
 
 <div class="panel controls" id="editor">
-<h1>Editor</h1>
+<h1>Cut Editor</h1>
 
 <div class="row">
 <label>Cut Start <span id="sv"></span></label>
@@ -102,9 +102,39 @@ Click to import audio
 
 <div class="buttons">
 <button class="secondary" onclick="addCut()">Add Cut</button>
+<button class="secondary" onclick="toggleAdvanced()">Advanced</button>
 <button class="primary" onclick="play()">Preview</button>
 <button class="secondary" onclick="stop()">Stop</button>
 <button class="primary" onclick="download()">Download</button>
+</div>
+</div>
+
+<div class="panel advanced" id="advanced">
+<h1>Advanced Tools</h1>
+
+<div class="row">
+<label>Playback Speed <span id="speedVal"></span></label>
+<input type="range" id="speed" min="0.5" max="2" step="0.01" value="1">
+</div>
+
+<div class="row">
+<label>Volume <span id="volVal"></span></label>
+<input type="range" id="volume" min="0" max="2" step="0.01" value="1">
+</div>
+
+<div class="row">
+<label>Bass Boost <span id="bassVal"></span></label>
+<input type="range" id="bass" min="0" max="20" step="0.5" value="0">
+</div>
+
+<div class="row">
+<label>Silence Start <span id="ssVal"></span></label>
+<input type="range" id="silenceStart" step="0.01" value="0">
+</div>
+
+<div class="row">
+<label>Silence End <span id="seVal"></span></label>
+<input type="range" id="silenceEnd" step="0.01" value="0">
 </div>
 </div>
 
@@ -122,30 +152,52 @@ let cuts=[];
 const file=document.getElementById("file");
 const editor=document.getElementById("editor");
 const cutsPanel=document.getElementById("cutsPanel");
+const advanced=document.getElementById("advanced");
 
 const start=document.getElementById("start");
 const end=document.getElementById("end");
 const fade=document.getElementById("fade");
+
+const speed=document.getElementById("speed");
+const volume=document.getElementById("volume");
+const bass=document.getElementById("bass");
+const silenceStart=document.getElementById("silenceStart");
+const silenceEnd=document.getElementById("silenceEnd");
+
 const sv=document.getElementById("sv");
 const ev=document.getElementById("ev");
 const fv=document.getElementById("fv");
+const speedVal=document.getElementById("speedVal");
+const volVal=document.getElementById("volVal");
+const bassVal=document.getElementById("bassVal");
+const ssVal=document.getElementById("ssVal");
+const seVal=document.getElementById("seVal");
 
-[start,end,fade].forEach(i=>i.oninput=updateVals);
+[start,end,fade,speed,volume,bass,silenceStart,silenceEnd].forEach(i=>i.oninput=updateVals);
 
 function updateVals(){
 sv.textContent=(+start.value).toFixed(2)+"s";
 ev.textContent=(+end.value).toFixed(2)+"s";
 fv.textContent=(+fade.value).toFixed(2)+"s";
+speedVal.textContent=(+speed.value).toFixed(2)+"×";
+volVal.textContent=(+volume.value).toFixed(2);
+bassVal.textContent=(+bass.value).toFixed(1)+" dB";
+ssVal.textContent=(+silenceStart.value).toFixed(2)+"s";
+seVal.textContent=(+silenceEnd.value).toFixed(2)+"s";
 }
 
 file.onchange=async e=>{
 ctx=new AudioContext();
 buffer=await ctx.decodeAudioData(await e.target.files[0].arrayBuffer());
-start.max=end.max=buffer.duration;
-end.value=buffer.duration;
+start.max=end.max=silenceStart.max=silenceEnd.max=buffer.duration;
+end.value=silenceEnd.value=buffer.duration;
 updateVals();
 editor.style.display="block";
 cutsPanel.style.display="block";
+}
+
+function toggleAdvanced(){
+advanced.style.display=advanced.style.display?"":"block";
 }
 
 function stop(){
@@ -154,11 +206,7 @@ if(src){src.stop();src=null}
 
 function addCut(){
 if(start.value>=end.value)return;
-cuts.push({
-start:+start.value,
-end:+end.value,
-fade:+fade.value
-});
+cuts.push({start:+start.value,end:+end.value,fade:+fade.value});
 cuts.sort((a,b)=>a.start-b.start);
 renderCuts();
 }
@@ -180,43 +228,51 @@ c.appendChild(d);
 });
 }
 
-function buildTimeline(ctx){
-let time=0;
+function buildTimeline(){
 const off=new OfflineAudioContext(buffer.numberOfChannels,buffer.length,buffer.sampleRate);
+let time=0;
 let cursor=0;
 
 cuts.forEach(cut=>{
 if(cut.start>cursor){
-const s=off.createBufferSource();
-const g=off.createGain();
-s.buffer=buffer;
-s.connect(g).connect(off.destination);
-s.start(time,cursor,cut.start-cursor);
+spawn(off,cursor,cut.start-cursor,time);
 time+=cut.start-cursor;
 }
-
-if(cut.fade>0 && time>0){
-const g=off.createGain();
-g.gain.setValueAtTime(1,time-cut.fade);
-g.gain.linearRampToValueAtTime(0,time);
-}
-
 cursor=cut.end;
 });
 
 if(cursor<buffer.duration){
-const s=off.createBufferSource();
-s.buffer=buffer;
-s.connect(off.destination);
-s.start(time,cursor,buffer.duration-cursor);
+spawn(off,cursor,buffer.duration-cursor,time);
 }
 
 return off.startRendering();
+
+function spawn(off,offset,dur,startTime){
+const src=off.createBufferSource();
+const gain=off.createGain();
+const shelf=off.createBiquadFilter();
+
+src.buffer=buffer;
+src.playbackRate.value=speed.value;
+
+shelf.type="lowshelf";
+shelf.frequency.value=200;
+shelf.gain.value=bass.value;
+
+gain.gain.value=volume.value;
+
+if(offset+dur>silenceStart.value && offset<silenceEnd.value){
+gain.gain.value=0;
+}
+
+src.connect(shelf).connect(gain).connect(off.destination);
+src.start(startTime,offset,dur);
+}
 }
 
 function play(){
 stop();
-buildTimeline(ctx).then(b=>{
+buildTimeline().then(b=>{
 src=ctx.createBufferSource();
 src.buffer=b;
 src.connect(ctx.destination);
@@ -225,7 +281,7 @@ src.start();
 }
 
 function download(){
-buildTimeline(ctx).then(b=>{
+buildTimeline().then(b=>{
 const a=document.createElement("a");
 a.href=URL.createObjectURL(new Blob([encode(b)],{type:"audio/wav"}));
 a.download="edited.wav";
