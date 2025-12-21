@@ -82,23 +82,37 @@ button {
 .segment {
     border: 1px solid rgba(212,175,55,0.35);
     border-radius: 12px;
-    padding: 16px;
+    padding: 14px;
     margin-bottom: 14px;
+}
+.segment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+.segment-body {
+    margin-top: 12px;
+}
+.segment.minimized .segment-body {
+    display: none;
 }
 .segment-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit,minmax(160px,1fr));
     gap: 12px;
 }
-.segment small {
-    color: var(--muted);
-}
+small { color: var(--muted); }
 select {
     background: #000;
     color: var(--text);
     border: 1px solid rgba(212,175,55,0.3);
     border-radius: 6px;
     padding: 6px;
+}
+.delete {
+    color: #ff6b6b;
+    border-color: rgba(255,107,107,0.4);
 }
 </style>
 </head>
@@ -204,8 +218,9 @@ document.getElementById("add").onclick = () => {
     segments.push({
         start:+start.value,
         end:+end.value,
-        fade:+0,
-        mode:"after"
+        fade:0,
+        mode:"after",
+        minimized:false
     });
     renderSegments();
 };
@@ -219,29 +234,47 @@ function renderSegments() {
     c.innerHTML = "";
     segments.forEach((s,i)=>{
         const d=document.createElement("div");
-        d.className="segment";
+        d.className="segment"+(s.minimized?" minimized":"");
         d.innerHTML=`
-        <strong>Section ${i+1}</strong>
-        <div class="segment-grid">
-            <small>Start ${s.start.toFixed(2)}s</small>
-            <small>End ${s.end.toFixed(2)}s</small>
+        <div class="segment-header">
+            <strong>Section ${i+1}</strong>
             <div>
-                <small>Placement</small><br>
-                <select onchange="segments[${i}].mode=this.value">
-                    <option value="after" ${s.mode==="after"?"selected":""}>After</option>
-                    <option value="cross" ${s.mode==="cross"?"selected":""}>Crossfade</option>
-                </select>
+                <button class="secondary" onclick="toggleMin(${i})">▾</button>
+                <button class="secondary delete" onclick="del(${i})">Delete</button>
             </div>
-            <div>
-                <small>Fade (s)</small><br>
-                <input type="range" min="0" max="3" step="0.05" value="${s.fade}"
-                 oninput="segments[${i}].fade=this.value">
+        </div>
+        <div class="segment-body">
+            <div class="segment-grid">
+                <small>Start ${s.start.toFixed(2)}s</small>
+                <small>End ${s.end.toFixed(2)}s</small>
+                <div>
+                    <small>Placement</small><br>
+                    <select onchange="segments[${i}].mode=this.value">
+                        <option value="after" ${s.mode==="after"?"selected":""}>After</option>
+                        <option value="cross" ${s.mode==="cross"?"selected":""}>Crossfade</option>
+                    </select>
+                </div>
+                <div>
+                    <small>Fade (s)</small><br>
+                    <input type="range" min="0" max="3" step="0.05" value="${s.fade}"
+                     oninput="segments[${i}].fade=this.value">
+                </div>
             </div>
         </div>
         `;
         c.appendChild(d);
     });
 }
+
+window.toggleMin = i => {
+    segments[i].minimized = !segments[i].minimized;
+    renderSegments();
+};
+
+window.del = i => {
+    segments.splice(i,1);
+    renderSegments();
+};
 
 document.getElementById("download").onclick = async () => {
     if (!segments.length) return;
