@@ -68,6 +68,12 @@ justify-content:space-between;
 align-items:center
 }
 small{color:var(--muted)}
+.time{
+text-align:center;
+margin-top:10px;
+font-size:15px;
+color:var(--gold)
+}
 </style>
 </head>
 <body>
@@ -107,6 +113,8 @@ Click to import audio
 <button class="secondary" onclick="stop()">Stop</button>
 <button class="primary" onclick="download()">Download</button>
 </div>
+
+<div class="time" id="timeDisplay">00:00 / 00:00</div>
 </div>
 
 <div class="panel advanced" id="advanced">
@@ -146,8 +154,10 @@ Click to import audio
 </div>
 
 <script>
-let ctx,buffer,src;
+let ctx,buffer,src,startTime,raf;
 let cuts=[];
+
+const timeDisplay=document.getElementById("timeDisplay");
 
 const file=document.getElementById("file");
 const editor=document.getElementById("editor");
@@ -194,6 +204,7 @@ end.value=silenceEnd.value=buffer.duration;
 updateVals();
 editor.style.display="block";
 cutsPanel.style.display="block";
+timeDisplay.textContent=`00:00 / ${fmt(buffer.duration)}`;
 }
 
 function toggleAdvanced(){
@@ -202,6 +213,7 @@ advanced.style.display=advanced.style.display?"":"block";
 
 function stop(){
 if(src){src.stop();src=null}
+cancelAnimationFrame(raf);
 }
 
 function addCut(){
@@ -222,7 +234,7 @@ d.innerHTML=`
 <b>Cut ${i+1}</b>
 <button class="secondary" onclick="cuts.splice(${i},1);renderCuts()">Delete</button>
 </header>
-<small>${cut.start.toFixed(2)}s → ${cut.end.toFixed(2)}s | Fade ${cut.fade.toFixed(2)}s</small>
+<small>${cut.start.toFixed(2)}s → ${cut.end.toFixed(2)}s</small>
 `;
 c.appendChild(d);
 });
@@ -230,43 +242,32 @@ c.appendChild(d);
 
 function buildTimeline(){
 const off=new OfflineAudioContext(buffer.numberOfChannels,buffer.length,buffer.sampleRate);
-let time=0;
-let cursor=0;
+let t=0,cursor=0;
 
-cuts.forEach(cut=>{
-if(cut.start>cursor){
-spawn(off,cursor,cut.start-cursor,time);
-time+=cut.start-cursor;
+cuts.forEach(c=>{
+if(c.start>cursor){
+spawn(cursor,c.start-cursor,t);
+t+=c.start-cursor;
 }
-cursor=cut.end;
+cursor=c.end;
 });
-
-if(cursor<buffer.duration){
-spawn(off,cursor,buffer.duration-cursor,time);
-}
+if(cursor<buffer.duration)spawn(cursor,buffer.duration-cursor,t);
 
 return off.startRendering();
 
-function spawn(off,offset,dur,startTime){
-const src=off.createBufferSource();
-const gain=off.createGain();
-const shelf=off.createBiquadFilter();
-
-src.buffer=buffer;
-src.playbackRate.value=speed.value;
-
-shelf.type="lowshelf";
-shelf.frequency.value=200;
-shelf.gain.value=bass.value;
-
-gain.gain.value=volume.value;
-
-if(offset+dur>silenceStart.value && offset<silenceEnd.value){
-gain.gain.value=0;
-}
-
-src.connect(shelf).connect(gain).connect(off.destination);
-src.start(startTime,offset,dur);
+function spawn(o,d,st){
+const s=off.createBufferSource();
+const g=off.createGain();
+const f=off.createBiquadFilter();
+s.buffer=buffer;
+s.playbackRate.value=speed.value;
+f.type="lowshelf";
+f.frequency.value=200;
+f.gain.value=bass.value;
+g.gain.value=volume.value;
+if(o+d>silenceStart.value&&o<silenceEnd.value)g.gain.value=0;
+s.connect(f).connect(g).connect(off.destination);
+s.start(st,o,d);
 }
 }
 
@@ -276,8 +277,16 @@ buildTimeline().then(b=>{
 src=ctx.createBufferSource();
 src.buffer=b;
 src.connect(ctx.destination);
+startTime=ctx.currentTime;
 src.start();
+tick(b.duration);
 });
+}
+
+function tick(dur){
+const now=ctx.currentTime-startTime;
+timeDisplay.textContent=`${fmt(now)} / ${fmt(dur)}`;
+if(now<dur)raf=requestAnimationFrame(()=>tick(dur));
 }
 
 function download(){
@@ -287,6 +296,13 @@ a.href=URL.createObjectURL(new Blob([encode(b)],{type:"audio/wav"}));
 a.download="edited.wav";
 a.click();
 });
+}
+
+function fmt(t){
+t=Math.max(0,t);
+const m=Math.floor(t/60);
+const s=Math.floor(t%60).toString().padStart(2,"0");
+return `${m}:${s}`;
 }
 
 function encode(b){
