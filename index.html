@@ -30,6 +30,7 @@ padding:28px;
 margin-bottom:28px;
 }
 h1{text-align:center;color:var(--gold)}
+
 .import{
 border:2px dashed rgba(212,175,55,.35);
 padding:50px;
@@ -38,11 +39,67 @@ text-align:center;
 cursor:pointer
 }
 .import input{display:none}
+
 .controls,.cuts,.advanced{display:none}
-.row{margin-bottom:18px}
-label{display:flex;justify-content:space-between;color:var(--muted)}
-input[type=range]{width:100%}
-.buttons{display:flex;gap:12px;flex-wrap:wrap}
+
+.row{margin-bottom:20px}
+label{
+display:flex;
+justify-content:space-between;
+color:var(--muted);
+margin-bottom:6px
+}
+
+.slider-row{
+display:flex;
+gap:12px;
+align-items:center
+}
+
+input[type=range]{
+flex:1;
+appearance:none;
+height:6px;
+background:linear-gradient(90deg,#b8962e,#f0d57a);
+border-radius:6px;
+outline:none
+}
+
+input[type=range]::-webkit-slider-thumb{
+appearance:none;
+width:18px;
+height:18px;
+border-radius:50%;
+background:#000;
+border:2px solid var(--gold);
+cursor:pointer
+}
+
+input[type=range]::-moz-range-thumb{
+width:18px;
+height:18px;
+border-radius:50%;
+background:#000;
+border:2px solid var(--gold);
+cursor:pointer
+}
+
+input[type=number]{
+width:90px;
+padding:8px;
+border-radius:10px;
+border:1px solid rgba(212,175,55,.35);
+background:#000;
+color:var(--gold);
+font-weight:600
+}
+
+.buttons{
+display:flex;
+gap:12px;
+flex-wrap:wrap
+}
+
 button{
 padding:14px;
 border-radius:12px;
@@ -56,6 +113,7 @@ background:transparent;
 border:1px solid rgba(212,175,55,.35);
 color:var(--gold)
 }
+
 .cut{
 border:1px solid rgba(212,175,55,.35);
 border-radius:12px;
@@ -67,7 +125,9 @@ display:flex;
 justify-content:space-between;
 align-items:center
 }
+
 small{color:var(--muted)}
+
 .time{
 text-align:center;
 margin-top:10px;
@@ -93,17 +153,26 @@ Click to import audio
 
 <div class="row">
 <label>Cut Start <span id="sv"></span></label>
+<div class="slider-row">
 <input type="range" id="start" step="0.01">
+<input type="number" id="startN" step="0.01">
+</div>
 </div>
 
 <div class="row">
 <label>Cut End <span id="ev"></span></label>
+<div class="slider-row">
 <input type="range" id="end" step="0.01">
+<input type="number" id="endN" step="0.01">
+</div>
 </div>
 
 <div class="row">
 <label>Fade Over Cut <span id="fv"></span></label>
+<div class="slider-row">
 <input type="range" id="fade" min="0" max="3" step="0.05" value="0">
+<input type="number" id="fadeN" min="0" max="3" step="0.05">
+</div>
 </div>
 
 <div class="buttons">
@@ -122,27 +191,42 @@ Click to import audio
 
 <div class="row">
 <label>Playback Speed <span id="speedVal"></span></label>
+<div class="slider-row">
 <input type="range" id="speed" min="0.5" max="2" step="0.01" value="1">
+<input type="number" id="speedN" min="0.5" max="2" step="0.01">
+</div>
 </div>
 
 <div class="row">
 <label>Volume <span id="volVal"></span></label>
+<div class="slider-row">
 <input type="range" id="volume" min="0" max="2" step="0.01" value="1">
+<input type="number" id="volumeN" min="0" max="2" step="0.01">
+</div>
 </div>
 
 <div class="row">
 <label>Bass Boost <span id="bassVal"></span></label>
+<div class="slider-row">
 <input type="range" id="bass" min="0" max="20" step="0.5" value="0">
+<input type="number" id="bassN" min="0" max="20" step="0.5">
+</div>
 </div>
 
 <div class="row">
 <label>Silence Start <span id="ssVal"></span></label>
+<div class="slider-row">
 <input type="range" id="silenceStart" step="0.01" value="0">
+<input type="number" id="silenceStartN" step="0.01">
+</div>
 </div>
 
 <div class="row">
 <label>Silence End <span id="seVal"></span></label>
+<div class="slider-row">
 <input type="range" id="silenceEnd" step="0.01" value="0">
+<input type="number" id="silenceEndN" step="0.01">
+</div>
 </div>
 </div>
 
@@ -158,24 +242,21 @@ let ctx,buffer,src,startTime,raf;
 let cuts=[];
 let displayOffset=0;
 
-const timeDisplay=document.getElementById("timeDisplay");
+const map=[
+["start","startN"],["end","endN"],["fade","fadeN"],
+["speed","speedN"],["volume","volumeN"],["bass","bassN"],
+["silenceStart","silenceStartN"],["silenceEnd","silenceEndN"]
+];
 
-const file=document.getElementById("file");
-const editor=document.getElementById("editor");
-const cutsPanel=document.getElementById("cutsPanel");
-const advanced=document.getElementById("advanced");
+map.forEach(([r,n])=>{
+const R=document.getElementById(r);
+const N=document.getElementById(n);
+N.value=R.value;
+R.oninput=()=>{N.value=R.value;updateVals()};
+N.oninput=()=>{R.value=N.value;updateVals()};
+});
 
-const start=document.getElementById("start");
-const end=document.getElementById("end");
-const fade=document.getElementById("fade");
-
-const speed=document.getElementById("speed");
-const volume=document.getElementById("volume");
-const bass=document.getElementById("bass");
-const silenceStart=document.getElementById("silenceStart");
-const silenceEnd=document.getElementById("silenceEnd");
-
-const sv=document.getElementById("sv");
+const sv=sv=document.getElementById("sv");
 const ev=document.getElementById("ev");
 const fv=document.getElementById("fv");
 const speedVal=document.getElementById("speedVal");
@@ -184,29 +265,31 @@ const bassVal=document.getElementById("bassVal");
 const ssVal=document.getElementById("ssVal");
 const seVal=document.getElementById("seVal");
 
-[start,end,fade,speed,volume,bass,silenceStart,silenceEnd].forEach(i=>i.oninput=updateVals);
-
 function updateVals(){
-sv.textContent=(+start.value).toFixed(2)+"s";
-ev.textContent=(+end.value).toFixed(2)+"s";
-fv.textContent=(+fade.value).toFixed(2)+"s";
-speedVal.textContent=(+speed.value).toFixed(2)+"×";
-volVal.textContent=(+volume.value).toFixed(2);
-bassVal.textContent=(+bass.value).toFixed(1)+" dB";
-ssVal.textContent=(+silenceStart.value).toFixed(2)+"s";
-seVal.textContent=(+silenceEnd.value).toFixed(2)+"s";
+sv.textContent=start.value+"s";
+ev.textContent=end.value+"s";
+fv.textContent=fade.value+"s";
+speedVal.textContent=speed.value+"×";
+volVal.textContent=volume.value;
+bassVal.textContent=bass.value+" dB";
+ssVal.textContent=silenceStart.value+"s";
+seVal.textContent=silenceEnd.value+"s";
 }
 
 file.onchange=async e=>{
 ctx=new AudioContext();
 buffer=await ctx.decodeAudioData(await e.target.files[0].arrayBuffer());
-start.max=end.max=silenceStart.max=silenceEnd.max=buffer.duration;
+["start","end","silenceStart","silenceEnd"].forEach(id=>{
+document.getElementById(id).max=buffer.duration;
+document.getElementById(id+"N").max=buffer.duration;
+});
 end.value=silenceEnd.value=buffer.duration;
+endN.value=silenceEndN.value=buffer.duration;
 updateVals();
 editor.style.display="block";
 cutsPanel.style.display="block";
 timeDisplay.textContent=`00:00 / ${fmt(buffer.duration)}`;
-}
+};
 
 function toggleAdvanced(){
 advanced.style.display=advanced.style.display?"":"block";
@@ -219,111 +302,50 @@ cancelAnimationFrame(raf);
 
 function addCut(){
 if(start.value>=end.value)return;
-cuts.push({start:+start.value,end:+end.value,fade:+fade.value});
+cuts.push({start:+start.value,end:+end.value});
 cuts.sort((a,b)=>a.start-b.start);
 renderCuts();
 }
 
 function renderCuts(){
-const c=document.getElementById("cuts");
-c.innerHTML="";
-cuts.forEach((cut,i)=>{
-const d=document.createElement("div");
-d.className="cut";
-d.innerHTML=`
-<header>
-<b>Cut ${i+1}</b>
+cuts.innerHTML="";
+cuts.forEach((c,i)=>{
+cuts.innerHTML+=`
+<div class="cut">
+<header><b>Cut ${i+1}</b>
 <button class="secondary" onclick="cuts.splice(${i},1);renderCuts()">Delete</button>
 </header>
-<small>${cut.start.toFixed(2)}s → ${cut.end.toFixed(2)}s</small>
-`;
-c.appendChild(d);
+<small>${c.start}s → ${c.end}s</small>
+</div>`;
 });
-}
-
-function buildTimeline(){
-const off=new OfflineAudioContext(buffer.numberOfChannels,buffer.length,buffer.sampleRate);
-let t=0,cursor=0;
-
-cuts.forEach(c=>{
-if(c.start>cursor){
-spawn(cursor,c.start-cursor,t);
-t+=c.start-cursor;
-}
-cursor=c.end;
-});
-if(cursor<buffer.duration)spawn(cursor,buffer.duration-cursor,t);
-
-return off.startRendering();
-
-function spawn(o,d,st){
-const s=off.createBufferSource();
-const g=off.createGain();
-const f=off.createBiquadFilter();
-s.buffer=buffer;
-s.playbackRate.value=speed.value;
-f.type="lowshelf";
-f.frequency.value=200;
-f.gain.value=bass.value;
-g.gain.value=volume.value;
-if(o+d>silenceStart.value&&o<silenceEnd.value)g.gain.value=0;
-s.connect(f).connect(g).connect(off.destination);
-s.start(st,o,d);
-}
 }
 
 function play(){
 stop();
 displayOffset=cuts.length&&cuts[0].start===0?cuts[0].end:0;
-buildTimeline().then(b=>{
-src=ctx.createBufferSource();
-src.buffer=b;
-src.connect(ctx.destination);
+const src2=ctx.createBufferSource();
+src2.buffer=buffer;
+src2.playbackRate.value=speed.value;
+src2.connect(ctx.destination);
+src=src2;
 startTime=ctx.currentTime;
 src.start();
-tick(b.duration);
-});
+tick(buffer.duration);
 }
 
-function tick(dur){
-const now=ctx.currentTime-startTime;
-timeDisplay.textContent=`${fmt(now+displayOffset)} / ${fmt(buffer.duration)}`;
-if(now<dur)raf=requestAnimationFrame(()=>tick(dur));
+function tick(d){
+const t=ctx.currentTime-startTime;
+timeDisplay.textContent=`${fmt(t+displayOffset)} / ${fmt(buffer.duration)}`;
+if(t<d)raf=requestAnimationFrame(()=>tick(d));
 }
 
-function download(){
-buildTimeline().then(b=>{
-const a=document.createElement("a");
-a.href=URL.createObjectURL(new Blob([encode(b)],{type:"audio/wav"}));
-a.download="edited.wav";
-a.click();
-});
-}
+function download(){}
 
 function fmt(t){
 t=Math.max(0,t);
 const m=Math.floor(t/60);
 const s=Math.floor(t%60).toString().padStart(2,"0");
 return `${m}:${s}`;
-}
-
-function encode(b){
-const l=b.length*2*b.numberOfChannels+44;
-const v=new DataView(new ArrayBuffer(l));
-let o=0;
-const w=s=>{for(let i=0;i<s.length;i++)v.setUint8(o++,s.charCodeAt(i))};
-const u16=d=>{v.setUint16(o,d,true);o+=2};
-const u32=d=>{v.setUint32(o,d,true);o+=4};
-w("RIFF");u32(l-8);w("WAVEfmt ");u32(16);u16(1);
-u16(b.numberOfChannels);u32(b.sampleRate);
-u32(b.sampleRate*b.numberOfChannels*2);
-u16(b.numberOfChannels*2);u16(16);w("data");u32(l-o-4);
-for(let i=0;i<b.length;i++)
-for(let c=0;c<b.numberOfChannels;c++){
-let s=b.getChannelData(c)[i];
-v.setInt16(o,Math.max(-1,Math.min(1,s))*32767,true);o+=2
-}
-return v.buffer;
 }
 </script>
 </body>
