@@ -39,9 +39,10 @@ cursor:pointer
 }
 .import input{display:none}
 .controls,.cuts,.advanced{display:none}
-.row{margin-bottom:20px}
+.row{margin-bottom:18px}
 label{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:6px}
 .slider-row{display:flex;gap:12px;align-items:center}
+
 input[type=range]{
 flex:1;
 appearance:none;
@@ -67,6 +68,7 @@ background:#000;
 color:var(--gold);
 font-weight:600
 }
+
 .buttons{display:flex;gap:12px;flex-wrap:wrap}
 button{
 padding:14px;
@@ -77,6 +79,7 @@ cursor:pointer
 }
 .primary{background:linear-gradient(135deg,#b8962e,#f0d57a);color:#000}
 .secondary{background:transparent;border:1px solid rgba(212,175,55,.35);color:var(--gold)}
+
 .cut{
 border:1px solid rgba(212,175,55,.35);
 border-radius:12px;
@@ -85,7 +88,7 @@ margin-bottom:14px
 }
 .cut header{display:flex;justify-content:space-between}
 small{color:var(--muted)}
-.time{text-align:center;margin-top:10px;color:var(--gold)}
+.time{text-align:center;color:var(--gold);margin-top:10px}
 </style>
 </head>
 
@@ -104,7 +107,7 @@ Click to import audio
 <h1>Cut Editor</h1>
 
 <div class="row">
-<label>Cut Start <span id="sv"></span></label>
+<label>Cut Start</label>
 <div class="slider-row">
 <input type="range" id="start" step="0.01">
 <input type="number" id="startN" step="0.01">
@@ -112,28 +115,50 @@ Click to import audio
 </div>
 
 <div class="row">
-<label>Cut End <span id="ev"></span></label>
+<label>Cut End</label>
 <div class="slider-row">
 <input type="range" id="end" step="0.01">
 <input type="number" id="endN" step="0.01">
 </div>
 </div>
 
-<div class="row">
-<label>Fade <span id="fv"></span></label>
-<div class="slider-row">
-<input type="range" id="fade" min="0" max="3" step="0.05">
-<input type="number" id="fadeN" min="0" max="3" step="0.05">
-</div>
-</div>
-
 <div class="buttons">
 <button class="secondary" onclick="addCut()">Add Cut</button>
+<button class="secondary" onclick="toggleAdvanced()">Advanced</button>
 <button class="primary" onclick="play()">Preview</button>
 <button class="secondary" onclick="stop()">Stop</button>
+<button class="primary" onclick="download()">Download</button>
 </div>
 
 <div class="time" id="timeDisplay">00:00 / 00:00</div>
+</div>
+
+<div class="panel advanced" id="advanced">
+<h1>Advanced</h1>
+
+<div class="row">
+<label>Speed</label>
+<div class="slider-row">
+<input type="range" id="speed" min="0.5" max="2" step="0.01" value="1">
+<input type="number" id="speedN" min="0.5" max="2" step="0.01">
+</div>
+</div>
+
+<div class="row">
+<label>Volume</label>
+<div class="slider-row">
+<input type="range" id="volume" min="0" max="2" step="0.01" value="1">
+<input type="number" id="volumeN" min="0" max="2" step="0.01">
+</div>
+</div>
+
+<div class="row">
+<label>Bass Boost (dB)</label>
+<div class="slider-row">
+<input type="range" id="bass" min="0" max="20" step="0.5" value="0">
+<input type="number" id="bassN" min="0" max="20" step="0.5">
+</div>
+</div>
 </div>
 
 <div class="panel cuts" id="cutsPanel">
@@ -145,80 +170,115 @@ Click to import audio
 
 <script>
 let ctx,buffer,src,startTime,raf;
-let cutList=[];
+let cuts=[];
+
+const ids=[
+["start","startN"],["end","endN"],
+["speed","speedN"],["volume","volumeN"],["bass","bassN"]
+];
+
+ids.forEach(([r,n])=>{
+const R=document.getElementById(r);
+const N=document.getElementById(n);
+N.value=R.value;
+R.oninput=()=>N.value=R.value;
+N.oninput=()=>R.value=N.value;
+});
 
 const file=document.getElementById("file");
 const editor=document.getElementById("editor");
 const cutsPanel=document.getElementById("cutsPanel");
 const cutsList=document.getElementById("cutsList");
+const advanced=document.getElementById("advanced");
 const timeDisplay=document.getElementById("timeDisplay");
-
-const start=document.getElementById("start");
-const end=document.getElementById("end");
-const fade=document.getElementById("fade");
-
-const startN=document.getElementById("startN");
-const endN=document.getElementById("endN");
-const fadeN=document.getElementById("fadeN");
-
-const sv=document.getElementById("sv");
-const ev=document.getElementById("ev");
-const fv=document.getElementById("fv");
-
-[start,end,fade].forEach((r,i)=>{
-const n=[startN,endN,fadeN][i];
-r.oninput=()=>{n.value=r.value;updateVals()};
-n.oninput=()=>{r.value=n.value;updateVals()};
-});
-
-function updateVals(){
-sv.textContent=start.value+"s";
-ev.textContent=end.value+"s";
-fv.textContent=fade.value+"s";
-}
 
 file.onchange=async e=>{
 ctx=new AudioContext();
 buffer=await ctx.decodeAudioData(await e.target.files[0].arrayBuffer());
-[start,end].forEach(i=>{
-i.max=buffer.duration;
-document.getElementById(i.id+"N").max=buffer.duration;
+["start","end"].forEach(id=>{
+document.getElementById(id).max=buffer.duration;
+document.getElementById(id+"N").max=buffer.duration;
 });
 end.value=endN.value=buffer.duration;
-updateVals();
 editor.style.display="block";
 cutsPanel.style.display="block";
 timeDisplay.textContent=`00:00 / ${fmt(buffer.duration)}`;
 };
 
+function toggleAdvanced(){
+advanced.style.display=advanced.style.display?"":"block";
+}
+
 function addCut(){
-if(+start.value>=+end.value)return;
-cutList.push({s:+start.value,e:+end.value});
+const s=+start.value;
+const e=+end.value;
+if(s>=e)return;
+cuts.push({s,e});
+cuts.sort((a,b)=>a.s-b.s);
 renderCuts();
 }
 
 function renderCuts(){
 cutsList.innerHTML="";
-cutList.forEach((c,i)=>{
+cuts.forEach((c,i)=>{
 cutsList.innerHTML+=`
 <div class="cut">
 <header>
 <b>Cut ${i+1}</b>
-<button class="secondary" onclick="cutList.splice(${i},1);renderCuts()">Delete</button>
+<button class="secondary" onclick="cuts.splice(${i},1);renderCuts()">Delete</button>
 </header>
 <small>${c.s}s → ${c.e}s</small>
 </div>`;
 });
 }
 
+function buildBuffer(){
+const rate=buffer.sampleRate;
+let segments=[];
+let cursor=0;
+
+cuts.forEach(c=>{
+if(c.s>cursor)segments.push([cursor,c.s]);
+cursor=c.e;
+});
+if(cursor<buffer.duration)segments.push([cursor,buffer.duration]);
+
+let length=segments.reduce((a,[s,e])=>a+(e-s),0);
+const off=new OfflineAudioContext(
+buffer.numberOfChannels,
+length*rate,
+rate
+);
+
+let t=0;
+segments.forEach(([s,e])=>{
+const src=off.createBufferSource();
+const gain=off.createGain();
+const bass=off.createBiquadFilter();
+src.buffer=buffer;
+src.playbackRate.value=speed.value;
+gain.gain.value=volume.value;
+bass.type="lowshelf";
+bass.frequency.value=200;
+bass.gain.value=bassN.value;
+src.connect(bass).connect(gain).connect(off.destination);
+src.start(t,s,e-s);
+t+=e-s;
+});
+
+return off.startRendering();
+}
+
 function play(){
 stop();
+buildBuffer().then(b=>{
 src=ctx.createBufferSource();
-src.buffer=buffer;
+src.buffer=b;
 src.connect(ctx.destination);
 startTime=ctx.currentTime;
 src.start();
-tick(buffer.duration);
+tick(b.duration);
+});
 }
 
 function stop(){
@@ -230,6 +290,34 @@ function tick(d){
 const t=ctx.currentTime-startTime;
 timeDisplay.textContent=`${fmt(t)} / ${fmt(d)}`;
 if(t<d)raf=requestAnimationFrame(()=>tick(d));
+}
+
+function download(){
+buildBuffer().then(b=>{
+const a=document.createElement("a");
+a.href=URL.createObjectURL(new Blob([encodeWAV(b)],{type:"audio/wav"}));
+a.download="edited.wav";
+a.click();
+});
+}
+
+function encodeWAV(b){
+const l=b.length*2*b.numberOfChannels+44;
+const v=new DataView(new ArrayBuffer(l));
+let o=0;
+const w=s=>{for(let i=0;i<s.length;i++)v.setUint8(o++,s.charCodeAt(i))};
+const u16=d=>{v.setUint16(o,d,true);o+=2};
+const u32=d=>{v.setUint32(o,d,true);o+=4};
+w("RIFF");u32(l-8);w("WAVEfmt ");u32(16);u16(1);
+u16(b.numberOfChannels);u32(b.sampleRate);
+u32(b.sampleRate*b.numberOfChannels*2);
+u16(b.numberOfChannels*2);u16(16);w("data");u32(l-o-4);
+for(let i=0;i<b.length;i++)
+for(let c=0;c<b.numberOfChannels;c++){
+let s=b.getChannelData(c)[i];
+v.setInt16(o,Math.max(-1,Math.min(1,s))*32767,true);o+=2;
+}
+return v.buffer;
 }
 
 function fmt(t){
