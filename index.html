@@ -30,7 +30,6 @@ padding:28px;
 margin-bottom:28px;
 }
 h1{text-align:center;color:var(--gold)}
-
 .import{
 border:2px dashed rgba(212,175,55,.35);
 padding:50px;
@@ -39,23 +38,10 @@ text-align:center;
 cursor:pointer
 }
 .import input{display:none}
-
 .controls,.cuts,.advanced{display:none}
-
 .row{margin-bottom:20px}
-label{
-display:flex;
-justify-content:space-between;
-color:var(--muted);
-margin-bottom:6px
-}
-
-.slider-row{
-display:flex;
-gap:12px;
-align-items:center
-}
-
+label{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:6px}
+.slider-row{display:flex;gap:12px;align-items:center}
 input[type=range]{
 flex:1;
 appearance:none;
@@ -64,26 +50,14 @@ background:linear-gradient(90deg,#b8962e,#f0d57a);
 border-radius:6px;
 outline:none
 }
-
 input[type=range]::-webkit-slider-thumb{
 appearance:none;
 width:18px;
 height:18px;
 border-radius:50%;
 background:#000;
-border:2px solid var(--gold);
-cursor:pointer
+border:2px solid var(--gold)
 }
-
-input[type=range]::-moz-range-thumb{
-width:18px;
-height:18px;
-border-radius:50%;
-background:#000;
-border:2px solid var(--gold);
-cursor:pointer
-}
-
 input[type=number]{
 width:90px;
 padding:8px;
@@ -93,13 +67,7 @@ background:#000;
 color:var(--gold);
 font-weight:600
 }
-
-.buttons{
-display:flex;
-gap:12px;
-flex-wrap:wrap
-}
-
+.buttons{display:flex;gap:12px;flex-wrap:wrap}
 button{
 padding:14px;
 border-radius:12px;
@@ -108,36 +76,20 @@ font-weight:600;
 cursor:pointer
 }
 .primary{background:linear-gradient(135deg,#b8962e,#f0d57a);color:#000}
-.secondary{
-background:transparent;
-border:1px solid rgba(212,175,55,.35);
-color:var(--gold)
-}
-
+.secondary{background:transparent;border:1px solid rgba(212,175,55,.35);color:var(--gold)}
 .cut{
 border:1px solid rgba(212,175,55,.35);
 border-radius:12px;
 padding:14px;
 margin-bottom:14px
 }
-.cut header{
-display:flex;
-justify-content:space-between;
-align-items:center
-}
-
+.cut header{display:flex;justify-content:space-between}
 small{color:var(--muted)}
-
-.time{
-text-align:center;
-margin-top:10px;
-font-size:15px;
-color:var(--gold)
-}
+.time{text-align:center;margin-top:10px;color:var(--gold)}
 </style>
 </head>
-<body>
 
+<body>
 <div class="wrapper">
 
 <div class="panel">
@@ -168,181 +120,119 @@ Click to import audio
 </div>
 
 <div class="row">
-<label>Fade Over Cut <span id="fv"></span></label>
+<label>Fade <span id="fv"></span></label>
 <div class="slider-row">
-<input type="range" id="fade" min="0" max="3" step="0.05" value="0">
+<input type="range" id="fade" min="0" max="3" step="0.05">
 <input type="number" id="fadeN" min="0" max="3" step="0.05">
 </div>
 </div>
 
 <div class="buttons">
 <button class="secondary" onclick="addCut()">Add Cut</button>
-<button class="secondary" onclick="toggleAdvanced()">Advanced</button>
 <button class="primary" onclick="play()">Preview</button>
 <button class="secondary" onclick="stop()">Stop</button>
-<button class="primary" onclick="download()">Download</button>
 </div>
 
 <div class="time" id="timeDisplay">00:00 / 00:00</div>
 </div>
 
-<div class="panel advanced" id="advanced">
-<h1>Advanced Tools</h1>
-
-<div class="row">
-<label>Playback Speed <span id="speedVal"></span></label>
-<div class="slider-row">
-<input type="range" id="speed" min="0.5" max="2" step="0.01" value="1">
-<input type="number" id="speedN" min="0.5" max="2" step="0.01">
-</div>
-</div>
-
-<div class="row">
-<label>Volume <span id="volVal"></span></label>
-<div class="slider-row">
-<input type="range" id="volume" min="0" max="2" step="0.01" value="1">
-<input type="number" id="volumeN" min="0" max="2" step="0.01">
-</div>
-</div>
-
-<div class="row">
-<label>Bass Boost <span id="bassVal"></span></label>
-<div class="slider-row">
-<input type="range" id="bass" min="0" max="20" step="0.5" value="0">
-<input type="number" id="bassN" min="0" max="20" step="0.5">
-</div>
-</div>
-
-<div class="row">
-<label>Silence Start <span id="ssVal"></span></label>
-<div class="slider-row">
-<input type="range" id="silenceStart" step="0.01" value="0">
-<input type="number" id="silenceStartN" step="0.01">
-</div>
-</div>
-
-<div class="row">
-<label>Silence End <span id="seVal"></span></label>
-<div class="slider-row">
-<input type="range" id="silenceEnd" step="0.01" value="0">
-<input type="number" id="silenceEndN" step="0.01">
-</div>
-</div>
-</div>
-
 <div class="panel cuts" id="cutsPanel">
 <h1>Removed Parts</h1>
-<div id="cuts"></div>
+<div id="cutsList"></div>
 </div>
 
 </div>
 
 <script>
 let ctx,buffer,src,startTime,raf;
-let cuts=[];
-let displayOffset=0;
+let cutList=[];
 
-const map=[
-["start","startN"],["end","endN"],["fade","fadeN"],
-["speed","speedN"],["volume","volumeN"],["bass","bassN"],
-["silenceStart","silenceStartN"],["silenceEnd","silenceEndN"]
-];
+const file=document.getElementById("file");
+const editor=document.getElementById("editor");
+const cutsPanel=document.getElementById("cutsPanel");
+const cutsList=document.getElementById("cutsList");
+const timeDisplay=document.getElementById("timeDisplay");
 
-map.forEach(([r,n])=>{
-const R=document.getElementById(r);
-const N=document.getElementById(n);
-N.value=R.value;
-R.oninput=()=>{N.value=R.value;updateVals()};
-N.oninput=()=>{R.value=N.value;updateVals()};
-});
+const start=document.getElementById("start");
+const end=document.getElementById("end");
+const fade=document.getElementById("fade");
 
-const sv=sv=document.getElementById("sv");
+const startN=document.getElementById("startN");
+const endN=document.getElementById("endN");
+const fadeN=document.getElementById("fadeN");
+
+const sv=document.getElementById("sv");
 const ev=document.getElementById("ev");
 const fv=document.getElementById("fv");
-const speedVal=document.getElementById("speedVal");
-const volVal=document.getElementById("volVal");
-const bassVal=document.getElementById("bassVal");
-const ssVal=document.getElementById("ssVal");
-const seVal=document.getElementById("seVal");
+
+[start,end,fade].forEach((r,i)=>{
+const n=[startN,endN,fadeN][i];
+r.oninput=()=>{n.value=r.value;updateVals()};
+n.oninput=()=>{r.value=n.value;updateVals()};
+});
 
 function updateVals(){
 sv.textContent=start.value+"s";
 ev.textContent=end.value+"s";
 fv.textContent=fade.value+"s";
-speedVal.textContent=speed.value+"×";
-volVal.textContent=volume.value;
-bassVal.textContent=bass.value+" dB";
-ssVal.textContent=silenceStart.value+"s";
-seVal.textContent=silenceEnd.value+"s";
 }
 
 file.onchange=async e=>{
 ctx=new AudioContext();
 buffer=await ctx.decodeAudioData(await e.target.files[0].arrayBuffer());
-["start","end","silenceStart","silenceEnd"].forEach(id=>{
-document.getElementById(id).max=buffer.duration;
-document.getElementById(id+"N").max=buffer.duration;
+[start,end].forEach(i=>{
+i.max=buffer.duration;
+document.getElementById(i.id+"N").max=buffer.duration;
 });
-end.value=silenceEnd.value=buffer.duration;
-endN.value=silenceEndN.value=buffer.duration;
+end.value=endN.value=buffer.duration;
 updateVals();
 editor.style.display="block";
 cutsPanel.style.display="block";
 timeDisplay.textContent=`00:00 / ${fmt(buffer.duration)}`;
 };
 
-function toggleAdvanced(){
-advanced.style.display=advanced.style.display?"":"block";
-}
-
-function stop(){
-if(src){src.stop();src=null}
-cancelAnimationFrame(raf);
-}
-
 function addCut(){
-if(start.value>=end.value)return;
-cuts.push({start:+start.value,end:+end.value});
-cuts.sort((a,b)=>a.start-b.start);
+if(+start.value>=+end.value)return;
+cutList.push({s:+start.value,e:+end.value});
 renderCuts();
 }
 
 function renderCuts(){
-cuts.innerHTML="";
-cuts.forEach((c,i)=>{
-cuts.innerHTML+=`
+cutsList.innerHTML="";
+cutList.forEach((c,i)=>{
+cutsList.innerHTML+=`
 <div class="cut">
-<header><b>Cut ${i+1}</b>
-<button class="secondary" onclick="cuts.splice(${i},1);renderCuts()">Delete</button>
+<header>
+<b>Cut ${i+1}</b>
+<button class="secondary" onclick="cutList.splice(${i},1);renderCuts()">Delete</button>
 </header>
-<small>${c.start}s → ${c.end}s</small>
+<small>${c.s}s → ${c.e}s</small>
 </div>`;
 });
 }
 
 function play(){
 stop();
-displayOffset=cuts.length&&cuts[0].start===0?cuts[0].end:0;
-const src2=ctx.createBufferSource();
-src2.buffer=buffer;
-src2.playbackRate.value=speed.value;
-src2.connect(ctx.destination);
-src=src2;
+src=ctx.createBufferSource();
+src.buffer=buffer;
+src.connect(ctx.destination);
 startTime=ctx.currentTime;
 src.start();
 tick(buffer.duration);
 }
 
+function stop(){
+if(src)src.stop();
+cancelAnimationFrame(raf);
+}
+
 function tick(d){
 const t=ctx.currentTime-startTime;
-timeDisplay.textContent=`${fmt(t+displayOffset)} / ${fmt(buffer.duration)}`;
+timeDisplay.textContent=`${fmt(t)} / ${fmt(d)}`;
 if(t<d)raf=requestAnimationFrame(()=>tick(d));
 }
 
-function download(){}
-
 function fmt(t){
-t=Math.max(0,t);
 const m=Math.floor(t/60);
 const s=Math.floor(t%60).toString().padStart(2,"0");
 return `${m}:${s}`;
