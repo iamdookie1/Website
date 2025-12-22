@@ -156,6 +156,7 @@ Click to import audio
 <script>
 let ctx,buffer,src,startTime,raf;
 let cuts=[];
+let displayOffset=0;
 
 const timeDisplay=document.getElementById("timeDisplay");
 
@@ -273,6 +274,7 @@ s.start(st,o,d);
 
 function play(){
 stop();
+displayOffset=cuts.length&&cuts[0].start===0?cuts[0].end:0;
 buildTimeline().then(b=>{
 src=ctx.createBufferSource();
 src.buffer=b;
@@ -285,7 +287,7 @@ tick(b.duration);
 
 function tick(dur){
 const now=ctx.currentTime-startTime;
-timeDisplay.textContent=`${fmt(now)} / ${fmt(dur)}`;
+timeDisplay.textContent=`${fmt(now+displayOffset)} / ${fmt(buffer.duration)}`;
 if(now<dur)raf=requestAnimationFrame(()=>tick(dur));
 }
 
