@@ -2,329 +2,75 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advanced Audio Cut Editor</title>
-
+<title>Invisible Character Cleaner</title>
 <style>
-:root{
---bg:radial-gradient(circle at top,#1c1c1c,#000);
---gold:#d4af37;
---panel:rgba(18,18,18,.95);
---text:#f3f3f3;
---muted:#9a9a9a;
-}
-*{box-sizing:border-box}
-body{
-margin:0;
-min-height:100vh;
-background:var(--bg);
-font-family:system-ui,sans-serif;
-color:var(--text);
-}
-.wrapper{max-width:1200px;margin:auto;padding:40px}
-.panel{
-background:var(--panel);
-border:1px solid rgba(212,175,55,.25);
-border-radius:18px;
-padding:28px;
-margin-bottom:28px;
-}
-h1{text-align:center;color:var(--gold)}
-.import{
-border:2px dashed rgba(212,175,55,.35);
-padding:50px;
-border-radius:14px;
-text-align:center;
-cursor:pointer
-}
-.import input{display:none}
-.controls,.cuts,.advanced{display:none}
-.row{margin-bottom:18px}
-label{display:flex;justify-content:space-between;color:var(--muted);margin-bottom:6px}
-.slider-row{display:flex;gap:12px;align-items:center}
+    body {
+        background-color: #000;
+        color: #fff;
+        font-family: monospace;
+        margin: 0;
+        padding: 20px;
+    }
 
-input[type=range]{
-flex:1;
-appearance:none;
-height:6px;
-background:linear-gradient(90deg,#b8962e,#f0d57a);
-border-radius:6px;
-outline:none
-}
-input[type=range]::-webkit-slider-thumb{
-appearance:none;
-width:18px;
-height:18px;
-border-radius:50%;
-background:#000;
-border:2px solid var(--gold)
-}
-input[type=number]{
-width:90px;
-padding:8px;
-border-radius:10px;
-border:1px solid rgba(212,175,55,.35);
-background:#000;
-color:var(--gold);
-font-weight:600
-}
+    textarea {
+        width: 100%;
+        height: 200px;
+        background: #000;
+        color: #fff;
+        border: 1px solid #444;
+        padding: 10px;
+        box-sizing: border-box;
+        resize: vertical;
+    }
 
-.buttons{display:flex;gap:12px;flex-wrap:wrap}
-button{
-padding:14px;
-border-radius:12px;
-border:none;
-font-weight:600;
-cursor:pointer
-}
-.primary{background:linear-gradient(135deg,#b8962e,#f0d57a);color:#000}
-.secondary{background:transparent;border:1px solid rgba(212,175,55,.35);color:var(--gold)}
+    button {
+        margin-top: 10px;
+        padding: 10px 15px;
+        background: #111;
+        color: #fff;
+        border: 1px solid #444;
+        cursor: pointer;
+    }
 
-.cut{
-border:1px solid rgba(212,175,55,.35);
-border-radius:12px;
-padding:14px;
-margin-bottom:14px
-}
-.cut header{display:flex;justify-content:space-between}
-small{color:var(--muted)}
-.time{text-align:center;color:var(--gold);margin-top:10px}
+    button:hover {
+        background: #222;
+    }
+
+    h1 {
+        font-size: 16px;
+        margin-bottom: 10px;
+        font-weight: normal;
+    }
 </style>
 </head>
-
 <body>
-<div class="wrapper">
 
-<div class="panel">
-<h1>Import File</h1>
-<label class="import">
-<input type="file" id="file" accept="audio/*">
-Click to import audio
-</label>
-</div>
+<h1>Invisible Character Cleaner</h1>
 
-<div class="panel controls" id="editor">
-<h1>Cut Editor</h1>
+<textarea id="input" placeholder="Paste code here..."></textarea>
 
-<div class="row">
-<label>Cut Start</label>
-<div class="slider-row">
-<input type="range" id="start" step="0.01">
-<input type="number" id="startN" step="0.01">
-</div>
-</div>
+<button onclick="cleanText()">Clean Code</button>
 
-<div class="row">
-<label>Cut End</label>
-<div class="slider-row">
-<input type="range" id="end" step="0.01">
-<input type="number" id="endN" step="0.01">
-</div>
-</div>
+<textarea id="output" placeholder="Cleaned code will appear here..."></textarea>
 
-<div class="buttons">
-<button class="secondary" onclick="addCut()">Add Cut</button>
-<button class="secondary" onclick="toggleAdvanced()">Advanced</button>
-<button class="primary" onclick="play()">Preview</button>
-<button class="secondary" onclick="stop()">Stop</button>
-<button class="primary" onclick="download()">Download</button>
-</div>
-
-<div class="time" id="timeDisplay">00:00 / 00:00</div>
-</div>
-
-<div class="panel advanced" id="advanced">
-<h1>Advanced</h1>
-
-<div class="row">
-<label>Speed</label>
-<div class="slider-row">
-<input type="range" id="speed" min="0.5" max="2" step="0.01" value="1">
-<input type="number" id="speedN" min="0.5" max="2" step="0.01">
-</div>
-</div>
-
-<div class="row">
-<label>Volume</label>
-<div class="slider-row">
-<input type="range" id="volume" min="0" max="2" step="0.01" value="1">
-<input type="number" id="volumeN" min="0" max="2" step="0.01">
-</div>
-</div>
-
-<div class="row">
-<label>Bass Boost (dB)</label>
-<div class="slider-row">
-<input type="range" id="bass" min="0" max="20" step="0.5" value="0">
-<input type="number" id="bassN" min="0" max="20" step="0.5">
-</div>
-</div>
-</div>
-
-<div class="panel cuts" id="cutsPanel">
-<h1>Removed Parts</h1>
-<div id="cutsList"></div>
-</div>
-
-</div>
+<button onclick="copyOutput()">Copy Cleaned Code</button>
 
 <script>
-let ctx,buffer,src,startTime,raf;
-let cuts=[];
+function cleanText() {
+    const input = document.getElementById('input').value;
 
-const ids=[
-["start","startN"],["end","endN"],
-["speed","speedN"],["volume","volumeN"],["bass","bassN"]
-];
+    // Replace all invisible/control characters except normal spaces
+    const cleaned = input.replace(/[\p{C}&&[^\u0020]]/gu, ' ');
 
-ids.forEach(([r,n])=>{
-const R=document.getElementById(r);
-const N=document.getElementById(n);
-N.value=R.value;
-R.oninput=()=>N.value=R.value;
-N.oninput=()=>R.value=N.value;
-});
-
-const file=document.getElementById("file");
-const editor=document.getElementById("editor");
-const cutsPanel=document.getElementById("cutsPanel");
-const cutsList=document.getElementById("cutsList");
-const advanced=document.getElementById("advanced");
-const timeDisplay=document.getElementById("timeDisplay");
-
-file.onchange=async e=>{
-ctx=new AudioContext();
-buffer=await ctx.decodeAudioData(await e.target.files[0].arrayBuffer());
-["start","end"].forEach(id=>{
-document.getElementById(id).max=buffer.duration;
-document.getElementById(id+"N").max=buffer.duration;
-});
-end.value=endN.value=buffer.duration;
-editor.style.display="block";
-cutsPanel.style.display="block";
-timeDisplay.textContent=`00:00 / ${fmt(buffer.duration)}`;
-};
-
-function toggleAdvanced(){
-advanced.style.display=advanced.style.display?"":"block";
+    document.getElementById('output').value = cleaned;
 }
 
-function addCut(){
-const s=+start.value;
-const e=+end.value;
-if(s>=e)return;
-cuts.push({s,e});
-cuts.sort((a,b)=>a.s-b.s);
-renderCuts();
-}
-
-function renderCuts(){
-cutsList.innerHTML="";
-cuts.forEach((c,i)=>{
-cutsList.innerHTML+=`
-<div class="cut">
-<header>
-<b>Cut ${i+1}</b>
-<button class="secondary" onclick="cuts.splice(${i},1);renderCuts()">Delete</button>
-</header>
-<small>${c.s}s → ${c.e}s</small>
-</div>`;
-});
-}
-
-function buildBuffer(){
-const rate=buffer.sampleRate;
-let segments=[];
-let cursor=0;
-
-cuts.forEach(c=>{
-if(c.s>cursor)segments.push([cursor,c.s]);
-cursor=c.e;
-});
-if(cursor<buffer.duration)segments.push([cursor,buffer.duration]);
-
-let length=segments.reduce((a,[s,e])=>a+(e-s),0);
-const off=new OfflineAudioContext(
-buffer.numberOfChannels,
-length*rate,
-rate
-);
-
-let t=0;
-segments.forEach(([s,e])=>{
-const src=off.createBufferSource();
-const gain=off.createGain();
-const bass=off.createBiquadFilter();
-src.buffer=buffer;
-src.playbackRate.value=speed.value;
-gain.gain.value=volume.value;
-bass.type="lowshelf";
-bass.frequency.value=200;
-bass.gain.value=bassN.value;
-src.connect(bass).connect(gain).connect(off.destination);
-src.start(t,s,e-s);
-t+=e-s;
-});
-
-return off.startRendering();
-}
-
-function play(){
-stop();
-buildBuffer().then(b=>{
-src=ctx.createBufferSource();
-src.buffer=b;
-src.connect(ctx.destination);
-startTime=ctx.currentTime;
-src.start();
-tick(b.duration);
-});
-}
-
-function stop(){
-if(src)src.stop();
-cancelAnimationFrame(raf);
-}
-
-function tick(d){
-const t=ctx.currentTime-startTime;
-timeDisplay.textContent=`${fmt(t)} / ${fmt(d)}`;
-if(t<d)raf=requestAnimationFrame(()=>tick(d));
-}
-
-function download(){
-buildBuffer().then(b=>{
-const a=document.createElement("a");
-a.href=URL.createObjectURL(new Blob([encodeWAV(b)],{type:"audio/wav"}));
-a.download="edited.wav";
-a.click();
-});
-}
-
-function encodeWAV(b){
-const l=b.length*2*b.numberOfChannels+44;
-const v=new DataView(new ArrayBuffer(l));
-let o=0;
-const w=s=>{for(let i=0;i<s.length;i++)v.setUint8(o++,s.charCodeAt(i))};
-const u16=d=>{v.setUint16(o,d,true);o+=2};
-const u32=d=>{v.setUint32(o,d,true);o+=4};
-w("RIFF");u32(l-8);w("WAVEfmt ");u32(16);u16(1);
-u16(b.numberOfChannels);u32(b.sampleRate);
-u32(b.sampleRate*b.numberOfChannels*2);
-u16(b.numberOfChannels*2);u16(16);w("data");u32(l-o-4);
-for(let i=0;i<b.length;i++)
-for(let c=0;c<b.numberOfChannels;c++){
-let s=b.getChannelData(c)[i];
-v.setInt16(o,Math.max(-1,Math.min(1,s))*32767,true);o+=2;
-}
-return v.buffer;
-}
-
-function fmt(t){
-const m=Math.floor(t/60);
-const s=Math.floor(t%60).toString().padStart(2,"0");
-return `${m}:${s}`;
+function copyOutput() {
+    const output = document.getElementById('output');
+    output.select();
+    document.execCommand('copy');
 }
 </script>
+
 </body>
 </html>
