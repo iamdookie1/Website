@@ -300,6 +300,28 @@
             margin: 0 auto;
         }
 
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -336,10 +358,36 @@
         <!-- Step 1: File Selection -->
         <div class="section">
             <div class="section-title">Step 1: Select Your File</div>
-            <div class="file-input-section">
-                <input type="file" id="fileInput" accept=".txt,.pdf,.md,.log,.csv,.json,.xml,.html">
-                <button onclick="loadFile()">📂 Load File</button>
+            
+            <div class="info-banner" style="margin-bottom: 15px;">
+                💡 Choose a file from your computer OR paste a PDF link
             </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">
+                    📎 Upload from Computer:
+                </label>
+                <div class="file-input-section">
+                    <input type="file" id="fileInput" accept=".txt,.pdf,.md,.log,.csv,.json,.xml,.html">
+                    <button onclick="loadFile()">📂 Load File</button>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 15px 0; color: #adb5bd; font-weight: bold;">
+                — OR —
+            </div>
+
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">
+                    🔗 Load from URL (PDF only):
+                </label>
+                <div class="file-input-section">
+                    <input type="text" id="urlInput" placeholder="https://example.com/document.pdf" 
+                           style="flex: 1; min-width: 200px; padding: 12px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 14px;">
+                    <button onclick="loadFromURL()">🌐 Load from URL</button>
+                </div>
+            </div>
+
             <div id="fileStatus" class="status"></div>
         </div>
 
@@ -382,11 +430,17 @@
             <div class="action-buttons">
                 <button onclick="processContent()">✨ Process & Preview</button>
                 <button id="downloadBtn" onclick="downloadFile()" disabled>💾 Download Result</button>
+                <button id="copyBtn" onclick="copyToClipboard()" disabled>📋 Copy to Clipboard</button>
+                <button id="statsBtn" onclick="exportStats()" disabled>📊 Export Stats</button>
             </div>
 
             <div id="loading" class="loading">
                 <div class="spinner"></div>
                 <p style="margin-top: 10px; color: #666;">Processing...</p>
+                <div class="progress-bar">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                <div id="progressText" class="progress-text"></div>
             </div>
 
             <div style="margin-top: 20px;">
@@ -433,7 +487,7 @@
 
             try {
                 if (file.name.toLowerCase().endsWith('.pdf')) {
-                    originalContent = await readPDF(file);
+                    originalContent = await readPDFFile(file);
                 } else {
                     originalContent = await readTextFile(file);
                 }
@@ -443,6 +497,60 @@
                 
             } catch (error) {
                 showStatus('error', `❌ Error loading file: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        // Load PDF from URL
+        async function loadFromURL() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showStatus('error', '❌ Please enter a URL');
+                return;
+            }
+
+            if (!url.toLowerCase().endsWith('.pdf')) {
+                showStatus('error', '❌ URL must point to a PDF file (must end with .pdf)');
+                return;
+            }
+
+            fileName = url.split('/').pop() || 'document.pdf';
+            showStatus('info', `🌐 Downloading PDF from URL...`);
+
+            try {
+                // Fetch PDF from URL with CORS support
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/pdf'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                
+                if (!blob.type.includes('pdf') && !url.toLowerCase().endsWith('.pdf')) {
+                    throw new Error('URL does not point to a valid PDF file');
+                }
+
+                showStatus('info', `📖 Processing PDF...`);
+                originalContent = await readPDFBlob(blob);
+
+                analyzeContent();
+                showStatus('success', `✓ Successfully loaded from URL (${originalContent.length.toLocaleString()} characters)`);
+                
+            } catch (error) {
+                if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+                    showStatus('error', `❌ Cannot load from URL: CORS policy blocked the request. Try downloading the PDF and using "Upload from Computer" instead.`);
+                } else {
+                    showStatus('error', `❌ Error loading from URL: ${error.message}`);
+                }
+                console.error(error);
             }
         }
 
@@ -456,24 +564,130 @@
             });
         }
 
-        // Read PDF file
-        async function readPDF(file) {
+        // Read PDF file - ENHANCED to get ALL characters including hidden
+        async function readPDFFile(file) {
             if (typeof pdfjsLib === 'undefined') {
                 throw new Error('PDF.js library not loaded. Please refresh the page.');
             }
 
             const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let fullText = '';
+            return await extractAllPDFText(arrayBuffer);
+        }
 
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const textContent = await page.getTextContent();
-                const pageText = textContent.items.map(item => item.str).join(' ');
-                fullText += pageText + '\n';
+        // Read PDF from blob (for URL loading)
+        async function readPDFBlob(blob) {
+            if (typeof pdfjsLib === 'undefined') {
+                throw new Error('PDF.js library not loaded. Please refresh the page.');
             }
 
+            const arrayBuffer = await blob.arrayBuffer();
+            return await extractAllPDFText(arrayBuffer);
+        }
+
+        // Extract ALL text from PDF including hidden layers
+        async function extractAllPDFText(arrayBuffer) {
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = '';
+            let extractedChars = new Set();
+
+            console.log(`Processing ${pdf.numPages} pages...`);
+
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                // Update progress
+                const progress = (pageNum / pdf.numPages) * 100;
+                updateProgress(progress, `Processing page ${pageNum} of ${pdf.numPages}...`);
+
+                const page = await pdf.getPage(pageNum);
+                
+                // Method 1: Get text content with ALL items (includes hidden text)
+                const textContent = await page.getTextContent({
+                    normalizeWhitespace: false,
+                    disableCombineTextItems: false
+                });
+
+                // Extract ALL text items including those that might be invisible
+                textContent.items.forEach(item => {
+                    if (item.str) {
+                        fullText += item.str;
+                        // Track unique characters
+                        for (const char of item.str) {
+                            extractedChars.add(char);
+                        }
+                    }
+                    // Some PDFs use spaces encoded differently
+                    if (item.hasEOL) {
+                        fullText += '\n';
+                    }
+                });
+
+                // Add page break
+                if (pageNum < pdf.numPages) {
+                    fullText += '\n';
+                }
+
+                // Method 2: Try to get annotations (some PDFs hide text in annotations)
+                try {
+                    const annotations = await page.getAnnotations();
+                    annotations.forEach(annotation => {
+                        if (annotation.subtype === 'FreeText' && annotation.fieldValue) {
+                            fullText += '\n' + annotation.fieldValue;
+                        }
+                        if (annotation.contents) {
+                            fullText += '\n' + annotation.contents;
+                        }
+                    });
+                } catch (e) {
+                    // Annotations might not be available
+                    console.log('No annotations on page ' + pageNum);
+                }
+
+                // Method 3: Check for text in operators (catches text that might be hidden)
+                try {
+                    const ops = await page.getOperatorList();
+                    const textOps = [];
+                    for (let i = 0; i < ops.fnArray.length; i++) {
+                        // Check for text-showing operators
+                        const fn = ops.fnArray[i];
+                        const args = ops.argsArray[i];
+                        
+                        // These are PDF text-showing operators
+                        if ([pdfjsLib.OPS.showText, pdfjsLib.OPS.showSpacedText].includes(fn)) {
+                            if (Array.isArray(args[0])) {
+                                args[0].forEach(item => {
+                                    if (typeof item === 'string') {
+                                        textOps.push(item);
+                                    }
+                                });
+                            } else if (typeof args[0] === 'string') {
+                                textOps.push(args[0]);
+                            }
+                        }
+                    }
+                    
+                    // Decode any additional text found
+                    textOps.forEach(text => {
+                        for (const char of text) {
+                            if (!extractedChars.has(char)) {
+                                fullText += char;
+                                extractedChars.add(char);
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.log('Could not extract operator text from page ' + pageNum);
+                }
+            }
+
+            console.log(`Extracted ${fullText.length} total characters, ${extractedChars.size} unique characters`);
             return fullText;
+        }
+
+        // Update progress indicator
+        function updateProgress(percent, text) {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            if (progressFill) progressFill.style.width = percent + '%';
+            if (progressText) progressText.textContent = text;
         }
 
         // Analyze content and find special characters
@@ -584,17 +798,24 @@
         function processContent() {
             const loading = document.getElementById('loading');
             loading.classList.add('active');
+            updateProgress(0, 'Starting...');
 
             setTimeout(() => {
+                updateProgress(30, 'Analyzing selections...');
+                
                 const keepChars = new Set();
                 document.querySelectorAll('#charsGrid input[type="checkbox"]:checked').forEach(cb => {
                     keepChars.add(cb.dataset.char);
                 });
 
+                updateProgress(60, 'Filtering content...');
+
                 // Filter content
                 processedContent = Array.from(originalContent).filter(char => {
                     return char.match(/[a-zA-Z0-9 ]/) || keepChars.has(char);
                 }).join('');
+
+                updateProgress(90, 'Generating preview...');
 
                 // Update preview
                 const preview = document.getElementById('previewBox');
@@ -602,16 +823,21 @@
                 const suffix = processedContent.length > 1000 ? '\n\n... (showing first 1000 characters)' : '';
                 preview.textContent = previewText + suffix;
 
-                // Enable download
+                updateProgress(100, 'Complete!');
+
+                // Enable all download buttons
                 document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('copyBtn').disabled = false;
+                document.getElementById('statsBtn').disabled = false;
 
                 // Show stats
                 const removed = originalContent.length - processedContent.length;
                 const keptSpecial = Array.from(processedContent).filter(c => !c.match(/[a-zA-Z0-9 ]/)).length;
 
-                loading.classList.remove('active');
-                
-                alert(`✓ Processing complete!\n\nOriginal: ${originalContent.length.toLocaleString()} characters\nFiltered: ${processedContent.length.toLocaleString()} characters\nRemoved: ${removed.toLocaleString()} characters\nSpecial chars kept: ${keptSpecial.toLocaleString()}`);
+                setTimeout(() => {
+                    loading.classList.remove('active');
+                    alert(`✓ Processing complete!\n\nOriginal: ${originalContent.length.toLocaleString()} characters\nFiltered: ${processedContent.length.toLocaleString()} characters\nRemoved: ${removed.toLocaleString()} characters\nSpecial chars kept: ${keptSpecial.toLocaleString()}`);
+                }, 500);
             }, 100);
         }
 
@@ -632,6 +858,125 @@
             URL.revokeObjectURL(url);
 
             showStatus('success', `✓ File downloaded: ${a.download}`);
+        }
+
+        // Copy to clipboard
+        async function copyToClipboard() {
+            if (!processedContent) return;
+
+            try {
+                await navigator.clipboard.writeText(processedContent);
+                showStatus('success', '✓ Content copied to clipboard!');
+                
+                // Temporary button feedback
+                const btn = document.getElementById('copyBtn');
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            } catch (error) {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = processedContent;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showStatus('success', '✓ Content copied to clipboard!');
+            }
+        }
+
+        // Export statistics report
+        function exportStats() {
+            if (!originalContent) return;
+
+            // Generate detailed statistics
+            const stats = {
+                fileName: fileName,
+                timestamp: new Date().toLocaleString(),
+                original: {
+                    totalChars: originalContent.length,
+                    letters: Array.from(originalContent).filter(c => /[a-zA-Z]/.test(c)).length,
+                    numbers: Array.from(originalContent).filter(c => /[0-9]/.test(c)).length,
+                    spaces: Array.from(originalContent).filter(c => c === ' ').length,
+                    specialChars: Array.from(originalContent).filter(c => !c.match(/[a-zA-Z0-9 ]/)).length,
+                    uniqueChars: new Set(originalContent).size
+                },
+                processed: processedContent ? {
+                    totalChars: processedContent.length,
+                    letters: Array.from(processedContent).filter(c => /[a-zA-Z]/.test(c)).length,
+                    numbers: Array.from(processedContent).filter(c => /[0-9]/.test(c)).length,
+                    spaces: Array.from(processedContent).filter(c => c === ' ').length,
+                    specialChars: Array.from(processedContent).filter(c => !c.match(/[a-zA-Z0-9 ]/)).length,
+                    uniqueChars: new Set(processedContent).size,
+                    removedChars: originalContent.length - processedContent.length
+                } : null,
+                specialCharacters: {}
+            };
+
+            // Add special character breakdown
+            specialCharsMap.forEach((count, char) => {
+                const kept = processedContent ? processedContent.split(char).length - 1 : 0;
+                stats.specialCharacters[getCharDisplayName(char)] = {
+                    count: count,
+                    kept: kept,
+                    removed: count - kept
+                };
+            });
+
+            // Create report
+            let report = '📊 FILE CONTENT PROCESSOR - STATISTICS REPORT\n';
+            report += '='.repeat(60) + '\n\n';
+            report += `File: ${stats.fileName}\n`;
+            report += `Generated: ${stats.timestamp}\n\n`;
+            
+            report += 'ORIGINAL CONTENT:\n';
+            report += '-'.repeat(60) + '\n';
+            report += `Total Characters: ${stats.original.totalChars.toLocaleString()}\n`;
+            report += `Letters: ${stats.original.letters.toLocaleString()}\n`;
+            report += `Numbers: ${stats.original.numbers.toLocaleString()}\n`;
+            report += `Spaces: ${stats.original.spaces.toLocaleString()}\n`;
+            report += `Special Characters: ${stats.original.specialChars.toLocaleString()}\n`;
+            report += `Unique Characters: ${stats.original.uniqueChars.toLocaleString()}\n\n`;
+
+            if (stats.processed) {
+                report += 'PROCESSED CONTENT:\n';
+                report += '-'.repeat(60) + '\n';
+                report += `Total Characters: ${stats.processed.totalChars.toLocaleString()}\n`;
+                report += `Letters: ${stats.processed.letters.toLocaleString()}\n`;
+                report += `Numbers: ${stats.processed.numbers.toLocaleString()}\n`;
+                report += `Spaces: ${stats.processed.spaces.toLocaleString()}\n`;
+                report += `Special Characters: ${stats.processed.specialChars.toLocaleString()}\n`;
+                report += `Unique Characters: ${stats.processed.uniqueChars.toLocaleString()}\n`;
+                report += `Removed Characters: ${stats.processed.removedChars.toLocaleString()}\n\n`;
+            }
+
+            report += 'SPECIAL CHARACTER BREAKDOWN:\n';
+            report += '-'.repeat(60) + '\n';
+            report += 'Character'.padEnd(20) + 'Count'.padEnd(15) + 'Kept'.padEnd(15) + 'Removed\n';
+            report += '-'.repeat(60) + '\n';
+
+            Object.entries(stats.specialCharacters).forEach(([char, data]) => {
+                const countStr = data.count.toString().padEnd(15);
+                const keptStr = data.kept.toString().padEnd(15);
+                const removedStr = data.removed.toString();
+                report += `${char.padEnd(20)}${countStr}${keptStr}${removedStr}\n`;
+            });
+
+            // Download report
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const baseName = fileName.replace(/\.[^/.]+$/, '');
+            a.href = url;
+            a.download = `${baseName}_statistics.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showStatus('success', '✓ Statistics report downloaded!');
         }
 
         // Show status message
