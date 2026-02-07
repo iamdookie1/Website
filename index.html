@@ -360,7 +360,7 @@
             <div class="section-title">Step 1: Select Your File</div>
             
             <div class="info-banner" style="margin-bottom: 15px;">
-                💡 Choose a file from your computer OR paste a PDF link
+                💡 Choose a file from your computer OR paste a PDF link (works with any URL - CORS bypass enabled!)
             </div>
 
             <div style="margin-bottom: 15px;">
@@ -385,6 +385,12 @@
                     <input type="text" id="urlInput" placeholder="https://example.com/document.pdf" 
                            style="flex: 1; min-width: 200px; padding: 12px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 14px;">
                     <button onclick="loadFromURL()">🌐 Load from URL</button>
+                </div>
+                <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
+                    <label style="display: flex; align-items: center; font-size: 13px; color: #6c757d; cursor: pointer;">
+                        <input type="checkbox" id="useCorsProxy" checked style="margin-right: 5px;">
+                        Use CORS bypass (recommended for most URLs)
+                    </label>
                 </div>
             </div>
 
@@ -501,10 +507,18 @@
             }
         }
 
-        // Load PDF from URL
+        // CORS proxy services (in order of preference)
+        const CORS_PROXIES = [
+            'https://corsproxy.io/?',
+            'https://api.allorigins.win/raw?url=',
+            'https://api.codetabs.com/v1/proxy?quest='
+        ];
+
+        // Load PDF from URL with CORS bypass
         async function loadFromURL() {
             const urlInput = document.getElementById('urlInput');
             const url = urlInput.value.trim();
+            const useCorsProxy = document.getElementById('useCorsProxy').checked;
             
             if (!url) {
                 showStatus('error', '❌ Please enter a URL');
@@ -517,10 +531,19 @@
             }
 
             fileName = url.split('/').pop() || 'document.pdf';
-            showStatus('info', `🌐 Downloading PDF from URL...`);
+            
+            if (useCorsProxy) {
+                showStatus('info', `🌐 Downloading PDF from URL (using CORS bypass)...`);
+                await loadPDFWithProxy(url);
+            } else {
+                showStatus('info', `🌐 Downloading PDF from URL (direct)...`);
+                await loadPDFDirect(url);
+            }
+        }
 
+        // Try loading PDF directly (may fail due to CORS)
+        async function loadPDFDirect(url) {
             try {
-                // Fetch PDF from URL with CORS support
                 const response = await fetch(url, {
                     mode: 'cors',
                     headers: {
@@ -546,12 +569,60 @@
                 
             } catch (error) {
                 if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-                    showStatus('error', `❌ Cannot load from URL: CORS policy blocked the request. Try downloading the PDF and using "Upload from Computer" instead.`);
+                    showStatus('error', `❌ Direct access blocked by CORS. Enable "Use CORS bypass" and try again.`);
                 } else {
                     showStatus('error', `❌ Error loading from URL: ${error.message}`);
                 }
                 console.error(error);
             }
+        }
+
+        // Load PDF using CORS proxy (bypasses CORS restrictions)
+        async function loadPDFWithProxy(originalUrl) {
+            let lastError = null;
+            
+            for (let i = 0; i < CORS_PROXIES.length; i++) {
+                const proxy = CORS_PROXIES[i];
+                const proxiedUrl = proxy + encodeURIComponent(originalUrl);
+                
+                try {
+                    showStatus('info', `🌐 Trying proxy ${i + 1}/${CORS_PROXIES.length}...`);
+                    
+                    const response = await fetch(proxiedUrl, {
+                        headers: {
+                            'Accept': 'application/pdf'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Proxy returned status: ${response.status}`);
+                    }
+
+                    const blob = await response.blob();
+                    
+                    // Verify it's a PDF
+                    if (blob.size < 100) {
+                        throw new Error('File too small to be a valid PDF');
+                    }
+
+                    showStatus('info', `📖 Processing PDF (${(blob.size / 1024 / 1024).toFixed(2)} MB)...`);
+                    originalContent = await readPDFBlob(blob);
+
+                    analyzeContent();
+                    showStatus('success', `✓ Successfully loaded from URL via proxy (${originalContent.length.toLocaleString()} characters)`);
+                    return;
+                    
+                } catch (error) {
+                    console.log(`Proxy ${i + 1} failed:`, error);
+                    lastError = error;
+                    // Try next proxy
+                    continue;
+                }
+            }
+            
+            // All proxies failed
+            showStatus('error', `❌ All proxies failed. Last error: ${lastError.message}. Try downloading the PDF manually.`);
+            console.error('All proxy attempts failed:', lastError);
         }
 
         // Read text file
