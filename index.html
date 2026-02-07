@@ -360,7 +360,7 @@
             <div class="section-title">Step 1: Select Your File</div>
             
             <div class="info-banner" style="margin-bottom: 15px;">
-                💡 Choose a file from your computer OR paste a PDF link (works with any URL - CORS bypass enabled!)
+                💡 Choose a file from your computer, paste a PDF link (12 CORS proxies!), or paste base64 data
             </div>
 
             <div style="margin-bottom: 15px;">
@@ -389,8 +389,23 @@
                 <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
                     <label style="display: flex; align-items: center; font-size: 13px; color: #6c757d; cursor: pointer;">
                         <input type="checkbox" id="useCorsProxy" checked style="margin-right: 5px;">
-                        Use CORS bypass (recommended for most URLs)
+                        Use CORS bypass (12 proxies - recommended)
                     </label>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin: 15px 0; color: #adb5bd; font-weight: bold;">
+                — OR —
+            </div>
+
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">
+                    📋 Paste Base64 PDF (for when URL fails):
+                </label>
+                <div style="display: flex; gap: 10px; flex-direction: column;">
+                    <textarea id="base64Input" placeholder="Paste base64-encoded PDF data here (starts with JVBERi0 or data:application/pdf;base64,)..." 
+                           style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 12px; font-family: monospace; resize: vertical;"></textarea>
+                    <button onclick="loadFromBase64()" style="align-self: flex-start;">📄 Load from Base64</button>
                 </div>
             </div>
 
@@ -508,16 +523,39 @@
         }
 
         // CORS proxy services (in order of preference)
+        // We try many different proxies to maximize success rate
         const CORS_PROXIES = [
+            // Fast and reliable proxies
             'https://corsproxy.io/?',
             'https://api.allorigins.win/raw?url=',
-            'https://api.codetabs.com/v1/proxy?quest='
+            'https://api.codetabs.com/v1/proxy?quest=',
+            
+            // Additional public proxies
+            'https://cors-anywhere.herokuapp.com/',
+            'https://thingproxy.freeboard.io/fetch/',
+            
+            // Alternative formats
+            { prefix: 'https://proxy.cors.sh/', encode: false },
+            { prefix: 'https://yacdn.org/proxy/', encode: false },
+            
+            // More backup options
+            'https://cors.bridged.cc/',
+            'https://api.1pt.co/api/proxy?url=',
+            
+            // JSONProxy based (for text extraction)
+            { prefix: 'https://jsonp.afeld.me/?url=', encode: true },
+            
+            // Worker-based proxies
+            'https://cors-proxy.htmldriven.com/?url=',
+            
+            // Direct attempts with different settings
+            { prefix: '', encode: false, direct: true }
         ];
 
         // Load PDF from URL with CORS bypass
         async function loadFromURL() {
             const urlInput = document.getElementById('urlInput');
-            const url = urlInput.value.trim();
+            let url = urlInput.value.trim();
             const useCorsProxy = document.getElementById('useCorsProxy').checked;
             
             if (!url) {
@@ -525,12 +563,19 @@
                 return;
             }
 
-            if (!url.toLowerCase().endsWith('.pdf')) {
-                showStatus('error', '❌ URL must point to a PDF file (must end with .pdf)');
+            // Convert common sharing URLs to direct download URLs
+            url = convertToDirectURL(url);
+            urlInput.value = url; // Update the input with converted URL
+
+            if (!url.toLowerCase().endsWith('.pdf') && !url.includes('drive.google.com') && !url.includes('dropbox.com')) {
+                showStatus('error', '❌ URL must point to a PDF file or be a Google Drive/Dropbox link');
                 return;
             }
 
-            fileName = url.split('/').pop() || 'document.pdf';
+            fileName = url.split('/').pop().split('?')[0] || 'document.pdf';
+            if (!fileName.endsWith('.pdf')) {
+                fileName = 'document.pdf';
+            }
             
             if (useCorsProxy) {
                 showStatus('info', `🌐 Downloading PDF from URL (using CORS bypass)...`);
@@ -539,6 +584,97 @@
                 showStatus('info', `🌐 Downloading PDF from URL (direct)...`);
                 await loadPDFDirect(url);
             }
+        }
+
+        // Load PDF from base64 data
+        async function loadFromBase64() {
+            const base64Input = document.getElementById('base64Input');
+            let base64Data = base64Input.value.trim();
+            
+            if (!base64Data) {
+                showStatus('error', '❌ Please paste base64 data');
+                return;
+            }
+
+            try {
+                showStatus('info', '📋 Processing base64 data...');
+
+                // Remove data URL prefix if present
+                if (base64Data.startsWith('data:')) {
+                    base64Data = base64Data.split(',')[1];
+                }
+
+                // Decode base64 to binary
+                const binaryString = atob(base64Data);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+
+                // Create blob from binary data
+                const blob = new Blob([bytes], { type: 'application/pdf' });
+                
+                // Verify it's a PDF
+                const isPDF = await verifyPDFBlob(blob);
+                if (!isPDF) {
+                    throw new Error('Data does not appear to be a valid PDF');
+                }
+
+                fileName = 'pasted_document.pdf';
+                showStatus('info', `📖 Processing PDF (${(blob.size / 1024 / 1024).toFixed(2)} MB)...`);
+                
+                originalContent = await readPDFBlob(blob);
+
+                analyzeContent();
+                showStatus('success', `✓ Successfully loaded from base64 (${originalContent.length.toLocaleString()} characters)`);
+                
+            } catch (error) {
+                showStatus('error', `❌ Error loading base64 data: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        // Convert sharing URLs to direct download URLs
+        function convertToDirectURL(url) {
+            // Google Drive: Convert sharing link to direct download
+            if (url.includes('drive.google.com/file/d/')) {
+                const fileId = url.match(/\/file\/d\/([^\/]+)/)?.[1];
+                if (fileId) {
+                    const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                    console.log('Converted Google Drive URL:', directUrl);
+                    showStatus('info', '🔄 Converted Google Drive sharing link to direct download URL');
+                    return directUrl;
+                }
+            }
+            
+            // Google Drive: Handle view links
+            if (url.includes('drive.google.com') && url.includes('/view')) {
+                const fileId = url.match(/\/d\/([^\/]+)/)?.[1];
+                if (fileId) {
+                    const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                    console.log('Converted Google Drive view URL:', directUrl);
+                    showStatus('info', '🔄 Converted Google Drive view link to direct download URL');
+                    return directUrl;
+                }
+            }
+            
+            // Dropbox: Convert dl=0 to dl=1 for direct download
+            if (url.includes('dropbox.com') && url.includes('dl=0')) {
+                const directUrl = url.replace('dl=0', 'dl=1');
+                console.log('Converted Dropbox URL:', directUrl);
+                showStatus('info', '🔄 Converted Dropbox sharing link to direct download');
+                return directUrl;
+            }
+            
+            // Dropbox: Add dl=1 if not present
+            if (url.includes('dropbox.com') && !url.includes('dl=')) {
+                const directUrl = url + (url.includes('?') ? '&' : '?') + 'dl=1';
+                console.log('Added dl=1 to Dropbox URL:', directUrl);
+                showStatus('info', '🔄 Modified Dropbox URL for direct download');
+                return directUrl;
+            }
+            
+            return url;
         }
 
         // Try loading PDF directly (may fail due to CORS)
@@ -580,21 +716,54 @@
         // Load PDF using CORS proxy (bypasses CORS restrictions)
         async function loadPDFWithProxy(originalUrl) {
             let lastError = null;
+            const totalProxies = CORS_PROXIES.length;
             
-            for (let i = 0; i < CORS_PROXIES.length; i++) {
-                const proxy = CORS_PROXIES[i];
-                const proxiedUrl = proxy + encodeURIComponent(originalUrl);
+            for (let i = 0; i < totalProxies; i++) {
+                const proxyConfig = CORS_PROXIES[i];
+                let proxiedUrl;
+                let proxyName;
+                
+                // Handle different proxy formats
+                if (typeof proxyConfig === 'string') {
+                    proxiedUrl = proxyConfig + encodeURIComponent(originalUrl);
+                    proxyName = proxyConfig.split('/')[2] || `Proxy ${i + 1}`;
+                } else if (typeof proxyConfig === 'object') {
+                    if (proxyConfig.direct) {
+                        // Try direct fetch with no-cors mode
+                        proxiedUrl = originalUrl;
+                        proxyName = 'Direct (no-cors)';
+                    } else if (proxyConfig.encode) {
+                        proxiedUrl = proxyConfig.prefix + encodeURIComponent(originalUrl);
+                        proxyName = proxyConfig.prefix.split('/')[2] || `Proxy ${i + 1}`;
+                    } else {
+                        proxiedUrl = proxyConfig.prefix + originalUrl;
+                        proxyName = proxyConfig.prefix.split('/')[2] || `Proxy ${i + 1}`;
+                    }
+                }
                 
                 try {
-                    showStatus('info', `🌐 Trying proxy ${i + 1}/${CORS_PROXIES.length}...`);
+                    showStatus('info', `🌐 Trying ${proxyName} (${i + 1}/${totalProxies})...`);
+                    console.log(`Attempting proxy ${i + 1}: ${proxyName}`);
                     
-                    const response = await fetch(proxiedUrl, {
+                    const fetchOptions = {
                         headers: {
                             'Accept': 'application/pdf'
                         }
-                    });
+                    };
+                    
+                    // For direct attempts, try no-cors mode
+                    if (proxyConfig.direct) {
+                        fetchOptions.mode = 'no-cors';
+                    }
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                    fetchOptions.signal = controller.signal;
+                    
+                    const response = await fetch(proxiedUrl, fetchOptions);
+                    clearTimeout(timeoutId);
 
-                    if (!response.ok) {
+                    if (!response.ok && response.status !== 0) {
                         throw new Error(`Proxy returned status: ${response.status}`);
                     }
 
@@ -604,25 +773,51 @@
                     if (blob.size < 100) {
                         throw new Error('File too small to be a valid PDF');
                     }
+                    
+                    // Check if it's actually a PDF (check magic bytes)
+                    const isPDF = await verifyPDFBlob(blob);
+                    if (!isPDF && blob.type !== 'application/pdf') {
+                        throw new Error('Response is not a valid PDF file');
+                    }
 
                     showStatus('info', `📖 Processing PDF (${(blob.size / 1024 / 1024).toFixed(2)} MB)...`);
                     originalContent = await readPDFBlob(blob);
 
                     analyzeContent();
-                    showStatus('success', `✓ Successfully loaded from URL via proxy (${originalContent.length.toLocaleString()} characters)`);
+                    showStatus('success', `✓ Successfully loaded via ${proxyName} (${originalContent.length.toLocaleString()} characters)`);
+                    console.log(`Success with proxy: ${proxyName}`);
                     return;
                     
                 } catch (error) {
-                    console.log(`Proxy ${i + 1} failed:`, error);
+                    console.log(`Proxy ${i + 1} (${proxyName}) failed:`, error.message);
                     lastError = error;
-                    // Try next proxy
+                    
+                    // Show progress
+                    if (i < totalProxies - 1) {
+                        showStatus('info', `⚠️ ${proxyName} failed, trying next proxy...`);
+                    }
+                    
+                    // Small delay before trying next proxy
+                    await new Promise(resolve => setTimeout(resolve, 500));
                     continue;
                 }
             }
             
             // All proxies failed
-            showStatus('error', `❌ All proxies failed. Last error: ${lastError.message}. Try downloading the PDF manually.`);
-            console.error('All proxy attempts failed:', lastError);
+            showStatus('error', `❌ All ${totalProxies} proxies failed. Last error: ${lastError.message}. Try downloading the PDF manually or the URL may require authentication.`);
+            console.error('All proxy attempts failed. Last error:', lastError);
+        }
+        
+        // Verify that a blob is actually a PDF by checking magic bytes
+        async function verifyPDFBlob(blob) {
+            try {
+                const arrayBuffer = await blob.slice(0, 5).arrayBuffer();
+                const bytes = new Uint8Array(arrayBuffer);
+                // PDF files start with "%PDF-"
+                return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
+            } catch (e) {
+                return false;
+            }
         }
 
         // Read text file
