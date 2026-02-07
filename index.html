@@ -1,1263 +1,1194 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Content Processor</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Drawing Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Lexend:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-card: #151b2b;
+      --bg-hover: #1f2937;
+      --accent-primary: #00d4ff;
+      --accent-secondary: #ff0080;
+      --accent-tertiary: #ffaa00;
+      --text-primary: #ffffff;
+      --text-secondary: #94a3b8;
+      --border-color: #2d3748;
+    }
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
-        }
+    body {
+      font-family: 'Lexend', sans-serif;
+      background: linear-gradient(135deg, var(--bg-dark) 0%, #0f1420 100%);
+      color: var(--text-primary);
+      overflow: hidden;
+      height: 100vh;
+    }
 
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 32px;
-        }
+    /* Start Menu Styles */
+    .start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
+    .start-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
 
-        .section {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border: 2px solid #e9ecef;
-        }
+    .start-content {
+      text-align: center;
+      animation: fadeInUp 0.8s ease;
+    }
 
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-        }
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 20px;
-            background: #667eea;
-            margin-right: 10px;
-            border-radius: 2px;
-        }
+    .start-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 4rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      letter-spacing: 2px;
+    }
 
-        .file-input-section {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+    .start-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 3rem;
+      font-weight: 300;
+    }
 
-        input[type="file"] {
-            flex: 1;
-            min-width: 200px;
-            padding: 12px;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+    .start-button {
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      border: none;
+      padding: 1.2rem 3rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      border-radius: 50px;
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
 
-        input[type="file"]:hover {
-            border-color: #667eea;
-        }
+    .start-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 50px rgba(0, 212, 255, 0.5);
+    }
 
-        button {
-            padding: 12px 24px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+    /* Main App Container */
+    .app-container {
+      display: flex;
+      height: 100vh;
+      opacity: 0;
+      transition: opacity 0.5s ease 0.3s;
+    }
 
-        button:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
+    .app-container.visible {
+      opacity: 1;
+    }
 
-        button:disabled {
-            background: #adb5bd;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
+    /* Toolbar */
+    .toolbar {
+      width: 320px;
+      background: var(--bg-card);
+      border-right: 2px solid var(--border-color);
+      padding: 1.5rem;
+      overflow-y: auto;
+      box-shadow: 5px 0 20px rgba(0, 0, 0, 0.3);
+    }
 
-        .status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 13px;
-            display: none;
-        }
+    .toolbar::-webkit-scrollbar {
+      width: 8px;
+    }
 
-        .status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-            display: block;
-        }
+    .toolbar::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
 
-        .status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-            display: block;
-        }
+    .toolbar::-webkit-scrollbar-thumb {
+      background: var(--accent-primary);
+      border-radius: 4px;
+    }
 
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-            display: block;
-        }
+    .toolbar-section {
+      margin-bottom: 2rem;
+      animation: slideInLeft 0.5s ease;
+      animation-fill-mode: both;
+    }
 
-        .chars-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
+    .toolbar-section:nth-child(1) { animation-delay: 0.1s; }
+    .toolbar-section:nth-child(2) { animation-delay: 0.2s; }
+    .toolbar-section:nth-child(3) { animation-delay: 0.3s; }
+    .toolbar-section:nth-child(4) { animation-delay: 0.4s; }
+    .toolbar-section:nth-child(5) { animation-delay: 0.5s; }
 
-        .char-item {
-            display: flex;
-            align-items: center;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
 
-        .char-item:hover {
-            background: #e9ecef;
-        }
+    .section-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--accent-primary);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
 
-        .char-item input[type="checkbox"] {
-            margin-right: 10px;
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
+    /* Tool Buttons */
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
 
-        .char-display {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            color: #495057;
-            margin-right: 8px;
-        }
+    .tool-btn {
+      background: var(--bg-dark);
+      border: 2px solid var(--border-color);
+      padding: 0.8rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-align: center;
+    }
 
-        .char-count {
-            margin-left: auto;
-            font-size: 12px;
-            color: #6c757d;
-            background: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-        }
+    .tool-btn:hover {
+      border-color: var(--accent-primary);
+      background: var(--bg-hover);
+      transform: translateY(-2px);
+    }
 
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
+    .tool-btn.active {
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      border-color: var(--accent-primary);
+      color: white;
+      box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
+    }
 
-        .button-group button {
-            padding: 8px 16px;
-            font-size: 13px;
-        }
+    /* Sliders */
+    .control-group {
+      margin-bottom: 1rem;
+    }
 
-        .stats {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 15px;
-        }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
 
-        .stat-item {
-            flex: 1;
-            min-width: 150px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
+    .control-value {
+      color: var(--accent-primary);
+      font-weight: 500;
+    }
 
-        .stat-label {
-            font-size: 12px;
-            color: #6c757d;
-            margin-bottom: 5px;
-        }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--bg-dark);
+      outline: none;
+      -webkit-appearance: none;
+    }
 
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #667eea;
-        }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 212, 255, 0.5);
+    }
 
-        .preview-box {
-            background: white;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+      cursor: pointer;
+      border: none;
+    }
 
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #adb5bd;
-        }
+    /* Color Picker */
+    .color-picker-container {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
 
-        .empty-state svg {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
+    input[type="color"] {
+      width: 60px;
+      height: 60px;
+      border: 3px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      background: transparent;
+    }
 
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
-        }
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
 
-        .action-buttons button {
-            padding: 14px 32px;
-            font-size: 16px;
-        }
+    input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 5px;
+    }
 
-        .info-banner {
-            background: #e7f3ff;
-            border-left: 4px solid #667eea;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            color: #004085;
-            font-size: 13px;
-        }
+    .color-presets {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      flex: 1;
+    }
 
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
+    .color-preset {
+      width: 100%;
+      aspect-ratio: 1;
+      border: 2px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
 
-        .loading.active {
-            display: block;
-        }
+    .color-preset:hover {
+      transform: scale(1.1);
+      border-color: var(--accent-primary);
+    }
 
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
+    /* Action Buttons */
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
 
-        .progress-bar {
-            width: 100%;
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
+    .action-btn {
+      background: var(--bg-dark);
+      border: 2px solid var(--border-color);
+      padding: 0.8rem;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            width: 0%;
-            transition: width 0.3s ease;
-        }
+    .action-btn:hover {
+      border-color: var(--accent-primary);
+      background: var(--bg-hover);
+    }
 
-        .progress-text {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 5px;
-        }
+    .action-btn.danger:hover {
+      border-color: var(--accent-secondary);
+      background: rgba(255, 0, 128, 0.1);
+    }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+    /* Checkbox */
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.8rem;
+      cursor: pointer;
+    }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-            }
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--accent-primary);
+    }
 
-            h1 {
-                font-size: 24px;
-            }
+    .checkbox-group label {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
 
-            .file-input-section {
-                flex-direction: column;
-            }
+    /* Canvas Container */
+    .canvas-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      position: relative;
+    }
 
-            input[type="file"] {
-                width: 100%;
-            }
+    #drawingCanvas {
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      cursor: crosshair;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+      background: white;
+    }
 
-            .stats {
-                flex-direction: column;
-            }
-        }
-    </style>
+    /* Canvas Info */
+    .canvas-info {
+      position: absolute;
+      top: 2rem;
+      right: 2rem;
+      background: rgba(21, 27, 43, 0.9);
+      backdrop-filter: blur(10px);
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      border: 2px solid var(--border-color);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 14, 23, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .loading-overlay.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid var(--bg-card);
+      border-top: 4px solid var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Select Dropdown */
+    select {
+      width: 100%;
+      padding: 0.8rem;
+      background: var(--bg-dark);
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    option {
+      background: var(--bg-dark);
+      color: var(--text-primary);
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📄 File Content Processor</h1>
-        <p class="subtitle">Extract and filter file contents with custom character selection</p>
+  <!-- Start Screen -->
+  <div id="startScreen" class="start-screen">
+    <div class="start-content">
+      <h1 class="start-title">DIGITAL STUDIO</h1>
+      <p class="start-subtitle">Professional Drawing & Painting Application</p>
+      <button class="start-button" onclick="startApp()">CREATE</button>
+    </div>
+  </div>
 
-        <!-- Step 1: File Selection -->
-        <div class="section">
-            <div class="section-title">Step 1: Select Your File</div>
-            
-            <div class="info-banner" style="margin-bottom: 15px;">
-                💡 Choose a file from your computer, paste a PDF link (12 CORS proxies!), or paste base64 data
-            </div>
+  <!-- Loading Overlay -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+  </div>
 
-            <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">
-                    📎 Upload from Computer:
-                </label>
-                <div class="file-input-section">
-                    <input type="file" id="fileInput" accept=".txt,.pdf,.md,.log,.csv,.json,.xml,.html">
-                    <button onclick="loadFile()">📂 Load File</button>
-                </div>
-            </div>
+  <!-- Main App -->
+  <div id="app" class="app-container">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <!-- Tools Section -->
+      <div class="toolbar-section">
+        <h3 class="section-title">🎨 Drawing Tools</h3>
+        <div class="tool-grid">
+          <button class="tool-btn active" data-tool="brush">Brush</button>
+          <button class="tool-btn" data-tool="eraser">Eraser</button>
+          <button class="tool-btn" data-tool="mix">Mix</button>
+          <button class="tool-btn" data-tool="spray">Spray</button>
+          <button class="tool-btn" data-tool="fill">Fill</button>
+          <button class="tool-btn" data-tool="eyedropper">Dropper</button>
+          <button class="tool-btn" data-tool="line">Line</button>
+          <button class="tool-btn" data-tool="rectangle">Rectangle</button>
+          <button class="tool-btn" data-tool="circle">Circle</button>
+        </div>
+      </div>
 
-            <div style="text-align: center; margin: 15px 0; color: #adb5bd; font-weight: bold;">
-                — OR —
-            </div>
-
-            <div>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">
-                    🔗 Load from URL (PDF only):
-                </label>
-                <div class="file-input-section">
-                    <input type="text" id="urlInput" placeholder="https://example.com/document.pdf" 
-                           style="flex: 1; min-width: 200px; padding: 12px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 14px;">
-                    <button onclick="loadFromURL()">🌐 Load from URL</button>
-                </div>
-                <div style="margin-top: 8px; display: flex; align-items: center; gap: 10px;">
-                    <label style="display: flex; align-items: center; font-size: 13px; color: #6c757d; cursor: pointer;">
-                        <input type="checkbox" id="useCorsProxy" checked style="margin-right: 5px;">
-                        Use CORS bypass (12 proxies - recommended)
-                    </label>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin: 15px 0; color: #adb5bd; font-weight: bold;">
-                — OR —
-            </div>
-
-            <div>
-                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #495057;">
-                    📋 Paste Base64 PDF (for when URL fails):
-                </label>
-                <div style="display: flex; gap: 10px; flex-direction: column;">
-                    <textarea id="base64Input" placeholder="Paste base64-encoded PDF data here (starts with JVBERi0 or data:application/pdf;base64,)..." 
-                           style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #dee2e6; border-radius: 8px; font-size: 12px; font-family: monospace; resize: vertical;"></textarea>
-                    <button onclick="loadFromBase64()" style="align-self: flex-start;">📄 Load from Base64</button>
-                </div>
-            </div>
-
-            <div id="fileStatus" class="status"></div>
+      <!-- Brush Settings -->
+      <div class="toolbar-section">
+        <h3 class="section-title">✏️ Brush Settings</h3>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Size</span>
+            <span class="control-value" id="sizeValue">20</span>
+          </div>
+          <input type="range" id="brushSize" min="1" max="100" value="20">
         </div>
 
-        <!-- Step 2: Character Selection -->
-        <div class="section" id="charSection" style="display: none;">
-            <div class="section-title">Step 2: Choose What to Keep</div>
-            
-            <div class="info-banner">
-                ✓ Letters (a-z, A-Z), numbers (0-9), and spaces are always kept. Toggle special characters below:
-            </div>
-
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-label">Total Characters</div>
-                    <div class="stat-value" id="totalChars">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Special Characters</div>
-                    <div class="stat-value" id="specialChars">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Unique Special</div>
-                    <div class="stat-value" id="uniqueSpecial">0</div>
-                </div>
-            </div>
-
-            <div class="button-group">
-                <button onclick="selectAll()">✓ Select All</button>
-                <button onclick="deselectAll()">✗ Deselect All</button>
-                <button onclick="keepCommon()">📝 Keep Common (. , ! ?)</button>
-            </div>
-
-            <div id="charsGrid" class="chars-grid"></div>
+        <div class="control-group">
+          <div class="control-label">
+            <span>Opacity</span>
+            <span class="control-value" id="opacityValue">100%</span>
+          </div>
+          <input type="range" id="brushOpacity" min="1" max="100" value="100">
         </div>
 
-        <!-- Step 3: Preview & Download -->
-        <div class="section" id="previewSection" style="display: none;">
-            <div class="section-title">Step 3: Preview & Download</div>
-            
-            <div class="action-buttons">
-                <button onclick="processContent()">✨ Process & Preview</button>
-                <button id="downloadBtn" onclick="downloadFile()" disabled>💾 Download Result</button>
-                <button id="copyBtn" onclick="copyToClipboard()" disabled>📋 Copy to Clipboard</button>
-                <button id="statsBtn" onclick="exportStats()" disabled>📊 Export Stats</button>
-            </div>
-
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
-                <p style="margin-top: 10px; color: #666;">Processing...</p>
-                <div class="progress-bar">
-                    <div id="progressFill" class="progress-fill"></div>
-                </div>
-                <div id="progressText" class="progress-text"></div>
-            </div>
-
-            <div style="margin-top: 20px;">
-                <strong style="color: #495057;">Preview (first 1000 characters):</strong>
-                <div id="previewBox" class="preview-box">
-                    <div class="empty-state">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <p>Click "Process & Preview" to see your filtered content</p>
-                    </div>
-                </div>
-            </div>
+        <div class="control-group">
+          <div class="control-label">
+            <span>Hardness</span>
+            <span class="control-value" id="hardnessValue">50%</span>
+          </div>
+          <input type="range" id="brushHardness" min="0" max="100" value="50">
         </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Smoothing</span>
+            <span class="control-value" id="smoothingValue">50%</span>
+          </div>
+          <input type="range" id="brushSmoothing" min="0" max="100" value="50">
+        </div>
+      </div>
+
+      <!-- Color Settings -->
+      <div class="toolbar-section">
+        <h3 class="section-title">🎨 Color</h3>
+        
+        <div class="color-picker-container">
+          <input type="color" id="colorPicker" value="#00d4ff">
+          <div class="color-presets">
+            <div class="color-preset" style="background: #ff0080;" data-color="#ff0080"></div>
+            <div class="color-preset" style="background: #00d4ff;" data-color="#00d4ff"></div>
+            <div class="color-preset" style="background: #ffaa00;" data-color="#ffaa00"></div>
+            <div class="color-preset" style="background: #00ff88;" data-color="#00ff88"></div>
+            <div class="color-preset" style="background: #ff3366;" data-color="#ff3366"></div>
+            <div class="color-preset" style="background: #9966ff;" data-color="#9966ff"></div>
+            <div class="color-preset" style="background: #ffffff;" data-color="#ffffff"></div>
+            <div class="color-preset" style="background: #000000;" data-color="#000000"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Effects -->
+      <div class="toolbar-section">
+        <h3 class="section-title">✨ Effects</h3>
+        
+        <div class="control-group">
+          <div class="control-label">
+            <span>Glow Intensity</span>
+            <span class="control-value" id="glowValue">0</span>
+          </div>
+          <input type="range" id="glowIntensity" min="0" max="50" value="0">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label">
+            <span>Blur Amount</span>
+            <span class="control-value" id="blurValue">0</span>
+          </div>
+          <input type="range" id="blurAmount" min="0" max="20" value="0">
+        </div>
+      </div>
+
+      <!-- Canvas Settings -->
+      <div class="toolbar-section">
+        <h3 class="section-title">⚙️ Canvas Settings</h3>
+        
+        <div class="control-group">
+          <label class="control-label">Background Color</label>
+          <input type="color" id="bgColor" value="#ffffff" style="width: 100%;">
+        </div>
+
+        <div class="control-group">
+          <label class="control-label">Canvas Size</label>
+          <select id="canvasSize">
+            <option value="800,600">800 × 600 (Standard)</option>
+            <option value="1024,768">1024 × 768 (XGA)</option>
+            <option value="1280,720">1280 × 720 (HD)</option>
+            <option value="1920,1080">1920 × 1080 (Full HD)</option>
+            <option value="2560,1440">2560 × 1440 (2K)</option>
+          </select>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="showGrid">
+          <label for="showGrid">Show Grid</label>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="symmetryMode">
+          <label for="symmetryMode">Symmetry Mode</label>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="pressureSim">
+          <label for="pressureSim">Pressure Simulation</label>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="toolbar-section">
+        <h3 class="section-title">💾 Actions</h3>
+        
+        <div class="action-buttons">
+          <button class="action-btn" onclick="undo()">↩️ Undo</button>
+          <button class="action-btn" onclick="redo()">↪️ Redo</button>
+          <button class="action-btn" onclick="clearCanvas()">🗑️ Clear</button>
+          <button class="action-btn danger" onclick="resetAll()">🔄 Reset</button>
+          <button class="action-btn" onclick="savePNG()">💾 Save PNG</button>
+          <button class="action-btn" onclick="saveJPG()">💾 Save JPG</button>
+          <button class="action-btn" onclick="loadImage()">📁 Load</button>
+          <button class="action-btn" onclick="downloadProject()">📦 Export</button>
+        </div>
+      </div>
     </div>
 
-    <!-- PDF.js Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- Canvas Area -->
+    <div class="canvas-container">
+      <canvas id="drawingCanvas" width="800" height="600"></canvas>
+      <div class="canvas-info">
+        <div>Position: <span id="mousePos">0, 0</span></div>
+        <div>Tool: <span id="currentTool">Brush</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Application State
+    const state = {
+      currentTool: 'brush',
+      brushSize: 20,
+      brushOpacity: 1,
+      brushHardness: 0.5,
+      brushSmoothing: 0.5,
+      color: '#00d4ff',
+      glowIntensity: 0,
+      blurAmount: 0,
+      isDrawing: false,
+      lastX: 0,
+      lastY: 0,
+      showGrid: false,
+      symmetryMode: false,
+      pressureSim: false,
+      history: [],
+      historyStep: -1,
+      smoothPoints: [],
+      bgColor: '#ffffff'
+    };
+
+    // Canvas Setup
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
-    <script>
-        // Global variables
-        let originalContent = '';
-        let processedContent = '';
-        let fileName = '';
-        let specialCharsMap = new Map();
+    // Initialize
+    function startApp() {
+      document.getElementById('startScreen').classList.add('hidden');
+      setTimeout(() => {
+        document.getElementById('app').classList.add('visible');
+        initializeCanvas();
+        saveState();
+      }, 500);
+    }
 
-        // Set PDF.js worker
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
+    function initializeCanvas() {
+      ctx.fillStyle = state.bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
-        // Load and analyze file
-        async function loadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                showStatus('error', '❌ Please select a file first');
-                return;
-            }
+    // Tool Selection
+    document.querySelectorAll('.tool-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        state.currentTool = this.dataset.tool;
+        document.getElementById('currentTool').textContent = this.textContent;
+      });
+    });
 
-            fileName = file.name;
-            showStatus('info', `📖 Loading ${fileName}...`);
+    // Brush Size
+    document.getElementById('brushSize').addEventListener('input', function() {
+      state.brushSize = parseInt(this.value);
+      document.getElementById('sizeValue').textContent = this.value;
+    });
 
-            try {
-                if (file.name.toLowerCase().endsWith('.pdf')) {
-                    originalContent = await readPDFFile(file);
-                } else {
-                    originalContent = await readTextFile(file);
-                }
+    // Brush Opacity
+    document.getElementById('brushOpacity').addEventListener('input', function() {
+      state.brushOpacity = parseInt(this.value) / 100;
+      document.getElementById('opacityValue').textContent = this.value + '%';
+    });
 
-                analyzeContent();
-                showStatus('success', `✓ Successfully loaded ${fileName} (${originalContent.length.toLocaleString()} characters)`);
-                
-            } catch (error) {
-                showStatus('error', `❌ Error loading file: ${error.message}`);
-                console.error(error);
-            }
-        }
+    // Brush Hardness
+    document.getElementById('brushHardness').addEventListener('input', function() {
+      state.brushHardness = parseInt(this.value) / 100;
+      document.getElementById('hardnessValue').textContent = this.value + '%';
+    });
 
-        // CORS proxy services (in order of preference)
-        // We try many different proxies to maximize success rate
-        const CORS_PROXIES = [
-            // Fast and reliable proxies
-            'https://corsproxy.io/?',
-            'https://api.allorigins.win/raw?url=',
-            'https://api.codetabs.com/v1/proxy?quest=',
-            
-            // Additional public proxies
-            'https://cors-anywhere.herokuapp.com/',
-            'https://thingproxy.freeboard.io/fetch/',
-            
-            // Alternative formats
-            { prefix: 'https://proxy.cors.sh/', encode: false },
-            { prefix: 'https://yacdn.org/proxy/', encode: false },
-            
-            // More backup options
-            'https://cors.bridged.cc/',
-            'https://api.1pt.co/api/proxy?url=',
-            
-            // JSONProxy based (for text extraction)
-            { prefix: 'https://jsonp.afeld.me/?url=', encode: true },
-            
-            // Worker-based proxies
-            'https://cors-proxy.htmldriven.com/?url=',
-            
-            // Direct attempts with different settings
-            { prefix: '', encode: false, direct: true }
-        ];
+    // Brush Smoothing
+    document.getElementById('brushSmoothing').addEventListener('input', function() {
+      state.brushSmoothing = parseInt(this.value) / 100;
+      document.getElementById('smoothingValue').textContent = this.value + '%';
+    });
 
-        // Load PDF from URL with CORS bypass
-        async function loadFromURL() {
-            const urlInput = document.getElementById('urlInput');
-            let url = urlInput.value.trim();
-            const useCorsProxy = document.getElementById('useCorsProxy').checked;
-            
-            if (!url) {
-                showStatus('error', '❌ Please enter a URL');
-                return;
-            }
+    // Color Picker
+    document.getElementById('colorPicker').addEventListener('input', function() {
+      state.color = this.value;
+    });
 
-            // Convert common sharing URLs to direct download URLs
-            url = convertToDirectURL(url);
-            urlInput.value = url; // Update the input with converted URL
+    // Color Presets
+    document.querySelectorAll('.color-preset').forEach(preset => {
+      preset.addEventListener('click', function() {
+        const color = this.dataset.color;
+        state.color = color;
+        document.getElementById('colorPicker').value = color;
+      });
+    });
 
-            if (!url.toLowerCase().endsWith('.pdf') && !url.includes('drive.google.com') && !url.includes('dropbox.com')) {
-                showStatus('error', '❌ URL must point to a PDF file or be a Google Drive/Dropbox link');
-                return;
-            }
+    // Glow Intensity
+    document.getElementById('glowIntensity').addEventListener('input', function() {
+      state.glowIntensity = parseInt(this.value);
+      document.getElementById('glowValue').textContent = this.value;
+    });
 
-            fileName = url.split('/').pop().split('?')[0] || 'document.pdf';
-            if (!fileName.endsWith('.pdf')) {
-                fileName = 'document.pdf';
-            }
-            
-            if (useCorsProxy) {
-                showStatus('info', `🌐 Downloading PDF from URL (using CORS bypass)...`);
-                await loadPDFWithProxy(url);
-            } else {
-                showStatus('info', `🌐 Downloading PDF from URL (direct)...`);
-                await loadPDFDirect(url);
-            }
-        }
+    // Blur Amount
+    document.getElementById('blurAmount').addEventListener('input', function() {
+      state.blurAmount = parseInt(this.value);
+      document.getElementById('blurValue').textContent = this.value;
+    });
 
-        // Load PDF from base64 data
-        async function loadFromBase64() {
-            const base64Input = document.getElementById('base64Input');
-            let base64Data = base64Input.value.trim();
-            
-            if (!base64Data) {
-                showStatus('error', '❌ Please paste base64 data');
-                return;
-            }
+    // Background Color
+    document.getElementById('bgColor').addEventListener('input', function() {
+      state.bgColor = this.value;
+      redrawCanvas();
+    });
 
-            try {
-                showStatus('info', '📋 Processing base64 data...');
+    // Canvas Size
+    document.getElementById('canvasSize').addEventListener('change', function() {
+      const [width, height] = this.value.split(',').map(Number);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      canvas.width = width;
+      canvas.height = height;
+      ctx.fillStyle = state.bgColor;
+      ctx.fillRect(0, 0, width, height);
+      ctx.putImageData(imageData, 0, 0);
+      saveState();
+    });
 
-                // Remove data URL prefix if present
-                if (base64Data.startsWith('data:')) {
-                    base64Data = base64Data.split(',')[1];
-                }
+    // Grid Toggle
+    document.getElementById('showGrid').addEventListener('change', function() {
+      state.showGrid = this.checked;
+      redrawCanvas();
+    });
 
-                // Decode base64 to binary
-                const binaryString = atob(base64Data);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
+    // Symmetry Mode
+    document.getElementById('symmetryMode').addEventListener('change', function() {
+      state.symmetryMode = this.checked;
+    });
 
-                // Create blob from binary data
-                const blob = new Blob([bytes], { type: 'application/pdf' });
-                
-                // Verify it's a PDF
-                const isPDF = await verifyPDFBlob(blob);
-                if (!isPDF) {
-                    throw new Error('Data does not appear to be a valid PDF');
-                }
+    // Pressure Simulation
+    document.getElementById('pressureSim').addEventListener('change', function() {
+      state.pressureSim = this.checked;
+    });
 
-                fileName = 'pasted_document.pdf';
-                showStatus('info', `📖 Processing PDF (${(blob.size / 1024 / 1024).toFixed(2)} MB)...`);
-                
-                originalContent = await readPDFBlob(blob);
+    // Drawing Functions
+    function startDrawing(e) {
+      state.isDrawing = true;
+      const rect = canvas.getBoundingClientRect();
+      state.lastX = e.clientX - rect.left;
+      state.lastY = e.clientY - rect.top;
+      state.smoothPoints = [{x: state.lastX, y: state.lastY}];
 
-                analyzeContent();
-                showStatus('success', `✓ Successfully loaded from base64 (${originalContent.length.toLocaleString()} characters)`);
-                
-            } catch (error) {
-                showStatus('error', `❌ Error loading base64 data: ${error.message}`);
-                console.error(error);
-            }
-        }
+      if (state.currentTool === 'fill') {
+        floodFill(state.lastX, state.lastY);
+        saveState();
+      } else if (state.currentTool === 'eyedropper') {
+        pickColor(state.lastX, state.lastY);
+      }
+    }
 
-        // Convert sharing URLs to direct download URLs
-        function convertToDirectURL(url) {
-            // Google Drive: Convert sharing link to direct download
-            if (url.includes('drive.google.com/file/d/')) {
-                const fileId = url.match(/\/file\/d\/([^\/]+)/)?.[1];
-                if (fileId) {
-                    const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                    console.log('Converted Google Drive URL:', directUrl);
-                    showStatus('info', '🔄 Converted Google Drive sharing link to direct download URL');
-                    return directUrl;
-                }
-            }
-            
-            // Google Drive: Handle view links
-            if (url.includes('drive.google.com') && url.includes('/view')) {
-                const fileId = url.match(/\/d\/([^\/]+)/)?.[1];
-                if (fileId) {
-                    const directUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
-                    console.log('Converted Google Drive view URL:', directUrl);
-                    showStatus('info', '🔄 Converted Google Drive view link to direct download URL');
-                    return directUrl;
-                }
-            }
-            
-            // Dropbox: Convert dl=0 to dl=1 for direct download
-            if (url.includes('dropbox.com') && url.includes('dl=0')) {
-                const directUrl = url.replace('dl=0', 'dl=1');
-                console.log('Converted Dropbox URL:', directUrl);
-                showStatus('info', '🔄 Converted Dropbox sharing link to direct download');
-                return directUrl;
-            }
-            
-            // Dropbox: Add dl=1 if not present
-            if (url.includes('dropbox.com') && !url.includes('dl=')) {
-                const directUrl = url + (url.includes('?') ? '&' : '?') + 'dl=1';
-                console.log('Added dl=1 to Dropbox URL:', directUrl);
-                showStatus('info', '🔄 Modified Dropbox URL for direct download');
-                return directUrl;
-            }
-            
-            return url;
-        }
+    function draw(e) {
+      if (!state.isDrawing) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-        // Try loading PDF directly (may fail due to CORS)
-        async function loadPDFDirect(url) {
-            try {
-                const response = await fetch(url, {
-                    mode: 'cors',
-                    headers: {
-                        'Accept': 'application/pdf'
-                    }
-                });
+      // Update mouse position
+      document.getElementById('mousePos').textContent = `${Math.round(x)}, ${Math.round(y)}`;
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+      // Add to smooth points
+      state.smoothPoints.push({x, y});
+      if (state.smoothPoints.length > 5) {
+        state.smoothPoints.shift();
+      }
 
-                const blob = await response.blob();
-                
-                if (!blob.type.includes('pdf') && !url.toLowerCase().endsWith('.pdf')) {
-                    throw new Error('URL does not point to a valid PDF file');
-                }
+      // Calculate smoothed position
+      let smoothX = x, smoothY = y;
+      if (state.brushSmoothing > 0 && state.smoothPoints.length > 1) {
+        const weight = state.brushSmoothing;
+        smoothX = state.smoothPoints.reduce((sum, p) => sum + p.x, 0) / state.smoothPoints.length;
+        smoothY = state.smoothPoints.reduce((sum, p) => sum + p.y, 0) / state.smoothPoints.length;
+        smoothX = x * (1 - weight) + smoothX * weight;
+        smoothY = y * (1 - weight) + smoothY * weight;
+      }
 
-                showStatus('info', `📖 Processing PDF...`);
-                originalContent = await readPDFBlob(blob);
+      // Pressure simulation
+      let size = state.brushSize;
+      if (state.pressureSim) {
+        const speed = Math.sqrt(Math.pow(x - state.lastX, 2) + Math.pow(y - state.lastY, 2));
+        const pressure = Math.max(0.3, 1 - Math.min(speed / 50, 0.7));
+        size *= pressure;
+      }
 
-                analyzeContent();
-                showStatus('success', `✓ Successfully loaded from URL (${originalContent.length.toLocaleString()} characters)`);
-                
-            } catch (error) {
-                if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
-                    showStatus('error', `❌ Direct access blocked by CORS. Enable "Use CORS bypass" and try again.`);
-                } else {
-                    showStatus('error', `❌ Error loading from URL: ${error.message}`);
-                }
-                console.error(error);
-            }
-        }
+      // Apply tool
+      switch (state.currentTool) {
+        case 'brush':
+          drawBrush(state.lastX, state.lastY, smoothX, smoothY, size);
+          break;
+        case 'eraser':
+          drawEraser(state.lastX, state.lastY, smoothX, smoothY, size);
+          break;
+        case 'mix':
+          drawMix(state.lastX, state.lastY, smoothX, smoothY, size);
+          break;
+        case 'spray':
+          drawSpray(smoothX, smoothY, size);
+          break;
+        case 'line':
+        case 'rectangle':
+        case 'circle':
+          // These are handled on mouseup
+          break;
+      }
 
-        // Load PDF using CORS proxy (bypasses CORS restrictions)
-        async function loadPDFWithProxy(originalUrl) {
-            let lastError = null;
-            const totalProxies = CORS_PROXIES.length;
-            
-            for (let i = 0; i < totalProxies; i++) {
-                const proxyConfig = CORS_PROXIES[i];
-                let proxiedUrl;
-                let proxyName;
-                
-                // Handle different proxy formats
-                if (typeof proxyConfig === 'string') {
-                    proxiedUrl = proxyConfig + encodeURIComponent(originalUrl);
-                    proxyName = proxyConfig.split('/')[2] || `Proxy ${i + 1}`;
-                } else if (typeof proxyConfig === 'object') {
-                    if (proxyConfig.direct) {
-                        // Try direct fetch with no-cors mode
-                        proxiedUrl = originalUrl;
-                        proxyName = 'Direct (no-cors)';
-                    } else if (proxyConfig.encode) {
-                        proxiedUrl = proxyConfig.prefix + encodeURIComponent(originalUrl);
-                        proxyName = proxyConfig.prefix.split('/')[2] || `Proxy ${i + 1}`;
-                    } else {
-                        proxiedUrl = proxyConfig.prefix + originalUrl;
-                        proxyName = proxyConfig.prefix.split('/')[2] || `Proxy ${i + 1}`;
-                    }
-                }
-                
-                try {
-                    showStatus('info', `🌐 Trying ${proxyName} (${i + 1}/${totalProxies})...`);
-                    console.log(`Attempting proxy ${i + 1}: ${proxyName}`);
-                    
-                    const fetchOptions = {
-                        headers: {
-                            'Accept': 'application/pdf'
-                        }
-                    };
-                    
-                    // For direct attempts, try no-cors mode
-                    if (proxyConfig.direct) {
-                        fetchOptions.mode = 'no-cors';
-                    }
-                    
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-                    fetchOptions.signal = controller.signal;
-                    
-                    const response = await fetch(proxiedUrl, fetchOptions);
-                    clearTimeout(timeoutId);
+      state.lastX = smoothX;
+      state.lastY = smoothY;
+    }
 
-                    if (!response.ok && response.status !== 0) {
-                        throw new Error(`Proxy returned status: ${response.status}`);
-                    }
+    function stopDrawing(e) {
+      if (!state.isDrawing) return;
+      
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-                    const blob = await response.blob();
-                    
-                    // Verify it's a PDF
-                    if (blob.size < 100) {
-                        throw new Error('File too small to be a valid PDF');
-                    }
-                    
-                    // Check if it's actually a PDF (check magic bytes)
-                    const isPDF = await verifyPDFBlob(blob);
-                    if (!isPDF && blob.type !== 'application/pdf') {
-                        throw new Error('Response is not a valid PDF file');
-                    }
-
-                    showStatus('info', `📖 Processing PDF (${(blob.size / 1024 / 1024).toFixed(2)} MB)...`);
-                    originalContent = await readPDFBlob(blob);
-
-                    analyzeContent();
-                    showStatus('success', `✓ Successfully loaded via ${proxyName} (${originalContent.length.toLocaleString()} characters)`);
-                    console.log(`Success with proxy: ${proxyName}`);
-                    return;
-                    
-                } catch (error) {
-                    console.log(`Proxy ${i + 1} (${proxyName}) failed:`, error.message);
-                    lastError = error;
-                    
-                    // Show progress
-                    if (i < totalProxies - 1) {
-                        showStatus('info', `⚠️ ${proxyName} failed, trying next proxy...`);
-                    }
-                    
-                    // Small delay before trying next proxy
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    continue;
-                }
-            }
-            
-            // All proxies failed
-            showStatus('error', `❌ All ${totalProxies} proxies failed. Last error: ${lastError.message}. Try downloading the PDF manually or the URL may require authentication.`);
-            console.error('All proxy attempts failed. Last error:', lastError);
-        }
+      // Handle shape tools
+      if (['line', 'rectangle', 'circle'].includes(state.currentTool)) {
+        const startX = state.smoothPoints[0].x;
+        const startY = state.smoothPoints[0].y;
         
-        // Verify that a blob is actually a PDF by checking magic bytes
-        async function verifyPDFBlob(blob) {
-            try {
-                const arrayBuffer = await blob.slice(0, 5).arrayBuffer();
-                const bytes = new Uint8Array(arrayBuffer);
-                // PDF files start with "%PDF-"
-                return bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46;
-            } catch (e) {
-                return false;
-            }
+        ctx.globalAlpha = state.brushOpacity;
+        ctx.strokeStyle = state.color;
+        ctx.lineWidth = state.brushSize;
+        
+        if (state.glowIntensity > 0) {
+          ctx.shadowBlur = state.glowIntensity;
+          ctx.shadowColor = state.color;
         }
 
-        // Read text file
-        function readTextFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (e) => resolve(e.target.result);
-                reader.onerror = (e) => reject(new Error('Failed to read file'));
-                reader.readAsText(file);
-            });
+        if (state.currentTool === 'line') {
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        } else if (state.currentTool === 'rectangle') {
+          ctx.strokeRect(startX, startY, x - startX, y - startY);
+        } else if (state.currentTool === 'circle') {
+          const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
+          ctx.beginPath();
+          ctx.arc(startX, startY, radius, 0, Math.PI * 2);
+          ctx.stroke();
         }
 
-        // Read PDF file - ENHANCED to get ALL characters including hidden
-        async function readPDFFile(file) {
-            if (typeof pdfjsLib === 'undefined') {
-                throw new Error('PDF.js library not loaded. Please refresh the page.');
-            }
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
 
-            const arrayBuffer = await file.arrayBuffer();
-            return await extractAllPDFText(arrayBuffer);
+      state.isDrawing = false;
+      state.smoothPoints = [];
+      saveState();
+    }
+
+    function drawBrush(x1, y1, x2, y2, size) {
+      ctx.globalAlpha = state.brushOpacity;
+      ctx.strokeStyle = state.color;
+      ctx.fillStyle = state.color;
+      ctx.lineWidth = size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (state.glowIntensity > 0) {
+        ctx.shadowBlur = state.glowIntensity;
+        ctx.shadowColor = state.color;
+      }
+
+      if (state.blurAmount > 0) {
+        ctx.filter = `blur(${state.blurAmount}px)`;
+      }
+
+      // Create gradient for hardness
+      if (state.brushHardness < 1) {
+        const gradient = ctx.createRadialGradient(x2, y2, 0, x2, y2, size / 2);
+        gradient.addColorStop(0, state.color);
+        gradient.addColorStop(state.brushHardness, state.color);
+        gradient.addColorStop(1, state.color + '00');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x2, y2, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      // Symmetry
+      if (state.symmetryMode) {
+        const centerX = canvas.width / 2;
+        const mirrorX1 = centerX - (x1 - centerX);
+        const mirrorX2 = centerX - (x2 - centerX);
+        
+        if (state.brushHardness < 1) {
+          const gradient = ctx.createRadialGradient(mirrorX2, y2, 0, mirrorX2, y2, size / 2);
+          gradient.addColorStop(0, state.color);
+          gradient.addColorStop(state.brushHardness, state.color);
+          gradient.addColorStop(1, state.color + '00');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(mirrorX2, y2, size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(mirrorX1, y1);
+          ctx.lineTo(mirrorX2, y2);
+          ctx.stroke();
         }
+      }
 
-        // Read PDF from blob (for URL loading)
-        async function readPDFBlob(blob) {
-            if (typeof pdfjsLib === 'undefined') {
-                throw new Error('PDF.js library not loaded. Please refresh the page.');
-            }
+      ctx.shadowBlur = 0;
+      ctx.filter = 'none';
+      ctx.globalAlpha = 1;
+    }
 
-            const arrayBuffer = await blob.arrayBuffer();
-            return await extractAllPDFText(arrayBuffer);
+    function drawEraser(x1, y1, x2, y2, size) {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.globalAlpha = state.brushOpacity;
+      ctx.lineWidth = size;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.globalAlpha = 1;
+    }
+
+    function drawMix(x1, y1, x2, y2, size) {
+      // Get pixel data
+      const imageData = ctx.getImageData(x2 - size/2, y2 - size/2, size, size);
+      const data = imageData.data;
+      
+      // Average colors
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        r += data[i];
+        g += data[i + 1];
+        b += data[i + 2];
+        count++;
+      }
+      
+      const avgColor = `rgb(${Math.round(r/count)}, ${Math.round(g/count)}, ${Math.round(b/count)})`;
+      
+      ctx.globalAlpha = state.brushOpacity * 0.3;
+      ctx.fillStyle = avgColor;
+      ctx.beginPath();
+      ctx.arc(x2, y2, size / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawSpray(x, y, size) {
+      const density = 50;
+      ctx.globalAlpha = state.brushOpacity * 0.1;
+      ctx.fillStyle = state.color;
+      
+      for (let i = 0; i < density; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * size / 2;
+        const px = x + Math.cos(angle) * radius;
+        const py = y + Math.sin(angle) * radius;
+        
+        ctx.beginPath();
+        ctx.arc(px, py, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      
+      ctx.globalAlpha = 1;
+    }
+
+    function floodFill(startX, startY) {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      const startPos = (Math.floor(startY) * canvas.width + Math.floor(startX)) * 4;
+      const startR = data[startPos];
+      const startG = data[startPos + 1];
+      const startB = data[startPos + 2];
+      
+      const fillColor = hexToRgb(state.color);
+      
+      if (startR === fillColor.r && startG === fillColor.g && startB === fillColor.b) return;
+      
+      const stack = [[Math.floor(startX), Math.floor(startY)]];
+      
+      while (stack.length > 0) {
+        const [x, y] = stack.pop();
+        const pos = (y * canvas.width + x) * 4;
+        
+        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
+        if (data[pos] !== startR || data[pos + 1] !== startG || data[pos + 2] !== startB) continue;
+        
+        data[pos] = fillColor.r;
+        data[pos + 1] = fillColor.g;
+        data[pos + 2] = fillColor.b;
+        data[pos + 3] = 255;
+        
+        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    function pickColor(x, y) {
+      const imageData = ctx.getImageData(x, y, 1, 1);
+      const data = imageData.data;
+      const color = rgbToHex(data[0], data[1], data[2]);
+      state.color = color;
+      document.getElementById('colorPicker').value = color;
+    }
+
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+
+    function rgbToHex(r, g, b) {
+      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    // History Management
+    function saveState() {
+      state.historyStep++;
+      if (state.historyStep < state.history.length) {
+        state.history.length = state.historyStep;
+      }
+      state.history.push(canvas.toDataURL());
+      if (state.history.length > 50) {
+        state.history.shift();
+        state.historyStep--;
+      }
+    }
+
+    function undo() {
+      if (state.historyStep > 0) {
+        state.historyStep--;
+        const img = new Image();
+        img.onload = function() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = state.history[state.historyStep];
+      }
+    }
+
+    function redo() {
+      if (state.historyStep < state.history.length - 1) {
+        state.historyStep++;
+        const img = new Image();
+        img.onload = function() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = state.history[state.historyStep];
+      }
+    }
+
+    function clearCanvas() {
+      if (confirm('Clear the entire canvas?')) {
+        ctx.fillStyle = state.bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        saveState();
+      }
+    }
+
+    function resetAll() {
+      if (confirm('Reset all settings and clear canvas?')) {
+        location.reload();
+      }
+    }
+
+    function redrawCanvas() {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = state.bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.putImageData(imageData, 0, 0);
+      
+      if (state.showGrid) {
+        drawGrid();
+      }
+    }
+
+    function drawGrid() {
+      const gridSize = 50;
+      ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
+      ctx.lineWidth = 1;
+      
+      for (let x = 0; x <= canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y <= canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    // Save Functions
+    function savePNG() {
+      const link = document.createElement('a');
+      link.download = `artwork-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+
+    function saveJPG() {
+      const link = document.createElement('a');
+      link.download = `artwork-${Date.now()}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+    }
+
+    function loadImage() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          const img = new Image();
+          img.onload = function() {
+            ctx.drawImage(img, 0, 0);
+            saveState();
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    }
+
+    function downloadProject() {
+      const projectData = {
+        image: canvas.toDataURL(),
+        settings: {
+          brushSize: state.brushSize,
+          brushOpacity: state.brushOpacity,
+          brushHardness: state.brushHardness,
+          color: state.color,
+          bgColor: state.bgColor,
+          canvasWidth: canvas.width,
+          canvasHeight: canvas.height
         }
+      };
+      
+      const blob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.download = `project-${Date.now()}.json`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+    }
 
-        // Extract ALL text from PDF including hidden layers
-        async function extractAllPDFText(arrayBuffer) {
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let fullText = '';
-            let extractedChars = new Set();
+    // Event Listeners
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
 
-            console.log(`Processing ${pdf.numPages} pages...`);
-
-            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                // Update progress
-                const progress = (pageNum / pdf.numPages) * 100;
-                updateProgress(progress, `Processing page ${pageNum} of ${pdf.numPages}...`);
-
-                const page = await pdf.getPage(pageNum);
-                
-                // Method 1: Get text content with ALL items (includes hidden text)
-                const textContent = await page.getTextContent({
-                    normalizeWhitespace: false,
-                    disableCombineTextItems: false
-                });
-
-                // Extract ALL text items including those that might be invisible
-                textContent.items.forEach(item => {
-                    if (item.str) {
-                        fullText += item.str;
-                        // Track unique characters
-                        for (const char of item.str) {
-                            extractedChars.add(char);
-                        }
-                    }
-                    // Some PDFs use spaces encoded differently
-                    if (item.hasEOL) {
-                        fullText += '\n';
-                    }
-                });
-
-                // Add page break
-                if (pageNum < pdf.numPages) {
-                    fullText += '\n';
-                }
-
-                // Method 2: Try to get annotations (some PDFs hide text in annotations)
-                try {
-                    const annotations = await page.getAnnotations();
-                    annotations.forEach(annotation => {
-                        if (annotation.subtype === 'FreeText' && annotation.fieldValue) {
-                            fullText += '\n' + annotation.fieldValue;
-                        }
-                        if (annotation.contents) {
-                            fullText += '\n' + annotation.contents;
-                        }
-                    });
-                } catch (e) {
-                    // Annotations might not be available
-                    console.log('No annotations on page ' + pageNum);
-                }
-
-                // Method 3: Check for text in operators (catches text that might be hidden)
-                try {
-                    const ops = await page.getOperatorList();
-                    const textOps = [];
-                    for (let i = 0; i < ops.fnArray.length; i++) {
-                        // Check for text-showing operators
-                        const fn = ops.fnArray[i];
-                        const args = ops.argsArray[i];
-                        
-                        // These are PDF text-showing operators
-                        if ([pdfjsLib.OPS.showText, pdfjsLib.OPS.showSpacedText].includes(fn)) {
-                            if (Array.isArray(args[0])) {
-                                args[0].forEach(item => {
-                                    if (typeof item === 'string') {
-                                        textOps.push(item);
-                                    }
-                                });
-                            } else if (typeof args[0] === 'string') {
-                                textOps.push(args[0]);
-                            }
-                        }
-                    }
-                    
-                    // Decode any additional text found
-                    textOps.forEach(text => {
-                        for (const char of text) {
-                            if (!extractedChars.has(char)) {
-                                fullText += char;
-                                extractedChars.add(char);
-                            }
-                        }
-                    });
-                } catch (e) {
-                    console.log('Could not extract operator text from page ' + pageNum);
-                }
-            }
-
-            console.log(`Extracted ${fullText.length} total characters, ${extractedChars.size} unique characters`);
-            return fullText;
-        }
-
-        // Update progress indicator
-        function updateProgress(percent, text) {
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            if (progressFill) progressFill.style.width = percent + '%';
-            if (progressText) progressText.textContent = text;
-        }
-
-        // Analyze content and find special characters
-        function analyzeContent() {
-            specialCharsMap.clear();
-            
-            // Count special characters
-            for (const char of originalContent) {
-                if (!char.match(/[a-zA-Z0-9 ]/)) {
-                    specialCharsMap.set(char, (specialCharsMap.get(char) || 0) + 1);
-                }
-            }
-
-            // Sort by frequency
-            const sortedChars = Array.from(specialCharsMap.entries())
-                .sort((a, b) => b[1] - a[1]);
-
-            // Update UI
-            displaySpecialCharacters(sortedChars);
-            updateStats();
-            
-            document.getElementById('charSection').style.display = 'block';
-            document.getElementById('previewSection').style.display = 'block';
-        }
-
-        // Display special characters as checkboxes
-        function displaySpecialCharacters(chars) {
-            const grid = document.getElementById('charsGrid');
-            grid.innerHTML = '';
-
-            if (chars.length === 0) {
-                grid.innerHTML = '<div class="empty-state"><p>✓ No special characters found! File only contains letters, numbers, and spaces.</p></div>';
-                return;
-            }
-
-            chars.forEach(([char, count]) => {
-                const item = document.createElement('div');
-                item.className = 'char-item';
-
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `char_${char.charCodeAt(0)}`;
-                checkbox.dataset.char = char;
-
-                const label = document.createElement('label');
-                label.htmlFor = checkbox.id;
-                label.style.display = 'flex';
-                label.style.alignItems = 'center';
-                label.style.flex = '1';
-                label.style.cursor = 'pointer';
-
-                const displayName = getCharDisplayName(char);
-                
-                label.innerHTML = `
-                    <span class="char-display">${displayName}</span>
-                    <span class="char-count">${count.toLocaleString()}</span>
-                `;
-
-                item.appendChild(checkbox);
-                item.appendChild(label);
-                grid.appendChild(item);
-            });
-        }
-
-        // Get display name for special characters
-        function getCharDisplayName(char) {
-            const names = {
-                '\n': '↵ (newline)',
-                '\t': '→ (tab)',
-                '\r': '⏎ (return)',
-                ' ': '␣ (space)'
-            };
-            return names[char] || `'${char}'`;
-        }
-
-        // Update statistics
-        function updateStats() {
-            const specialCount = Array.from(originalContent).filter(c => !c.match(/[a-zA-Z0-9 ]/)).length;
-            
-            document.getElementById('totalChars').textContent = originalContent.length.toLocaleString();
-            document.getElementById('specialChars').textContent = specialCount.toLocaleString();
-            document.getElementById('uniqueSpecial').textContent = specialCharsMap.size.toLocaleString();
-        }
-
-        // Select all checkboxes
-        function selectAll() {
-            document.querySelectorAll('#charsGrid input[type="checkbox"]').forEach(cb => {
-                cb.checked = true;
-            });
-        }
-
-        // Deselect all checkboxes
-        function deselectAll() {
-            document.querySelectorAll('#charsGrid input[type="checkbox"]').forEach(cb => {
-                cb.checked = false;
-            });
-        }
-
-        // Keep common punctuation
-        function keepCommon() {
-            const common = new Set(['.', ',', '!', '?', ';', ':', '-', '\n', "'", '"']);
-            document.querySelectorAll('#charsGrid input[type="checkbox"]').forEach(cb => {
-                cb.checked = common.has(cb.dataset.char);
-            });
-        }
-
-        // Process content based on selections
-        function processContent() {
-            const loading = document.getElementById('loading');
-            loading.classList.add('active');
-            updateProgress(0, 'Starting...');
-
-            setTimeout(() => {
-                updateProgress(30, 'Analyzing selections...');
-                
-                const keepChars = new Set();
-                document.querySelectorAll('#charsGrid input[type="checkbox"]:checked').forEach(cb => {
-                    keepChars.add(cb.dataset.char);
-                });
-
-                updateProgress(60, 'Filtering content...');
-
-                // Filter content
-                processedContent = Array.from(originalContent).filter(char => {
-                    return char.match(/[a-zA-Z0-9 ]/) || keepChars.has(char);
-                }).join('');
-
-                updateProgress(90, 'Generating preview...');
-
-                // Update preview
-                const preview = document.getElementById('previewBox');
-                const previewText = processedContent.substring(0, 1000);
-                const suffix = processedContent.length > 1000 ? '\n\n... (showing first 1000 characters)' : '';
-                preview.textContent = previewText + suffix;
-
-                updateProgress(100, 'Complete!');
-
-                // Enable all download buttons
-                document.getElementById('downloadBtn').disabled = false;
-                document.getElementById('copyBtn').disabled = false;
-                document.getElementById('statsBtn').disabled = false;
-
-                // Show stats
-                const removed = originalContent.length - processedContent.length;
-                const keptSpecial = Array.from(processedContent).filter(c => !c.match(/[a-zA-Z0-9 ]/)).length;
-
-                setTimeout(() => {
-                    loading.classList.remove('active');
-                    alert(`✓ Processing complete!\n\nOriginal: ${originalContent.length.toLocaleString()} characters\nFiltered: ${processedContent.length.toLocaleString()} characters\nRemoved: ${removed.toLocaleString()} characters\nSpecial chars kept: ${keptSpecial.toLocaleString()}`);
-                }, 500);
-            }, 100);
-        }
-
-        // Download filtered content
-        function downloadFile() {
-            if (!processedContent) return;
-
-            const blob = new Blob([processedContent], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            
-            const baseName = fileName.replace(/\.[^/.]+$/, '');
-            a.href = url;
-            a.download = `${baseName}_filtered.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            showStatus('success', `✓ File downloaded: ${a.download}`);
-        }
-
-        // Copy to clipboard
-        async function copyToClipboard() {
-            if (!processedContent) return;
-
-            try {
-                await navigator.clipboard.writeText(processedContent);
-                showStatus('success', '✓ Content copied to clipboard!');
-                
-                // Temporary button feedback
-                const btn = document.getElementById('copyBtn');
-                const originalText = btn.textContent;
-                btn.textContent = '✓ Copied!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            } catch (error) {
-                // Fallback for older browsers
-                const textarea = document.createElement('textarea');
-                textarea.value = processedContent;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                showStatus('success', '✓ Content copied to clipboard!');
-            }
-        }
-
-        // Export statistics report
-        function exportStats() {
-            if (!originalContent) return;
-
-            // Generate detailed statistics
-            const stats = {
-                fileName: fileName,
-                timestamp: new Date().toLocaleString(),
-                original: {
-                    totalChars: originalContent.length,
-                    letters: Array.from(originalContent).filter(c => /[a-zA-Z]/.test(c)).length,
-                    numbers: Array.from(originalContent).filter(c => /[0-9]/.test(c)).length,
-                    spaces: Array.from(originalContent).filter(c => c === ' ').length,
-                    specialChars: Array.from(originalContent).filter(c => !c.match(/[a-zA-Z0-9 ]/)).length,
-                    uniqueChars: new Set(originalContent).size
-                },
-                processed: processedContent ? {
-                    totalChars: processedContent.length,
-                    letters: Array.from(processedContent).filter(c => /[a-zA-Z]/.test(c)).length,
-                    numbers: Array.from(processedContent).filter(c => /[0-9]/.test(c)).length,
-                    spaces: Array.from(processedContent).filter(c => c === ' ').length,
-                    specialChars: Array.from(processedContent).filter(c => !c.match(/[a-zA-Z0-9 ]/)).length,
-                    uniqueChars: new Set(processedContent).size,
-                    removedChars: originalContent.length - processedContent.length
-                } : null,
-                specialCharacters: {}
-            };
-
-            // Add special character breakdown
-            specialCharsMap.forEach((count, char) => {
-                const kept = processedContent ? processedContent.split(char).length - 1 : 0;
-                stats.specialCharacters[getCharDisplayName(char)] = {
-                    count: count,
-                    kept: kept,
-                    removed: count - kept
-                };
-            });
-
-            // Create report
-            let report = '📊 FILE CONTENT PROCESSOR - STATISTICS REPORT\n';
-            report += '='.repeat(60) + '\n\n';
-            report += `File: ${stats.fileName}\n`;
-            report += `Generated: ${stats.timestamp}\n\n`;
-            
-            report += 'ORIGINAL CONTENT:\n';
-            report += '-'.repeat(60) + '\n';
-            report += `Total Characters: ${stats.original.totalChars.toLocaleString()}\n`;
-            report += `Letters: ${stats.original.letters.toLocaleString()}\n`;
-            report += `Numbers: ${stats.original.numbers.toLocaleString()}\n`;
-            report += `Spaces: ${stats.original.spaces.toLocaleString()}\n`;
-            report += `Special Characters: ${stats.original.specialChars.toLocaleString()}\n`;
-            report += `Unique Characters: ${stats.original.uniqueChars.toLocaleString()}\n\n`;
-
-            if (stats.processed) {
-                report += 'PROCESSED CONTENT:\n';
-                report += '-'.repeat(60) + '\n';
-                report += `Total Characters: ${stats.processed.totalChars.toLocaleString()}\n`;
-                report += `Letters: ${stats.processed.letters.toLocaleString()}\n`;
-                report += `Numbers: ${stats.processed.numbers.toLocaleString()}\n`;
-                report += `Spaces: ${stats.processed.spaces.toLocaleString()}\n`;
-                report += `Special Characters: ${stats.processed.specialChars.toLocaleString()}\n`;
-                report += `Unique Characters: ${stats.processed.uniqueChars.toLocaleString()}\n`;
-                report += `Removed Characters: ${stats.processed.removedChars.toLocaleString()}\n\n`;
-            }
-
-            report += 'SPECIAL CHARACTER BREAKDOWN:\n';
-            report += '-'.repeat(60) + '\n';
-            report += 'Character'.padEnd(20) + 'Count'.padEnd(15) + 'Kept'.padEnd(15) + 'Removed\n';
-            report += '-'.repeat(60) + '\n';
-
-            Object.entries(stats.specialCharacters).forEach(([char, data]) => {
-                const countStr = data.count.toString().padEnd(15);
-                const keptStr = data.kept.toString().padEnd(15);
-                const removedStr = data.removed.toString();
-                report += `${char.padEnd(20)}${countStr}${keptStr}${removedStr}\n`;
-            });
-
-            // Download report
-            const blob = new Blob([report], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            const baseName = fileName.replace(/\.[^/.]+$/, '');
-            a.href = url;
-            a.download = `${baseName}_statistics.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            showStatus('success', '✓ Statistics report downloaded!');
-        }
-
-        // Show status message
-        function showStatus(type, message) {
-            const status = document.getElementById('fileStatus');
-            status.className = `status ${type}`;
-            status.textContent = message;
-        }
-
-        // Allow file input to trigger on Enter key
-        document.getElementById('fileInput').addEventListener('change', function() {
-            if (this.files.length > 0) {
-                loadFile();
-            }
-        });
-    </script>
+    // Prevent context menu
+    canvas.addEventListener('contextmenu', e => e.preventDefault());
+  </script>
 </body>
 </html>
