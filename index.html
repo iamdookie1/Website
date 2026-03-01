@@ -1,1194 +1,2368 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Digital Drawing Studio</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Lexend:wght@300;400;500&display=swap" rel="stylesheet">
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reddit Browser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   VARIABLES & RESET
+═══════════════════════════════════════════ */
+:root {
+  --bg:        #080810;
+  --bg2:       #0d0d1a;
+  --bg3:       #111122;
+  --surface:   #131320;
+  --surface2:  #181828;
+  --surface3:  #1e1e30;
+  --card:      #111120;
+  --card-h:    #161626;
+  --border:    #1e1e32;
+  --border2:   #282840;
+  --border3:   #343458;
+  --accent:    #ff4500;
+  --accent-l:  #ff6533;
+  --accent-d:  #cc3800;
+  --accent-bg: #180900;
+  --text:      #eeeef8;
+  --text2:     #7878a0;
+  --text3:     #3a3a58;
+  --green:     #22c55e;
+  --amber:     #f59e0b;
+  --red:       #ef4444;
+  --blue:      #60a5fa;
+  --purple:    #a78bfa;
+  --gold:      #fbbf24;
+  --nsfw:      #ff1744;
+  --nsfw-bg:   #1a0008;
+  --sidebar-w: 220px;
+  --topbar-h:  54px;
+  --radius:    10px;
+  --radius-sm: 6px;
+  --shadow:    0 4px 24px rgba(0,0,0,.6);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,.8);
+  --font-d:    'Fraunces', Georgia, serif;
+  --font-b:    'DM Sans', system-ui, sans-serif;
+  --font-m:    'DM Mono', monospace;
+}
 
-    :root {
-      --bg-dark: #0a0e17;
-      --bg-card: #151b2b;
-      --bg-hover: #1f2937;
-      --accent-primary: #00d4ff;
-      --accent-secondary: #ff0080;
-      --accent-tertiary: #ffaa00;
-      --text-primary: #ffffff;
-      --text-secondary: #94a3b8;
-      --border-color: #2d3748;
-    }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      font-family: 'Lexend', sans-serif;
-      background: linear-gradient(135deg, var(--bg-dark) 0%, #0f1420 100%);
-      color: var(--text-primary);
-      overflow: hidden;
-      height: 100vh;
-    }
+html, body {
+  height: 100%; width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-b);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
 
-    /* Start Menu Styles */
-    .start-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 1;
-      transition: opacity 0.5s ease;
-    }
+a { color: inherit; text-decoration: none; }
+button { border: none; background: none; cursor: pointer; font: inherit; color: inherit; }
+input, select, textarea { font: inherit; color: inherit; background: none; border: none; outline: none; }
+img, video { max-width: 100%; display: block; }
 
-    .start-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
+/* ═══════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border3); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-    .start-content {
-      text-align: center;
-      animation: fadeInUp 0.8s ease;
-    }
+/* ═══════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════ */
+#app { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
 
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
+/* Sidebar */
+#sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 20;
+  transition: width .25s ease, min-width .25s ease;
+}
 
-    .start-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 4rem;
-      font-weight: 900;
-      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 1rem;
-      letter-spacing: 2px;
-    }
+/* Main */
+#main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
 
-    .start-subtitle {
-      font-size: 1.2rem;
-      color: var(--text-secondary);
-      margin-bottom: 3rem;
-      font-weight: 300;
-    }
+/* Topbar */
+#topbar {
+  height: var(--topbar-h);
+  min-height: var(--topbar-h);
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 10px;
+  z-index: 10;
+}
 
-    .start-button {
-      font-family: 'Orbitron', sans-serif;
-      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-      border: none;
-      padding: 1.2rem 3rem;
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: white;
-      cursor: pointer;
-      border-radius: 50px;
-      transition: all 0.3s ease;
-      box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-    }
+/* Banner */
+#banner {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  font-size: 12px;
+  color: var(--text2);
+  transition: opacity .3s;
+}
 
-    .start-button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 15px 50px rgba(0, 212, 255, 0.5);
-    }
+/* Feed area */
+#feed-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 20px 60px;
+  scroll-behavior: smooth;
+}
 
-    /* Main App Container */
-    .app-container {
-      display: flex;
-      height: 100vh;
-      opacity: 0;
-      transition: opacity 0.5s ease 0.3s;
-    }
+/* Status bar */
+#statusbar {
+  height: 34px;
+  min-height: 34px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text3);
+}
 
-    .app-container.visible {
-      opacity: 1;
-    }
+/* ═══════════════════════════════════════════
+   SIDEBAR INTERNALS
+═══════════════════════════════════════════ */
+.sidebar-logo {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo-title {
+  font-family: var(--font-d);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: -.5px;
+  line-height: 1;
+}
+.sidebar-logo-sub {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-top: 3px;
+}
 
-    /* Toolbar */
-    .toolbar {
-      width: 320px;
-      background: var(--bg-card);
-      border-right: 2px solid var(--border-color);
-      padding: 1.5rem;
-      overflow-y: auto;
-      box-shadow: 5px 0 20px rgba(0, 0, 0, 0.3);
-    }
+.sidebar-section {
+  padding: 14px 18px 6px;
+}
+.sidebar-section-label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
 
-    .toolbar::-webkit-scrollbar {
-      width: 8px;
-    }
+/* Sub input */
+.sub-input-wrap {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 8px;
+  transition: border-color .2s;
+}
+.sub-input-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+.sub-prefix {
+  color: var(--text2);
+  font-size: 13px;
+  user-select: none;
+}
+.sub-input {
+  flex: 1;
+  padding: 7px 4px;
+  font-size: 13px;
+  background: transparent;
+  color: var(--text);
+  min-width: 0;
+}
+.sub-input::placeholder { color: var(--text3); }
 
-    .toolbar::-webkit-scrollbar-track {
-      background: var(--bg-dark);
-    }
+/* Sort / time rows */
+.sort-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.sort-row label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); flex: none; }
+.sort-select {
+  flex: 1;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237878a0'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+.sort-select option { background: var(--surface3); }
+.sort-select:focus { outline: none; border-color: var(--accent); }
 
-    .toolbar::-webkit-scrollbar-thumb {
-      background: var(--accent-primary);
-      border-radius: 4px;
-    }
+/* Nav tabs */
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text2);
+  cursor: pointer;
+  border-radius: 0;
+  width: 100%;
+  text-align: left;
+  transition: background .15s, color .15s;
+  border-left: 2px solid transparent;
+  user-select: none;
+}
+.nav-tab:hover { background: var(--surface2); color: var(--text); }
+.nav-tab.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+.nav-tab .tab-icon {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
 
-    .toolbar-section {
-      margin-bottom: 2rem;
-      animation: slideInLeft 0.5s ease;
-      animation-fill-mode: both;
-    }
+/* History items */
+.history-item {
+  display: block;
+  padding: 6px 18px 6px 36px;
+  font-size: 12px;
+  color: var(--text3);
+  cursor: pointer;
+  transition: color .15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.history-item:hover { color: var(--accent); }
 
-    .toolbar-section:nth-child(1) { animation-delay: 0.1s; }
-    .toolbar-section:nth-child(2) { animation-delay: 0.2s; }
-    .toolbar-section:nth-child(3) { animation-delay: 0.3s; }
-    .toolbar-section:nth-child(4) { animation-delay: 0.4s; }
-    .toolbar-section:nth-child(5) { animation-delay: 0.5s; }
+/* Sidebar bottom */
+.sidebar-bottom {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+}
+.sidebar-spacer { flex: 1; overflow-y: auto; }
 
-    @keyframes slideInLeft {
-      from {
-        opacity: 0;
-        transform: translateX(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateX(0);
-      }
-    }
+/* ═══════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════ */
+.search-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 99px;
+  padding: 0 14px;
+  gap: 8px;
+  flex: 1;
+  max-width: 480px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.search-wrap:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-bg);
+}
+.search-wrap svg { color: var(--text3); flex-shrink: 0; }
+.search-input {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 13px;
+  background: transparent;
+  color: var(--text);
+  min-width: 0;
+}
+.search-input::placeholder { color: var(--text3); }
 
-    .section-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.9rem;
-      font-weight: 700;
-      color: var(--accent-primary);
-      margin-bottom: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
+.search-sort {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 99px;
+  padding: 7px 28px 7px 12px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237878a0'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+.search-sort option { background: #1a1a2e; }
 
-    /* Tool Buttons */
-    .tool-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
-    }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  user-select: none;
+}
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: var(--accent-l); }
+.btn-ghost { background: var(--surface3); color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--border3); }
 
-    .tool-btn {
-      background: var(--bg-dark);
-      border: 2px solid var(--border-color);
-      padding: 0.8rem;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      font-weight: 500;
-      text-align: center;
-    }
+.nsfw-badge {
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: var(--nsfw-bg);
+  color: var(--nsfw);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  border: 1px solid var(--nsfw);
+  cursor: pointer;
+  transition: all .15s;
+  user-select: none;
+}
+.nsfw-badge:hover { background: var(--nsfw); color: #fff; }
+.nsfw-off { background: var(--surface3); color: var(--text3); border-color: var(--border2); }
+.nsfw-off:hover { background: var(--surface2); color: var(--text2); }
 
-    .tool-btn:hover {
-      border-color: var(--accent-primary);
-      background: var(--bg-hover);
-      transform: translateY(-2px);
-    }
+/* ═══════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════ */
+#cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 860px;
+}
 
-    .tool-btn.active {
-      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-      border-color: var(--accent-primary);
-      color: white;
-      box-shadow: 0 5px 20px rgba(0, 212, 255, 0.3);
-    }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color .2s, transform .15s, box-shadow .2s;
+  animation: cardIn .25s ease both;
+}
+.card:hover {
+  border-color: var(--border3);
+  box-shadow: 0 2px 20px rgba(0,0,0,.5);
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
-    /* Sliders */
-    .control-group {
-      margin-bottom: 1rem;
-    }
+.card-inner { padding: 14px 16px; }
 
-    .control-label {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 0.5rem;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
+.card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 11px;
+}
+.card-sub {
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .15s;
+}
+.card-sub:hover { color: var(--accent-l); text-decoration: underline; }
+.card-dot { color: var(--text3); }
+.card-author { color: var(--text2); }
+.card-age { color: var(--text3); }
 
-    .control-value {
-      color: var(--accent-primary);
-      font-weight: 500;
-    }
+.badge {
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+.badge-nsfw { background: var(--nsfw-bg); color: var(--nsfw); border: 1px solid #ff174422; }
+.badge-flair { background: #2a1a4a; color: var(--purple); }
+.badge-kind  { background: var(--surface3); color: var(--text3); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
 
-    input[type="range"] {
-      width: 100%;
-      height: 6px;
-      border-radius: 3px;
-      background: var(--bg-dark);
-      outline: none;
-      -webkit-appearance: none;
-    }
+.card-title {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: color .15s;
+  font-family: var(--font-b);
+}
+.card-title:hover { color: var(--accent-l); }
 
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-      cursor: pointer;
-      box-shadow: 0 2px 10px rgba(0, 212, 255, 0.5);
-    }
+/* Media area */
+.card-media {
+  position: relative;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.card-media img {
+  width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius-sm);
+  transition: transform .3s;
+}
+.card-media:hover img { transform: scale(1.01); }
+.card-media video {
+  width: 100%;
+  max-height: 480px;
+  border-radius: var(--radius-sm);
+  background: #000;
+  display: block;
+}
+.media-overlay {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: rgba(0,0,0,.7);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+}
+.play-btn-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.4);
+  border-radius: var(--radius-sm);
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+.card-media:hover .play-btn-overlay { opacity: 1; }
+.play-btn-overlay svg { width: 52px; height: 52px; filter: drop-shadow(0 2px 8px rgba(0,0,0,.8)); }
 
-    input[type="range"]::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-      cursor: pointer;
-      border: none;
-    }
+/* Selftext */
+.card-selftext {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
 
-    /* Color Picker */
-    .color-picker-container {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
+/* Card actions */
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.card-score {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 48px;
+  margin-right: 6px;
+}
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  user-select: none;
+}
+.action-btn:hover { background: var(--surface3); color: var(--text); }
+.action-btn.saved { color: var(--gold); }
+.action-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.card-domain {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--font-m);
+}
 
-    input[type="color"] {
-      width: 60px;
-      height: 60px;
-      border: 3px solid var(--border-color);
-      border-radius: 8px;
-      cursor: pointer;
-      background: transparent;
-    }
+/* Awards */
+.card-awards {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--gold);
+  margin-left: auto;
+}
 
-    input[type="color"]::-webkit-color-swatch-wrapper {
-      padding: 0;
-    }
+/* ═══════════════════════════════════════════
+   VIDEO CARD
+═══════════════════════════════════════════ */
+.video-container {
+  position: relative;
+  background: #000;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.video-container video {
+  width: 100%;
+  max-height: 500px;
+  display: block;
+}
+.video-no-audio {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,.75);
+  color: var(--amber);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
 
-    input[type="color"]::-webkit-color-swatch {
-      border: none;
-      border-radius: 5px;
-    }
+/* ═══════════════════════════════════════════
+   SKELETONS
+═══════════════════════════════════════════ */
+.skeleton-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  animation: cardIn .2s ease both;
+}
+.skel {
+  background: var(--surface2);
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+.skel-sm { height: 8px; }
+.skel-md { height: 14px; }
+.skel-lg { height: 22px; }
+.skel-img { height: 180px; border-radius: var(--radius-sm); margin-bottom: 12px; }
+@keyframes shimmer {
+  0%   { opacity: .6; }
+  50%  { opacity: 1; }
+  100% { opacity: .6; }
+}
+.skeleton-card .skel { animation: shimmer 1.4s ease infinite; }
+.skeleton-card:nth-child(2) .skel { animation-delay: .15s; }
+.skeleton-card:nth-child(3) .skel { animation-delay: .3s; }
+.skeleton-card:nth-child(4) .skel { animation-delay: .45s; }
+.skeleton-card:nth-child(5) .skel { animation-delay: .6s; }
 
-    .color-presets {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.5rem;
-      flex: 1;
-    }
+/* ═══════════════════════════════════════════
+   LIGHTBOX
+═══════════════════════════════════════════ */
+#lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,.94);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  animation: fadeIn .2s ease;
+}
+#lightbox.open { display: flex; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.lightbox-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(to bottom, rgba(0,0,0,.8), transparent);
+}
+.lightbox-title {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#lightbox-img {
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 100px);
+  object-fit: contain;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  animation: zoomIn .25s ease;
+}
+@keyframes zoomIn {
+  from { transform: scale(.95); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.lightbox-loading {
+  color: var(--text2);
+  font-size: 14px;
+  display: none;
+}
+.lightbox-loading.show { display: block; }
 
-    .color-preset {
-      width: 100%;
-      aspect-ratio: 1;
-      border: 2px solid var(--border-color);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
+/* ═══════════════════════════════════════════
+   MODAL (Settings, Age Gate)
+═══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: rgba(0,0,0,.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  animation: fadeIn .2s ease;
+}
+.modal-overlay.open { display: flex; }
 
-    .color-preset:hover {
-      transform: scale(1.1);
-      border-color: var(--accent-primary);
-    }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  width: min(540px, calc(100vw - 32px));
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp .25s ease;
+}
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h2 {
+  font-family: var(--font-d);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+}
+.modal-header p {
+  font-size: 13px;
+  color: var(--text2);
+  margin-top: 4px;
+}
+.modal-body { padding: 20px 24px; }
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
 
-    /* Action Buttons */
-    .action-buttons {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 0.5rem;
-    }
+.settings-section-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 18px 0 10px;
+}
+.settings-section-title:first-child { margin-top: 0; }
 
-    .action-btn {
-      background: var(--bg-dark);
-      border: 2px solid var(--border-color);
-      padding: 0.8rem;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      color: var(--text-primary);
-      font-size: 0.85rem;
-      font-weight: 500;
-    }
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 13px; color: var(--text); }
+.setting-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
-    .action-btn:hover {
-      border-color: var(--accent-primary);
-      background: var(--bg-hover);
-    }
+/* Toggle switch */
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.toggle input { display: none; }
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--surface3);
+  border-radius: 99px;
+  border: 1px solid var(--border2);
+  cursor: pointer;
+  transition: background .2s;
+}
+.toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 14px; height: 14px;
+  background: var(--text3);
+  border-radius: 99px;
+  transition: transform .2s, background .2s;
+  pointer-events: none;
+}
+.toggle input:checked ~ .toggle-track { background: var(--accent-bg); border-color: var(--accent); }
+.toggle input:checked ~ .toggle-thumb { transform: translateX(18px); background: var(--accent); }
 
-    .action-btn.danger:hover {
-      border-color: var(--accent-secondary);
-      background: rgba(255, 0, 128, 0.1);
-    }
+/* Select input in modal */
+.modal-select {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 7px 30px 7px 12px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237878a0'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  min-width: 130px;
+}
+.modal-select option { background: #1e1e30; }
+.modal-select:focus { outline: none; border-color: var(--accent); }
 
-    /* Checkbox */
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.8rem;
-      cursor: pointer;
-    }
+.modal-input {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--text);
+  width: 180px;
+  transition: border-color .2s;
+}
+.modal-input:focus { border-color: var(--accent); }
+.modal-input::placeholder { color: var(--text3); }
 
-    .checkbox-group input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: var(--accent-primary);
-    }
+/* Age gate modal */
+.age-gate { text-align: center; padding: 32px 24px; }
+.age-gate-icon {
+  font-family: var(--font-d);
+  font-size: 64px;
+  font-weight: 600;
+  color: var(--nsfw);
+  line-height: 1;
+  margin-bottom: 12px;
+}
+.age-gate h2 { font-family: var(--font-d); font-size: 24px; margin-bottom: 8px; }
+.age-gate p { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 20px; max-width: 340px; margin-inline: auto; }
+.age-gate-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.btn-nsfw { background: var(--nsfw); color: #fff; }
+.btn-nsfw:hover { background: #ff4466; }
+.btn-nsfw { border-radius: 99px; }
 
-    .checkbox-group label {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      cursor: pointer;
-    }
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+#toast-container {
+  position: fixed;
+  bottom: 48px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  animation: toastIn .25s ease;
+  pointer-events: none;
+  max-width: 300px;
+  backdrop-filter: blur(8px);
+}
+.toast.accent { border-color: var(--accent); }
+.toast.amber  { border-color: var(--amber); color: var(--amber); }
+.toast.green  { border-color: var(--green); color: var(--green); }
+@keyframes toastIn {
+  from { transform: translateX(20px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes toastOut {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(20px); opacity: 0; }
+}
+.toast.out { animation: toastOut .25s ease forwards; }
 
-    /* Canvas Container */
-    .canvas-container {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      position: relative;
-    }
+/* ═══════════════════════════════════════════
+   MISC
+═══════════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text3);
+}
+.empty-state-icon { font-size: 48px; margin-bottom: 12px; font-family: var(--font-d); }
+.empty-state h3 { font-size: 18px; font-family: var(--font-d); color: var(--text2); margin-bottom: 6px; }
+.empty-state p { font-size: 13px; line-height: 1.6; }
 
-    #drawingCanvas {
-      border: 2px solid var(--border-color);
-      border-radius: 8px;
-      cursor: crosshair;
-      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
-      background: white;
-    }
+.load-more-wrap {
+  padding: 20px 0;
+  display: flex;
+  justify-content: center;
+}
 
-    /* Canvas Info */
-    .canvas-info {
-      position: absolute;
-      top: 2rem;
-      right: 2rem;
-      background: rgba(21, 27, 43, 0.9);
-      backdrop-filter: blur(10px);
-      padding: 1rem 1.5rem;
-      border-radius: 8px;
-      border: 2px solid var(--border-color);
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
+#scroll-anchor { height: 1px; }
 
-    /* Loading Overlay */
-    .loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(10, 14, 23, 0.95);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 2000;
-    }
+.kbd {
+  font-family: var(--font-m);
+  font-size: 11px;
+  background: var(--surface3);
+  color: var(--text2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
 
-    .loading-overlay.active {
-      display: flex;
-    }
+/* Score colors */
+.score-great { color: var(--green); }
+.score-good  { color: var(--text); }
+.score-ok    { color: var(--amber); }
+.score-bad   { color: var(--red); }
 
-    .spinner {
-      width: 50px;
-      height: 50px;
-      border: 4px solid var(--bg-card);
-      border-top: 4px solid var(--accent-primary);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
+/* Help panel */
+#help-panel {
+  position: fixed;
+  bottom: 48px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-lg);
+  display: none;
+  grid-template-columns: auto 1fr;
+  gap: 8px 20px;
+  font-size: 12px;
+  animation: slideUp .2s ease;
+  max-width: 360px;
+  width: calc(100vw - 32px);
+}
+#help-panel.open { display: grid; }
+#help-panel dt { font-family: var(--font-m); }
+#help-panel dd { color: var(--text2); }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Select Dropdown */
-    select {
-      width: 100%;
-      padding: 0.8rem;
-      background: var(--bg-dark);
-      border: 2px solid var(--border-color);
-      border-radius: 8px;
-      color: var(--text-primary);
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-
-    select:focus {
-      outline: none;
-      border-color: var(--accent-primary);
-    }
-
-    option {
-      background: var(--bg-dark);
-      color: var(--text-primary);
-    }
-  </style>
+/* Saved dot indicator */
+.saved-dot {
+  width: 6px; height: 6px;
+  border-radius: 99px;
+  background: var(--gold);
+  display: inline-block;
+  margin-left: 2px;
+}
+</style>
 </head>
 <body>
-  <!-- Start Screen -->
-  <div id="startScreen" class="start-screen">
-    <div class="start-content">
-      <h1 class="start-title">DIGITAL STUDIO</h1>
-      <p class="start-subtitle">Professional Drawing & Painting Application</p>
-      <button class="start-button" onclick="startApp()">CREATE</button>
+
+<!-- ══════════════════════════════════════
+     HTML STRUCTURE
+══════════════════════════════════════ -->
+<div id="app">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-title">Reddit</div>
+      <div class="sidebar-logo-sub">Browser</div>
     </div>
-  </div>
 
-  <!-- Loading Overlay -->
-  <div id="loadingOverlay" class="loading-overlay">
-    <div class="spinner"></div>
-  </div>
-
-  <!-- Main App -->
-  <div id="app" class="app-container">
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <!-- Tools Section -->
-      <div class="toolbar-section">
-        <h3 class="section-title">🎨 Drawing Tools</h3>
-        <div class="tool-grid">
-          <button class="tool-btn active" data-tool="brush">Brush</button>
-          <button class="tool-btn" data-tool="eraser">Eraser</button>
-          <button class="tool-btn" data-tool="mix">Mix</button>
-          <button class="tool-btn" data-tool="spray">Spray</button>
-          <button class="tool-btn" data-tool="fill">Fill</button>
-          <button class="tool-btn" data-tool="eyedropper">Dropper</button>
-          <button class="tool-btn" data-tool="line">Line</button>
-          <button class="tool-btn" data-tool="rectangle">Rectangle</button>
-          <button class="tool-btn" data-tool="circle">Circle</button>
-        </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Subreddit</div>
+      <div class="sub-input-wrap">
+        <span class="sub-prefix">r/</span>
+        <input class="sub-input" id="sub-input" type="text"
+               placeholder="popular" autocomplete="off"
+               autocorrect="off" spellcheck="false">
       </div>
-
-      <!-- Brush Settings -->
-      <div class="toolbar-section">
-        <h3 class="section-title">✏️ Brush Settings</h3>
-        
-        <div class="control-group">
-          <div class="control-label">
-            <span>Size</span>
-            <span class="control-value" id="sizeValue">20</span>
-          </div>
-          <input type="range" id="brushSize" min="1" max="100" value="20">
-        </div>
-
-        <div class="control-group">
-          <div class="control-label">
-            <span>Opacity</span>
-            <span class="control-value" id="opacityValue">100%</span>
-          </div>
-          <input type="range" id="brushOpacity" min="1" max="100" value="100">
-        </div>
-
-        <div class="control-group">
-          <div class="control-label">
-            <span>Hardness</span>
-            <span class="control-value" id="hardnessValue">50%</span>
-          </div>
-          <input type="range" id="brushHardness" min="0" max="100" value="50">
-        </div>
-
-        <div class="control-group">
-          <div class="control-label">
-            <span>Smoothing</span>
-            <span class="control-value" id="smoothingValue">50%</span>
-          </div>
-          <input type="range" id="brushSmoothing" min="0" max="100" value="50">
-        </div>
+      <div class="sort-row">
+        <label>Sort</label>
+        <select class="sort-select" id="sort-select">
+          <option value="hot">Hot</option>
+          <option value="new">New</option>
+          <option value="top">Top</option>
+          <option value="rising">Rising</option>
+          <option value="controversial">Controversial</option>
+        </select>
       </div>
-
-      <!-- Color Settings -->
-      <div class="toolbar-section">
-        <h3 class="section-title">🎨 Color</h3>
-        
-        <div class="color-picker-container">
-          <input type="color" id="colorPicker" value="#00d4ff">
-          <div class="color-presets">
-            <div class="color-preset" style="background: #ff0080;" data-color="#ff0080"></div>
-            <div class="color-preset" style="background: #00d4ff;" data-color="#00d4ff"></div>
-            <div class="color-preset" style="background: #ffaa00;" data-color="#ffaa00"></div>
-            <div class="color-preset" style="background: #00ff88;" data-color="#00ff88"></div>
-            <div class="color-preset" style="background: #ff3366;" data-color="#ff3366"></div>
-            <div class="color-preset" style="background: #9966ff;" data-color="#9966ff"></div>
-            <div class="color-preset" style="background: #ffffff;" data-color="#ffffff"></div>
-            <div class="color-preset" style="background: #000000;" data-color="#000000"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Effects -->
-      <div class="toolbar-section">
-        <h3 class="section-title">✨ Effects</h3>
-        
-        <div class="control-group">
-          <div class="control-label">
-            <span>Glow Intensity</span>
-            <span class="control-value" id="glowValue">0</span>
-          </div>
-          <input type="range" id="glowIntensity" min="0" max="50" value="0">
-        </div>
-
-        <div class="control-group">
-          <div class="control-label">
-            <span>Blur Amount</span>
-            <span class="control-value" id="blurValue">0</span>
-          </div>
-          <input type="range" id="blurAmount" min="0" max="20" value="0">
-        </div>
-      </div>
-
-      <!-- Canvas Settings -->
-      <div class="toolbar-section">
-        <h3 class="section-title">⚙️ Canvas Settings</h3>
-        
-        <div class="control-group">
-          <label class="control-label">Background Color</label>
-          <input type="color" id="bgColor" value="#ffffff" style="width: 100%;">
-        </div>
-
-        <div class="control-group">
-          <label class="control-label">Canvas Size</label>
-          <select id="canvasSize">
-            <option value="800,600">800 × 600 (Standard)</option>
-            <option value="1024,768">1024 × 768 (XGA)</option>
-            <option value="1280,720">1280 × 720 (HD)</option>
-            <option value="1920,1080">1920 × 1080 (Full HD)</option>
-            <option value="2560,1440">2560 × 1440 (2K)</option>
-          </select>
-        </div>
-
-        <div class="checkbox-group">
-          <input type="checkbox" id="showGrid">
-          <label for="showGrid">Show Grid</label>
-        </div>
-
-        <div class="checkbox-group">
-          <input type="checkbox" id="symmetryMode">
-          <label for="symmetryMode">Symmetry Mode</label>
-        </div>
-
-        <div class="checkbox-group">
-          <input type="checkbox" id="pressureSim">
-          <label for="pressureSim">Pressure Simulation</label>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="toolbar-section">
-        <h3 class="section-title">💾 Actions</h3>
-        
-        <div class="action-buttons">
-          <button class="action-btn" onclick="undo()">↩️ Undo</button>
-          <button class="action-btn" onclick="redo()">↪️ Redo</button>
-          <button class="action-btn" onclick="clearCanvas()">🗑️ Clear</button>
-          <button class="action-btn danger" onclick="resetAll()">🔄 Reset</button>
-          <button class="action-btn" onclick="savePNG()">💾 Save PNG</button>
-          <button class="action-btn" onclick="saveJPG()">💾 Save JPG</button>
-          <button class="action-btn" onclick="loadImage()">📁 Load</button>
-          <button class="action-btn" onclick="downloadProject()">📦 Export</button>
-        </div>
+      <div class="sort-row" id="time-row" style="display:none">
+        <label>Time</label>
+        <select class="sort-select" id="time-select">
+          <option value="hour">Hour</option>
+          <option value="day" selected>Day</option>
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+          <option value="year">Year</option>
+          <option value="all">All time</option>
+        </select>
       </div>
     </div>
 
-    <!-- Canvas Area -->
-    <div class="canvas-container">
-      <canvas id="drawingCanvas" width="800" height="600"></canvas>
-      <div class="canvas-info">
-        <div>Position: <span id="mousePos">0, 0</span></div>
-        <div>Tool: <span id="currentTool">Brush</span></div>
+    <div style="border-top:1px solid var(--border); margin: 0"></div>
+
+    <div class="sidebar-section" style="padding-bottom:2px">
+      <div class="sidebar-section-label">Browse</div>
+    </div>
+    <nav id="nav-tabs">
+      <button class="nav-tab active" data-tab="feed">
+        <span class="tab-icon">⊞</span> Feed
+      </button>
+      <button class="nav-tab" data-tab="images">
+        <span class="tab-icon">⬚</span> Images
+      </button>
+      <button class="nav-tab" data-tab="videos">
+        <span class="tab-icon">▷</span> Videos
+      </button>
+      <button class="nav-tab" data-tab="gifs">
+        <span class="tab-icon">◈</span> GIFs
+      </button>
+      <button class="nav-tab" data-tab="text">
+        <span class="tab-icon">≡</span> Text Posts
+      </button>
+      <button class="nav-tab" data-tab="links">
+        <span class="tab-icon">⤴</span> Links
+      </button>
+    </nav>
+
+    <div style="border-top:1px solid var(--border); margin: 8px 0 0"></div>
+    <div class="sidebar-section" style="padding-bottom:2px">
+      <div class="sidebar-section-label">Saved</div>
+    </div>
+    <nav>
+      <button class="nav-tab" data-tab="bookmarks">
+        <span class="tab-icon">◈</span> Bookmarks <span id="bm-count"></span>
+      </button>
+      <button class="nav-tab" id="search-results-tab" data-tab="search" style="display:none">
+        <span class="tab-icon">◎</span> Results
+      </button>
+    </nav>
+
+    <div class="sidebar-spacer">
+      <div style="border-top:1px solid var(--border); margin: 8px 0 0"></div>
+      <div class="sidebar-section" style="padding-bottom:2px">
+        <div class="sidebar-section-label">Recent</div>
+      </div>
+      <div id="history-list"></div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="nav-tab" onclick="openSettings()">
+        <span class="tab-icon">⚙</span> Settings
+      </button>
+      <button class="nav-tab" onclick="toggleHelp()">
+        <span class="tab-icon">?</span> Shortcuts
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <div id="main">
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <div class="search-wrap">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
+        </svg>
+        <input class="search-input" id="search-input" type="text"
+               placeholder="Search Reddit..." autocomplete="off">
+      </div>
+      <select class="search-sort" id="search-sort-select">
+        <option value="relevance">Relevance</option>
+        <option value="new">New</option>
+        <option value="top">Top</option>
+        <option value="comments">Comments</option>
+      </select>
+      <button class="btn btn-accent" onclick="doSearch()">Search</button>
+      <button class="nsfw-badge nsfw-off" id="nsfw-badge" onclick="toggleNSFW()">18+</button>
+    </div>
+
+    <!-- BANNER -->
+    <div id="banner">
+      <span id="banner-text">r/popular — Reddit front page</span>
+      <span id="banner-stats" style="color:var(--green);font-size:11px"></span>
+    </div>
+
+    <!-- FEED -->
+    <div id="feed-area">
+      <div id="cards-container"></div>
+      <div id="scroll-anchor"></div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div id="statusbar">
+      <span id="status-text">Ready</span>
+      <button class="btn btn-ghost" id="load-more-btn"
+              style="padding:3px 12px;font-size:11px;display:none"
+              onclick="loadMore()">Load more</button>
+      <button class="btn btn-ghost" id="top-btn"
+              style="margin-left:auto;padding:3px 12px;font-size:11px"
+              onclick="scrollTop()">↑ Top</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox" onclick="closeLightbox(event)">
+  <div class="lightbox-top">
+    <span class="lightbox-title" id="lightbox-title"></span>
+    <a class="btn btn-ghost" id="lightbox-open" target="_blank" rel="noopener"
+       style="font-size:12px">Open ↗</a>
+    <button class="btn btn-ghost" onclick="closeLightboxDirect()"
+            style="font-size:12px">✕ Close</button>
+  </div>
+  <div class="lightbox-loading" id="lightbox-loading">Loading...</div>
+  <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal" onclick="closeModal('settings-modal', event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Settings</h2>
+      <p>Customize your Reddit Browser experience</p>
+    </div>
+    <div class="modal-body">
+      <div class="settings-section-title">Content</div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">NSFW Content <span style="color:var(--nsfw);font-size:11px">(18+)</span></div>
+          <div class="setting-desc">Show adult-only posts — requires age verification</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="setting-nsfw" onchange="onNSFWToggle(this)">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Show Previews</div>
+          <div class="setting-desc">Load image / video previews in cards</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="setting-previews" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Autoplay Videos</div>
+          <div class="setting-desc">Play videos automatically (muted)</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="setting-autoplay">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Compact Cards</div>
+          <div class="setting-desc">Denser layout, no media previews</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="setting-compact">
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Infinite Scroll</div>
+          <div class="setting-desc">Auto-load more posts when scrolling</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="setting-infinite" checked>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+
+      <div class="settings-section-title">Defaults</div>
+
+      <div class="setting-row">
+        <div class="setting-label">Default Subreddit</div>
+        <input class="modal-input" id="setting-default-sub"
+               placeholder="popular" style="width:160px">
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Default Sort</div>
+        <select class="modal-select" id="setting-default-sort">
+          <option value="hot">Hot</option>
+          <option value="new">New</option>
+          <option value="top">Top</option>
+          <option value="rising">Rising</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Posts per load</div>
+        <select class="modal-select" id="setting-limit">
+          <option value="15">15</option>
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
+
+      <div class="settings-section-title">Bookmarks</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Clear All Bookmarks</div>
+          <div class="setting-desc">Permanently delete all saved posts</div>
+        </div>
+        <button class="btn btn-ghost" onclick="clearBookmarks()"
+                style="font-size:12px;color:var(--red)">Clear</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('settings-modal')">Cancel</button>
+      <button class="btn btn-accent" onclick="saveSettings()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- AGE GATE MODAL -->
+<div class="modal-overlay" id="age-modal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="age-gate">
+      <div class="age-gate-icon">18+</div>
+      <h2>Age Verification</h2>
+      <p>NSFW content is intended for adults only.<br>
+         By continuing you confirm you are 18 or older,
+         that viewing such content is legal where you are,
+         and that you consent to viewing mature material.</p>
+      <div class="age-gate-btns">
+        <button class="btn btn-nsfw" onclick="confirmAge()">I am 18+ — Continue</button>
+        <button class="btn btn-ghost" onclick="denyAge()">Cancel</button>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
-    // Application State
-    const state = {
-      currentTool: 'brush',
-      brushSize: 20,
-      brushOpacity: 1,
-      brushHardness: 0.5,
-      brushSmoothing: 0.5,
-      color: '#00d4ff',
-      glowIntensity: 0,
-      blurAmount: 0,
-      isDrawing: false,
-      lastX: 0,
-      lastY: 0,
-      showGrid: false,
-      symmetryMode: false,
-      pressureSim: false,
-      history: [],
-      historyStep: -1,
-      smoothPoints: [],
-      bgColor: '#ffffff'
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- HELP PANEL -->
+<dl id="help-panel">
+  <dt><kbd class="kbd">J / K</kbd></dt><dd>Scroll down / up</dd>
+  <dt><kbd class="kbd">R</kbd></dt><dd>Refresh feed</dd>
+  <dt><kbd class="kbd">/</kbd></dt><dd>Focus search</dd>
+  <dt><kbd class="kbd">B</kbd></dt><dd>Go to bookmarks</dd>
+  <dt><kbd class="kbd">Esc</kbd></dt><dd>Close popups / clear search</dd>
+  <dt><kbd class="kbd">F1</kbd></dt><dd>Toggle this panel</dd>
+</dl>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+const S = {
+  activeTab:    'feed',
+  sub:          '',
+  sort:         'hot',
+  timef:        'day',
+  after:        {},   // tab -> next page cursor
+  loading:      {},   // tab -> bool
+  cards:        {},   // tab -> [{...}]
+  searchAfter:  null,
+  searchQuery:  '',
+  debounceTimer: null,
+  autoLock:     {},   // prevent double auto-load
+  history:      [],
+  bookmarks:    [],
+  settings: {
+    nsfw:          false,
+    ageVerified:   false,
+    showPreviews:  true,
+    autoplay:      false,
+    compact:       false,
+    infinite:      true,
+    defaultSub:    '',
+    defaultSort:   'hot',
+    limit:         25,
+  },
+};
+
+// Tab type filters
+const TAB_KIND = {
+  images: 'image',
+  videos: 'video',
+  gifs:   'gif',
+  text:   'text',
+  links:  'link',
+};
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+function init() {
+  loadPersistedData();
+  applySettings();
+  bindEvents();
+
+  const defaultSub  = S.settings.defaultSub || '';
+  const defaultSort = S.settings.defaultSort || 'hot';
+  document.getElementById('sub-input').value  = defaultSub;
+  document.getElementById('sort-select').value = defaultSort;
+  S.sub  = defaultSub;
+  S.sort = defaultSort;
+
+  // Init after maps
+  ['feed','images','videos','gifs','text','links','search','bookmarks'].forEach(t => {
+    S.after[t]    = null;
+    S.loading[t]  = false;
+    S.cards[t]    = [];
+    S.autoLock[t] = false;
+  });
+
+  loadSubInfo(S.sub);
+  switchTab('feed');
+  loadTab('feed');
+
+  // Infinite scroll observer
+  const anchor = document.getElementById('scroll-anchor');
+  const observer = new IntersectionObserver(entries => {
+    if (!S.settings.infinite) return;
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      if (S.autoLock[S.activeTab]) return;
+      if (!S.after[S.activeTab]) return;
+      S.autoLock[S.activeTab] = true;
+      loadMore();
+    });
+  }, { rootMargin: '200px' });
+  observer.observe(anchor);
+}
+
+// ═══════════════════════════════════════════
+//  PERSIST
+// ═══════════════════════════════════════════
+function loadPersistedData() {
+  try {
+    const saved = localStorage.getItem('rbs3_settings');
+    if (saved) Object.assign(S.settings, JSON.parse(saved));
+    const bm = localStorage.getItem('rbs3_bookmarks');
+    if (bm) S.bookmarks = JSON.parse(bm);
+    const hist = localStorage.getItem('rbs3_history');
+    if (hist) S.history = JSON.parse(hist);
+  } catch(e) {}
+}
+
+function persistSettings() {
+  try { localStorage.setItem('rbs3_settings', JSON.stringify(S.settings)); } catch(e) {}
+}
+function persistBookmarks() {
+  try { localStorage.setItem('rbs3_bookmarks', JSON.stringify(S.bookmarks)); } catch(e) {}
+}
+function persistHistory() {
+  try { localStorage.setItem('rbs3_history', JSON.stringify(S.history)); } catch(e) {}
+}
+
+// ═══════════════════════════════════════════
+//  EVENTS
+// ═══════════════════════════════════════════
+function bindEvents() {
+  // Sub input with debounce
+  const subInput = document.getElementById('sub-input');
+  subInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { clearTimeout(S.debounceTimer); onSubChange(true); }
+  });
+  subInput.addEventListener('input', () => {
+    clearTimeout(S.debounceTimer);
+    S.debounceTimer = setTimeout(() => onSubChange(false), 650);
+  });
+
+  // Sort / time
+  document.getElementById('sort-select').addEventListener('change', () => {
+    S.sort = document.getElementById('sort-select').value;
+    const showTime = ['top','controversial'].includes(S.sort);
+    document.getElementById('time-row').style.display = showTime ? 'flex' : 'none';
+    reloadAll();
+  });
+  document.getElementById('time-select').addEventListener('change', () => {
+    S.timef = document.getElementById('time-select').value;
+    reloadAll();
+  });
+
+  // Nav tabs
+  document.getElementById('nav-tabs').addEventListener('click', e => {
+    const btn = e.target.closest('[data-tab]');
+    if (btn) switchTab(btn.dataset.tab);
+  });
+  document.getElementById('search-results-tab').addEventListener('click', () => {
+    switchTab('search');
+  });
+  document.getElementById('nav-tabs').querySelectorAll('[data-tab="bookmarks"]').forEach(b => {
+    b.addEventListener('click', () => switchTab('bookmarks'));
+  });
+  // also the bookmarks tab outside nav-tabs
+  document.querySelectorAll('[data-tab="bookmarks"]').forEach(b => {
+    b.addEventListener('click', () => switchTab('bookmarks'));
+  });
+
+  // Search
+  document.getElementById('search-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doSearch();
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+      if (e.key === 'Escape') {
+        document.activeElement.blur();
+        closeLightboxDirect();
+      }
+      return;
+    }
+    switch(e.key.toLowerCase()) {
+      case 'j': document.getElementById('feed-area').scrollBy({top:250, behavior:'smooth'}); break;
+      case 'k': document.getElementById('feed-area').scrollBy({top:-250, behavior:'smooth'}); break;
+      case 'r': reloadAll(); break;
+      case '/': e.preventDefault(); document.getElementById('search-input').focus(); break;
+      case 'b': switchTab('bookmarks'); break;
+      case 'f1': e.preventDefault(); toggleHelp(); break;
+      case 'escape':
+        closeLightboxDirect();
+        closeAllModals();
+        document.getElementById('help-panel').classList.remove('open');
+        break;
+    }
+  });
+}
+
+// ═══════════════════════════════════════════
+//  SUB CHANGE
+// ═══════════════════════════════════════════
+function onSubChange(force) {
+  const val = document.getElementById('sub-input').value.trim();
+  S.sub = val;
+  if (force || val.length >= 2 || val.length === 0) {
+    pushHistory(val);
+    loadSubInfo(val);
+    reloadAll();
+  }
+}
+
+function reloadAll() {
+  ['feed','images','videos','gifs','text','links'].forEach(tab => {
+    S.after[tab]    = null;
+    S.loading[tab]  = false;
+    S.autoLock[tab] = false;
+    S.cards[tab]    = [];
+  });
+
+  const currentTab = S.activeTab;
+  if (currentTab === 'search' || currentTab === 'bookmarks') {
+    switchTab('feed');
+  } else {
+    loadTab(currentTab);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SUB INFO BANNER
+// ═══════════════════════════════════════════
+async function loadSubInfo(sub) {
+  const bannerText  = document.getElementById('banner-text');
+  const bannerStats = document.getElementById('banner-stats');
+  if (!sub || sub === '') {
+    bannerText.textContent  = 'r/popular — Reddit front page';
+    bannerStats.textContent = '';
+    return;
+  }
+  bannerText.textContent  = `r/${sub}`;
+  bannerStats.textContent = '';
+  try {
+    const res  = await fetch(`https://www.reddit.com/r/${sub}/about.json?raw_json=1`);
+    const data = await res.json();
+    const d    = data.data || {};
+    const members = fmtK(d.subscribers || 0);
+    const online  = fmtK(d.active_user_count || 0);
+    const title   = (d.title || sub).slice(0, 60);
+    bannerText.textContent  = `r/${sub} — ${title}`;
+    bannerStats.textContent = `${members} members · ${online} online`;
+  } catch(e) {
+    bannerText.textContent = `r/${sub || 'popular'}`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  TAB SWITCHING
+// ═══════════════════════════════════════════
+function switchTab(tab) {
+  S.activeTab = tab;
+
+  // Update nav highlights
+  document.querySelectorAll('.nav-tab[data-tab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+
+  // Show search tab if switching to it
+  if (tab === 'search') {
+    document.getElementById('search-results-tab').style.display = 'flex';
+  }
+
+  // Render
+  if (tab === 'bookmarks') {
+    renderBookmarks();
+  } else if (!S.cards[tab] || S.cards[tab].length === 0) {
+    if (tab !== 'search') {
+      loadTab(tab);
+    } else {
+      renderEmpty('No search results yet. Try searching above.');
+    }
+  } else {
+    renderCards(tab, false);
+  }
+
+  updateLoadMore();
+}
+
+// ═══════════════════════════════════════════
+//  DATA LOADING
+// ═══════════════════════════════════════════
+async function loadTab(tab, append = false) {
+  if (S.loading[tab]) return;
+  S.loading[tab]  = true;
+  S.autoLock[tab] = false;
+
+  const sub   = S.sub || 'popular';
+  const sort  = S.sort;
+  const tf    = S.timef;
+  const after = append ? (S.after[tab] || '') : '';
+  const limit = S.settings.limit;
+
+  if (!append) {
+    setStatus(`Loading ${tab}...`);
+    showSkeletons();
+  } else {
+    setStatus(`Loading more...`);
+  }
+
+  try {
+    let url = `https://www.reddit.com/r/${sub}/${sort}.json?limit=${limit}&raw_json=1`;
+    if (after)  url += `&after=${after}`;
+    if (['top','controversial'].includes(sort)) url += `&t=${tf}`;
+
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const children = data.data?.children || [];
+    const nextAfter = data.data?.after || null;
+
+    let posts = children.map(c => parsePost(c.data));
+
+    // NSFW filter
+    if (!S.settings.nsfw) {
+      posts = posts.filter(p => !p.nsfw);
+    }
+
+    // Kind filter
+    const kind = TAB_KIND[tab];
+    if (kind) posts = posts.filter(p => p.kind === kind);
+
+    S.after[tab] = nextAfter;
+
+    if (append) {
+      S.cards[tab] = [...(S.cards[tab] || []), ...posts];
+    } else {
+      S.cards[tab] = posts;
+    }
+
+    if (S.activeTab === tab) {
+      renderCards(tab, append);
+    }
+
+    const n = S.cards[tab].length;
+    const nsfwNote = S.settings.nsfw ? '' : '  (NSFW hidden)';
+    setStatus(`${n} post${n !== 1 ? 's' : ''} — r/${S.sub || 'popular'}${nsfwNote}`);
+
+  } catch(err) {
+    console.error(err);
+    setStatus(`Error: ${err.message}`);
+    if (!append) showError(err.message);
+  } finally {
+    S.loading[tab]  = false;
+    S.autoLock[tab] = false;
+    updateLoadMore();
+  }
+}
+
+function loadMore() {
+  const tab = S.activeTab;
+  if (tab === 'search') {
+    doSearch(true);
+  } else if (tab !== 'bookmarks') {
+    loadTab(tab, true);
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SEARCH
+// ═══════════════════════════════════════════
+async function doSearch(append = false) {
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) return;
+
+  if (!append) {
+    S.searchAfter = null;
+    S.searchQuery = q;
+    S.cards['search'] = [];
+    S.after['search'] = null;
+  }
+
+  S.loading['search'] = true;
+  setStatus(`Searching "${q}"...`);
+
+  document.getElementById('search-results-tab').style.display = 'flex';
+  switchTab('search');
+
+  if (!append) showSkeletons();
+
+  const sub   = S.sub || 'all';
+  const sort  = document.getElementById('search-sort-select').value;
+  const limit = S.settings.limit;
+  const after = append ? (S.searchAfter || '') : '';
+
+  try {
+    let url = `https://www.reddit.com/r/${sub}/search.json?q=${encodeURIComponent(q)}&sort=${sort}&limit=${limit}&raw_json=1`;
+    if (sub !== 'all') url += '&restrict_sr=1';
+    if (after) url += `&after=${after}`;
+
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const children  = data.data?.children || [];
+    const nextAfter = data.data?.after || null;
+
+    let posts = children.map(c => parsePost(c.data));
+    if (!S.settings.nsfw) posts = posts.filter(p => !p.nsfw);
+
+    S.searchAfter    = nextAfter;
+    S.after['search'] = nextAfter;
+
+    if (append) {
+      S.cards['search'] = [...(S.cards['search'] || []), ...posts];
+    } else {
+      S.cards['search'] = posts;
+    }
+
+    renderCards('search', append);
+    setStatus(`${S.cards['search'].length} results for "${q}"`);
+
+  } catch(err) {
+    setStatus(`Search error: ${err.message}`);
+    if (!append) showError(err.message);
+  } finally {
+    S.loading['search'] = false;
+    updateLoadMore();
+  }
+}
+
+// ═══════════════════════════════════════════
+//  PARSE POST
+// ═══════════════════════════════════════════
+function parsePost(p) {
+  const kind = classifyPost(p);
+  const post = {
+    id:       p.id,
+    title:    p.title || '',
+    author:   p.author || '[deleted]',
+    sub:      p.subreddit || '',
+    score:    p.score || 0,
+    ratio:    p.upvote_ratio || 0,
+    comments: p.num_comments || 0,
+    created:  p.created_utc || 0,
+    nsfw:     p.over_18 || false,
+    url:      p.url || '',
+    permalink:`https://reddit.com${p.permalink || ''}`,
+    selftext: (p.selftext || '').slice(0, 600),
+    kind,
+    domain:   p.domain || '',
+    flair:    p.link_flair_text || '',
+    awards:   (p.all_awardings || []).length,
+    img:      '',
+    video:    '',
+    videoAudio: '',
+    gif:      '',
+    thumb:    '',
+  };
+
+  // Extract preview thumbnail
+  try {
+    const imgs = p.preview?.images?.[0];
+    if (imgs) {
+      const resolutions = imgs.resolutions || [];
+      // Pick a medium resolution for thumbnails
+      const medRes = resolutions.find(r => r.width >= 640) ||
+                     resolutions[resolutions.length - 1] ||
+                     imgs.source;
+      if (medRes) post.thumb = medRes.url;
+      // Also keep full source for lightbox
+      if (imgs.source) post.imgFull = imgs.source.url;
+    }
+  } catch(e) {}
+
+  if (kind === 'image') {
+    post.img     = p.url;
+    post.imgFull = post.imgFull || p.url;
+  }
+
+  if (kind === 'video') {
+    try {
+      const rv = p.media?.reddit_video;
+      if (rv) {
+        // fallback_url = video without audio (Reddit DASH)
+        post.video = rv.fallback_url || '';
+        // Try to get audio track from DASH manifest
+        // Audio is at same base URL with DASH_audio.mp4
+        if (post.video) {
+          const base = post.video.split('DASH_')[0];
+          post.videoAudio = base + 'DASH_audio.mp4';
+        }
+        post.videoDuration = rv.duration || 0;
+        post.videoDash     = rv.dash_url || '';
+      }
+    } catch(e) {}
+  }
+
+  if (kind === 'gif') {
+    post.gif = p.url;
+    // Prefer MP4 version for smooth playback
+    try {
+      const mp4 = p.preview?.images?.[0]?.variants?.mp4;
+      if (mp4?.source?.url) {
+        post.gif     = mp4.source.url;
+        post.gifIsMP4= true;
+      }
+    } catch(e) {}
+  }
+
+  return post;
+}
+
+function classifyPost(p) {
+  const url  = (p.url || '').toLowerCase();
+  const hint = p.post_hint || '';
+  const dom  = p.domain   || '';
+
+  if (p.is_video || dom.includes('v.redd.it'))              return 'video';
+  if (hint === 'image' || /\.(jpg|jpeg|png|webp)$/.test(url)) return 'image';
+  if (/\.(gif|gifv)$/.test(url) || hint === 'rich:video' && dom.includes('gfycat'))
+                                                             return 'gif';
+  if (p.is_self || hint === 'self')                          return 'text';
+  return 'link';
+}
+
+// ═══════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════
+function renderCards(tab, append) {
+  const container = document.getElementById('cards-container');
+
+  if (!append) {
+    container.innerHTML = '';
+    document.getElementById('feed-area').scrollTop = 0;
+  }
+
+  const posts = S.cards[tab] || [];
+
+  if (posts.length === 0 && !append) {
+    renderEmpty('No posts found. Try a different subreddit or filter.');
+    return;
+  }
+
+  const startIdx = append ? (S.cards[tab].length - (posts.length)) : 0;
+  const newPosts = append ? posts.slice(-(posts.length - startIdx + posts.length)) : posts;
+
+  // If appending, only render the newly added cards
+  const toRender = append
+    ? posts.slice(container.children.length)
+    : posts;
+
+  toRender.forEach((post, i) => {
+    const card = buildCard(post);
+    card.style.animationDelay = `${Math.min(i * 30, 300)}ms`;
+    container.appendChild(card);
+  });
+
+  updateLoadMore();
+}
+
+function buildCard(post) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.id = post.id;
+
+  const isSaved = S.bookmarks.some(b => b.id === post.id);
+  const compact = S.settings.compact;
+  const showPrev = S.settings.showPreviews && !compact;
+
+  const scoreClass = post.ratio >= 0.95 ? 'score-great'
+                   : post.ratio >= 0.75 ? 'score-good'
+                   : post.ratio >= 0.50 ? 'score-ok'
+                   : 'score-bad';
+
+  let mediaHTML = '';
+  if (showPrev) {
+    if (post.kind === 'video' && post.video) {
+      mediaHTML = buildVideoHTML(post);
+    } else if (post.kind === 'gif' && post.gif) {
+      mediaHTML = buildGifHTML(post);
+    } else if ((post.kind === 'image') && (post.thumb || post.img)) {
+      mediaHTML = buildImageHTML(post);
+    } else if (post.thumb && post.kind !== 'text' && post.kind !== 'link') {
+      mediaHTML = buildImageHTML(post);
+    }
+  }
+
+  const selftextHTML = (!compact && post.selftext)
+    ? `<div class="card-selftext">${escHtml(post.selftext)}</div>`
+    : '';
+
+  const flairHTML = post.flair
+    ? `<span class="badge badge-flair">${escHtml(post.flair)}</span>`
+    : '';
+
+  const nsfwHTML = post.nsfw
+    ? `<span class="badge badge-nsfw">NSFW</span>`
+    : '';
+
+  const awardsHTML = post.awards > 0
+    ? `<span class="card-awards">🏆 ${post.awards}</span>`
+    : '';
+
+  const kindLabel = { image:'IMG', video:'VID', gif:'GIF', text:'TXT', link:'LINK' }[post.kind] || '';
+
+  card.innerHTML = `
+    <div class="card-inner">
+      <div class="card-meta">
+        <span class="card-sub" onclick="navToSub('${escAttr(post.sub)}')"
+              title="Go to r/${escHtml(post.sub)}">r/${escHtml(post.sub)}</span>
+        <span class="card-dot">·</span>
+        <span class="card-author">u/${escHtml(post.author)}</span>
+        <span class="card-dot">·</span>
+        <span class="card-age">${fmtAge(post.created)}</span>
+        ${nsfwHTML}
+        ${flairHTML}
+        <span class="badge badge-kind">${kindLabel}</span>
+        ${awardsHTML}
+      </div>
+      <div class="card-title" onclick="openPost('${escAttr(post.permalink)}')">${escHtml(post.title)}</div>
+      ${mediaHTML}
+      ${selftextHTML}
+      <div class="card-actions">
+        <span class="card-score ${scoreClass}">▲ ${fmtK(post.score)}</span>
+        <button class="action-btn" onclick="openPost('${escAttr(post.permalink)}')">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>
+          ${fmtK(post.comments)}
+        </button>
+        <button class="action-btn" onclick="copyLink('${escAttr(post.permalink)}')">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/></svg>
+          Copy
+        </button>
+        <button class="action-btn" onclick="openURL('${escAttr(post.url || post.permalink)}')">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+          Open
+        </button>
+        ${post.kind === 'image' ? `
+        <button class="action-btn" onclick="openLightbox('${escAttr(post.imgFull||post.img||post.thumb)}','${escAttr(post.title)}')">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg>
+          View Full
+        </button>` : ''}
+        <button class="action-btn ${isSaved ? 'saved' : ''}" id="bm-${escAttr(post.id)}"
+                onclick="toggleBookmark(${JSON.stringify(escHtml(post.id))})">
+          <svg viewBox="0 0 20 20" fill="${isSaved ? 'currentColor' : 'none'}" stroke="${isSaved ? 'none' : 'currentColor'}" stroke-width="1.5">
+            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+          </svg>
+          ${isSaved ? 'Saved' : 'Save'}
+        </button>
+        <span class="card-domain">${escHtml(post.domain)}</span>
+      </div>
+    </div>`;
+
+  return card;
+}
+
+// ── Media builders ──────────────────────────
+function buildImageHTML(post) {
+  const src  = post.thumb || post.img || '';
+  const full = post.imgFull || post.img || src;
+  if (!src) return '';
+  return `
+    <div class="card-media" onclick="openLightbox('${escAttr(full)}','${escAttr(post.title)}')">
+      <img src="${escAttr(src)}" alt="" loading="lazy"
+           onerror="this.closest('.card-media').style.display='none'">
+      <div class="play-btn-overlay">
+        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="rgba(0,0,0,.5)"/>
+          <path d="M18 16l16 8-16 8V16z" fill="white"/></svg>
+      </div>
+      ${post.kind === 'image' ? '<div class="media-overlay">IMAGE</div>' : ''}
+    </div>`;
+}
+
+function buildVideoHTML(post) {
+  if (!post.video) return '';
+  const autoplay = S.settings.autoplay ? 'autoplay' : '';
+  // Reddit videos: fallback_url is video-only (no audio).
+  // We render it with controls and add audio track attempt via JS.
+  return `
+    <div class="video-container card-media" style="margin-bottom:12px">
+      <video controls ${autoplay} muted loop preload="metadata"
+             src="${escAttr(post.video)}"
+             poster="${escAttr(post.thumb || '')}"
+             onerror="handleVideoError(this,'${escAttr(post.permalink)}')"
+             onloadeddata="onVideoLoaded(this)">
+        Your browser does not support HTML5 video.
+      </video>
+      <div class="video-no-audio" id="audio-note-${escAttr(post.id)}" style="display:none">
+        🔇 Video-only — <a href="${escAttr(post.permalink)}" target="_blank" rel="noopener"
+          style="color:var(--accent)">Open on Reddit</a> for audio
+      </div>
+    </div>`;
+}
+
+function buildGifHTML(post) {
+  if (!post.gif) return '';
+  if (post.gifIsMP4) {
+    return `
+      <div class="card-media" style="margin-bottom:12px">
+        <video autoplay muted loop playsinline preload="auto"
+               style="max-height:400px;width:100%;border-radius:var(--radius-sm)"
+               src="${escAttr(post.gif)}"
+               onerror="this.closest('.card-media').style.display='none'">
+        </video>
+        <div class="media-overlay">GIF</div>
+      </div>`;
+  }
+  return `
+    <div class="card-media" style="margin-bottom:12px">
+      <img src="${escAttr(post.gif)}" alt=""
+           style="max-height:400px;width:100%;object-fit:contain"
+           loading="lazy"
+           onerror="this.closest('.card-media').style.display='none'">
+      <div class="media-overlay">GIF</div>
+    </div>`;
+}
+
+// After video loads, check if it has audio
+function onVideoLoaded(video) {
+  // Show "no audio" note for Reddit-hosted videos
+  if (video.src && video.src.includes('v.redd.it')) {
+    const postId = video.closest('.video-container')?.id?.replace('vc-','');
+    // Reddit fallback URLs have no audio — always show note
+    const note = video.closest('.video-container')?.querySelector('.video-no-audio');
+    if (note) {
+      note.style.display = 'block';
+      setTimeout(() => { if (note) note.style.opacity = '0.5'; }, 4000);
+    }
+  }
+}
+
+function handleVideoError(video, permalink) {
+  const wrap = video.closest('.card-media, .video-container');
+  if (wrap) {
+    wrap.innerHTML = `
+      <div style="padding:20px;text-align:center;background:var(--surface);border-radius:var(--radius-sm)">
+        <div style="color:var(--text3);margin-bottom:8px;font-size:13px">Video unavailable in browser</div>
+        <a href="${permalink}" target="_blank" rel="noopener" class="btn btn-ghost"
+           style="font-size:12px;display:inline-flex">Open on Reddit ↗</a>
+      </div>`;
+  }
+}
+
+// ═══════════════════════════════════════════
+//  SKELETON + EMPTY STATES
+// ═══════════════════════════════════════════
+function showSkeletons() {
+  const c = document.getElementById('cards-container');
+  c.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    c.innerHTML += `
+      <div class="skeleton-card">
+        <div class="skel skel-sm" style="width:${120+i*20}px"></div>
+        <div class="skel skel-lg" style="width:${90-i*5}%;margin-top:8px"></div>
+        <div class="skel skel-md" style="width:${75-i*3}%;margin-top:4px"></div>
+        ${i % 2 === 0 ? '<div class="skel skel-img"></div>' : ''}
+        <div class="skel skel-sm" style="width:220px;margin-top:4px"></div>
+      </div>`;
+  }
+}
+
+function renderEmpty(msg) {
+  document.getElementById('cards-container').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-icon">◈</div>
+      <h3>Nothing here</h3>
+      <p>${escHtml(msg)}</p>
+    </div>`;
+}
+
+function showError(msg) {
+  document.getElementById('cards-container').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-state-icon" style="color:var(--red)">⚠</div>
+      <h3 style="color:var(--red)">Error loading posts</h3>
+      <p style="color:var(--text2)">${escHtml(msg)}</p>
+      <p style="margin-top:8px;font-size:12px;color:var(--text3)">
+        Reddit's API requires fetching from a served page (not file://)<br>
+        Try running: <code style="color:var(--accent)">python -m http.server</code>
+        then opening <a href="http://localhost:8000" style="color:var(--accent)">localhost:8000</a>
+      </p>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  LIGHTBOX
+// ═══════════════════════════════════════════
+function openLightbox(url, title) {
+  if (!url) return;
+  const lb    = document.getElementById('lightbox');
+  const img   = document.getElementById('lightbox-img');
+  const lbl   = document.getElementById('lightbox-loading');
+  const tspan = document.getElementById('lightbox-title');
+  const olink = document.getElementById('lightbox-open');
+
+  tspan.textContent = title || '';
+  olink.href        = url;
+  img.style.display = 'none';
+  lbl.classList.add('show');
+  lb.classList.add('open');
+
+  img.onload = () => {
+    lbl.classList.remove('show');
+    img.style.display = 'block';
+  };
+  img.onerror = () => {
+    lbl.textContent = 'Could not load image.';
+  };
+  img.src = url;
+}
+
+function closeLightbox(e) {
+  if (e.target === document.getElementById('lightbox')) {
+    closeLightboxDirect();
+  }
+}
+
+function closeLightboxDirect() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox-img').src = '';
+}
+
+// ═══════════════════════════════════════════
+//  BOOKMARKS
+// ═══════════════════════════════════════════
+function toggleBookmark(id) {
+  const idx = S.bookmarks.findIndex(b => b.id === id);
+  const tab = S.activeTab;
+  const post = (S.cards[tab] || []).find(p => p.id === id)
+            || S.bookmarks.find(b => b.id === id);
+
+  if (idx >= 0) {
+    S.bookmarks.splice(idx, 1);
+    persistBookmarks();
+    updateBookmarkBtn(id, false);
+    toast('Removed from saved', 'amber');
+    if (tab === 'bookmarks') renderBookmarks();
+  } else if (post) {
+    S.bookmarks.unshift(post);
+    if (S.bookmarks.length > 500) S.bookmarks.length = 500;
+    persistBookmarks();
+    updateBookmarkBtn(id, true);
+    toast(`Saved: ${post.title.slice(0,40)}...`, 'green');
+  }
+  updateBMCount();
+}
+
+function updateBookmarkBtn(id, saved) {
+  const btn = document.getElementById(`bm-${id}`);
+  if (!btn) return;
+  btn.className = 'action-btn' + (saved ? ' saved' : '');
+  btn.innerHTML = `
+    <svg viewBox="0 0 20 20" fill="${saved ? 'currentColor' : 'none'}"
+         stroke="${saved ? 'none' : 'currentColor'}" stroke-width="1.5">
+      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
+    </svg>
+    ${saved ? 'Saved' : 'Save'}`;
+}
+
+function renderBookmarks() {
+  const c = document.getElementById('cards-container');
+  c.innerHTML = '';
+  document.getElementById('feed-area').scrollTop = 0;
+
+  if (S.bookmarks.length === 0) {
+    renderEmpty('No saved posts yet. Click "Save" on any post to bookmark it.');
+    return;
+  }
+
+  S.bookmarks.forEach((post, i) => {
+    const card = buildCard(post);
+    card.style.animationDelay = `${Math.min(i * 20, 200)}ms`;
+    c.appendChild(card);
+  });
+  setStatus(`${S.bookmarks.length} saved post${S.bookmarks.length !== 1 ? 's' : ''}`);
+}
+
+function clearBookmarks() {
+  if (!confirm('Delete all saved posts? This cannot be undone.')) return;
+  S.bookmarks = [];
+  persistBookmarks();
+  updateBMCount();
+  toast('All bookmarks cleared', 'amber');
+  if (S.activeTab === 'bookmarks') renderBookmarks();
+}
+
+function updateBMCount() {
+  const el = document.getElementById('bm-count');
+  if (el) el.textContent = S.bookmarks.length > 0
+    ? ` (${S.bookmarks.length})` : '';
+}
+
+// ═══════════════════════════════════════════
+//  HISTORY
+// ═══════════════════════════════════════════
+function pushHistory(sub) {
+  if (!sub) return;
+  S.history = [sub, ...S.history.filter(h => h !== sub)].slice(0, 10);
+  persistHistory();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = '';
+  S.history.slice(0, 6).forEach(sub => {
+    const a = document.createElement('a');
+    a.className = 'history-item';
+    a.textContent = `r/${sub}`;
+    a.onclick = () => {
+      document.getElementById('sub-input').value = sub;
+      S.sub = sub;
+      loadSubInfo(sub);
+      reloadAll();
     };
+    list.appendChild(a);
+  });
+}
 
-    // Canvas Setup
-    const canvas = document.getElementById('drawingCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    
-    // Initialize
-    function startApp() {
-      document.getElementById('startScreen').classList.add('hidden');
-      setTimeout(() => {
-        document.getElementById('app').classList.add('visible');
-        initializeCanvas();
-        saveState();
-      }, 500);
+// ═══════════════════════════════════════════
+//  SETTINGS
+// ═══════════════════════════════════════════
+function openSettings() {
+  const s = S.settings;
+  document.getElementById('setting-nsfw').checked          = s.nsfw;
+  document.getElementById('setting-previews').checked      = s.showPreviews;
+  document.getElementById('setting-autoplay').checked      = s.autoplay;
+  document.getElementById('setting-compact').checked       = s.compact;
+  document.getElementById('setting-infinite').checked      = s.infinite;
+  document.getElementById('setting-default-sub').value     = s.defaultSub;
+  document.getElementById('setting-default-sort').value    = s.defaultSort;
+  document.getElementById('setting-limit').value           = s.limit;
+  openModal('settings-modal');
+}
+
+function saveSettings() {
+  const nsfw = document.getElementById('setting-nsfw').checked;
+
+  if (nsfw && !S.settings.ageVerified) {
+    document.getElementById('setting-nsfw').checked = false;
+    toast('Age verification required to enable NSFW', 'amber');
+    closeModal('settings-modal');
+    openModal('age-modal');
+    return;
+  }
+
+  S.settings.nsfw         = nsfw;
+  S.settings.showPreviews = document.getElementById('setting-previews').checked;
+  S.settings.autoplay     = document.getElementById('setting-autoplay').checked;
+  S.settings.compact      = document.getElementById('setting-compact').checked;
+  S.settings.infinite     = document.getElementById('setting-infinite').checked;
+  S.settings.defaultSub   = document.getElementById('setting-default-sub').value.trim();
+  S.settings.defaultSort  = document.getElementById('setting-default-sort').value;
+  S.settings.limit        = parseInt(document.getElementById('setting-limit').value);
+
+  persistSettings();
+  applySettings();
+  closeModal('settings-modal');
+  toast('Settings saved', 'green');
+  reloadAll();
+}
+
+function applySettings() {
+  updateNSFWBadge();
+  updateBMCount();
+  renderHistory();
+}
+
+function toggleNSFW() {
+  if (!S.settings.nsfw) {
+    if (!S.settings.ageVerified) {
+      openModal('age-modal');
+    } else {
+      S.settings.nsfw = true;
+      persistSettings();
+      updateNSFWBadge();
+      reloadAll();
+      toast('NSFW content enabled', 'amber');
     }
+  } else {
+    S.settings.nsfw = false;
+    persistSettings();
+    updateNSFWBadge();
+    reloadAll();
+    toast('NSFW content hidden');
+  }
+}
 
-    function initializeCanvas() {
-      ctx.fillStyle = state.bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
+function onNSFWToggle(checkbox) {
+  if (checkbox.checked && !S.settings.ageVerified) {
+    checkbox.checked = false;
+    closeModal('settings-modal');
+    openModal('age-modal');
+  }
+}
 
-    // Tool Selection
-    document.querySelectorAll('.tool-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-        this.classList.add('active');
-        state.currentTool = this.dataset.tool;
-        document.getElementById('currentTool').textContent = this.textContent;
-      });
-    });
+function updateNSFWBadge() {
+  const badge = document.getElementById('nsfw-badge');
+  if (S.settings.nsfw) {
+    badge.className = 'nsfw-badge';
+    badge.title     = 'NSFW ON — click to disable';
+  } else {
+    badge.className = 'nsfw-badge nsfw-off';
+    badge.title     = 'Click to enable NSFW content (18+)';
+  }
+}
 
-    // Brush Size
-    document.getElementById('brushSize').addEventListener('input', function() {
-      state.brushSize = parseInt(this.value);
-      document.getElementById('sizeValue').textContent = this.value;
-    });
+// ═══════════════════════════════════════════
+//  AGE GATE
+// ═══════════════════════════════════════════
+function confirmAge() {
+  S.settings.ageVerified = true;
+  S.settings.nsfw        = true;
+  persistSettings();
+  closeModal('age-modal');
+  updateNSFWBadge();
+  reloadAll();
+  toast('NSFW content enabled', 'amber');
 
-    // Brush Opacity
-    document.getElementById('brushOpacity').addEventListener('input', function() {
-      state.brushOpacity = parseInt(this.value) / 100;
-      document.getElementById('opacityValue').textContent = this.value + '%';
-    });
+  // Also re-open settings if it was from settings
+  document.getElementById('setting-nsfw').checked = true;
+}
 
-    // Brush Hardness
-    document.getElementById('brushHardness').addEventListener('input', function() {
-      state.brushHardness = parseInt(this.value) / 100;
-      document.getElementById('hardnessValue').textContent = this.value + '%';
-    });
+function denyAge() {
+  S.settings.nsfw = false;
+  document.getElementById('setting-nsfw').checked = false;
+  closeModal('age-modal');
+}
 
-    // Brush Smoothing
-    document.getElementById('brushSmoothing').addEventListener('input', function() {
-      state.brushSmoothing = parseInt(this.value) / 100;
-      document.getElementById('smoothingValue').textContent = this.value + '%';
-    });
+// ═══════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id, e) {
+  if (e && e.target !== document.getElementById(id)) return;
+  document.getElementById(id).classList.remove('open');
+}
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+}
 
-    // Color Picker
-    document.getElementById('colorPicker').addEventListener('input', function() {
-      state.color = this.value;
-    });
+// ═══════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════
+function toast(msg, type = '') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  const container = document.getElementById('toast-container');
+  container.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 300);
+  }, 2500);
+}
 
-    // Color Presets
-    document.querySelectorAll('.color-preset').forEach(preset => {
-      preset.addEventListener('click', function() {
-        const color = this.dataset.color;
-        state.color = color;
-        document.getElementById('colorPicker').value = color;
-      });
-    });
+// ═══════════════════════════════════════════
+//  HELP
+// ═══════════════════════════════════════════
+function toggleHelp() {
+  document.getElementById('help-panel').classList.toggle('open');
+}
 
-    // Glow Intensity
-    document.getElementById('glowIntensity').addEventListener('input', function() {
-      state.glowIntensity = parseInt(this.value);
-      document.getElementById('glowValue').textContent = this.value;
-    });
+// ═══════════════════════════════════════════
+//  MISC ACTIONS
+// ═══════════════════════════════════════════
+function navToSub(sub) {
+  document.getElementById('sub-input').value = sub;
+  S.sub = sub;
+  pushHistory(sub);
+  loadSubInfo(sub);
+  reloadAll();
+  if (S.activeTab === 'search' || S.activeTab === 'bookmarks') {
+    switchTab('feed');
+  }
+}
 
-    // Blur Amount
-    document.getElementById('blurAmount').addEventListener('input', function() {
-      state.blurAmount = parseInt(this.value);
-      document.getElementById('blurValue').textContent = this.value;
-    });
+function openPost(url)  { window.open(url, '_blank', 'noopener'); }
+function openURL(url)   { window.open(url, '_blank', 'noopener'); }
 
-    // Background Color
-    document.getElementById('bgColor').addEventListener('input', function() {
-      state.bgColor = this.value;
-      redrawCanvas();
-    });
+function copyLink(url) {
+  navigator.clipboard.writeText(url).then(() => {
+    toast('Link copied to clipboard', 'green');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    toast('Link copied', 'green');
+  });
+}
 
-    // Canvas Size
-    document.getElementById('canvasSize').addEventListener('change', function() {
-      const [width, height] = this.value.split(',').map(Number);
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      canvas.width = width;
-      canvas.height = height;
-      ctx.fillStyle = state.bgColor;
-      ctx.fillRect(0, 0, width, height);
-      ctx.putImageData(imageData, 0, 0);
-      saveState();
-    });
+function scrollTop() {
+  document.getElementById('feed-area').scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-    // Grid Toggle
-    document.getElementById('showGrid').addEventListener('change', function() {
-      state.showGrid = this.checked;
-      redrawCanvas();
-    });
+function updateLoadMore() {
+  const tab = S.activeTab;
+  const has = !!S.after[tab];
+  document.getElementById('load-more-btn').style.display = has ? 'inline-flex' : 'none';
+}
 
-    // Symmetry Mode
-    document.getElementById('symmetryMode').addEventListener('change', function() {
-      state.symmetryMode = this.checked;
-    });
+function setStatus(msg) {
+  document.getElementById('status-text').textContent = msg;
+}
 
-    // Pressure Simulation
-    document.getElementById('pressureSim').addEventListener('change', function() {
-      state.pressureSim = this.checked;
-    });
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function fmtK(n) {
+  if (n >= 1e6) return `${(n/1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `${(n/1e3).toFixed(1)}k`;
+  return String(n);
+}
 
-    // Drawing Functions
-    function startDrawing(e) {
-      state.isDrawing = true;
-      const rect = canvas.getBoundingClientRect();
-      state.lastX = e.clientX - rect.left;
-      state.lastY = e.clientY - rect.top;
-      state.smoothPoints = [{x: state.lastX, y: state.lastY}];
+function fmtAge(ts) {
+  const d = Date.now()/1000 - ts;
+  if (d < 60)     return 'just now';
+  if (d < 3600)   return `${Math.floor(d/60)}m`;
+  if (d < 86400)  return `${Math.floor(d/3600)}h`;
+  if (d < 604800) return `${Math.floor(d/86400)}d`;
+  return `${Math.floor(d/604800)}w`;
+}
 
-      if (state.currentTool === 'fill') {
-        floodFill(state.lastX, state.lastY);
-        saveState();
-      } else if (state.currentTool === 'eyedropper') {
-        pickColor(state.lastX, state.lastY);
-      }
-    }
+function escHtml(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
 
-    function draw(e) {
-      if (!state.isDrawing) return;
-      
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+function escAttr(s) {
+  if (typeof s !== 'string') return '';
+  return s.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+}
 
-      // Update mouse position
-      document.getElementById('mousePos').textContent = `${Math.round(x)}, ${Math.round(y)}`;
-
-      // Add to smooth points
-      state.smoothPoints.push({x, y});
-      if (state.smoothPoints.length > 5) {
-        state.smoothPoints.shift();
-      }
-
-      // Calculate smoothed position
-      let smoothX = x, smoothY = y;
-      if (state.brushSmoothing > 0 && state.smoothPoints.length > 1) {
-        const weight = state.brushSmoothing;
-        smoothX = state.smoothPoints.reduce((sum, p) => sum + p.x, 0) / state.smoothPoints.length;
-        smoothY = state.smoothPoints.reduce((sum, p) => sum + p.y, 0) / state.smoothPoints.length;
-        smoothX = x * (1 - weight) + smoothX * weight;
-        smoothY = y * (1 - weight) + smoothY * weight;
-      }
-
-      // Pressure simulation
-      let size = state.brushSize;
-      if (state.pressureSim) {
-        const speed = Math.sqrt(Math.pow(x - state.lastX, 2) + Math.pow(y - state.lastY, 2));
-        const pressure = Math.max(0.3, 1 - Math.min(speed / 50, 0.7));
-        size *= pressure;
-      }
-
-      // Apply tool
-      switch (state.currentTool) {
-        case 'brush':
-          drawBrush(state.lastX, state.lastY, smoothX, smoothY, size);
-          break;
-        case 'eraser':
-          drawEraser(state.lastX, state.lastY, smoothX, smoothY, size);
-          break;
-        case 'mix':
-          drawMix(state.lastX, state.lastY, smoothX, smoothY, size);
-          break;
-        case 'spray':
-          drawSpray(smoothX, smoothY, size);
-          break;
-        case 'line':
-        case 'rectangle':
-        case 'circle':
-          // These are handled on mouseup
-          break;
-      }
-
-      state.lastX = smoothX;
-      state.lastY = smoothY;
-    }
-
-    function stopDrawing(e) {
-      if (!state.isDrawing) return;
-      
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      // Handle shape tools
-      if (['line', 'rectangle', 'circle'].includes(state.currentTool)) {
-        const startX = state.smoothPoints[0].x;
-        const startY = state.smoothPoints[0].y;
-        
-        ctx.globalAlpha = state.brushOpacity;
-        ctx.strokeStyle = state.color;
-        ctx.lineWidth = state.brushSize;
-        
-        if (state.glowIntensity > 0) {
-          ctx.shadowBlur = state.glowIntensity;
-          ctx.shadowColor = state.color;
-        }
-
-        if (state.currentTool === 'line') {
-          ctx.beginPath();
-          ctx.moveTo(startX, startY);
-          ctx.lineTo(x, y);
-          ctx.stroke();
-        } else if (state.currentTool === 'rectangle') {
-          ctx.strokeRect(startX, startY, x - startX, y - startY);
-        } else if (state.currentTool === 'circle') {
-          const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
-          ctx.beginPath();
-          ctx.arc(startX, startY, radius, 0, Math.PI * 2);
-          ctx.stroke();
-        }
-
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = 1;
-      }
-
-      state.isDrawing = false;
-      state.smoothPoints = [];
-      saveState();
-    }
-
-    function drawBrush(x1, y1, x2, y2, size) {
-      ctx.globalAlpha = state.brushOpacity;
-      ctx.strokeStyle = state.color;
-      ctx.fillStyle = state.color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      if (state.glowIntensity > 0) {
-        ctx.shadowBlur = state.glowIntensity;
-        ctx.shadowColor = state.color;
-      }
-
-      if (state.blurAmount > 0) {
-        ctx.filter = `blur(${state.blurAmount}px)`;
-      }
-
-      // Create gradient for hardness
-      if (state.brushHardness < 1) {
-        const gradient = ctx.createRadialGradient(x2, y2, 0, x2, y2, size / 2);
-        gradient.addColorStop(0, state.color);
-        gradient.addColorStop(state.brushHardness, state.color);
-        gradient.addColorStop(1, state.color + '00');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(x2, y2, size / 2, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-      }
-
-      // Symmetry
-      if (state.symmetryMode) {
-        const centerX = canvas.width / 2;
-        const mirrorX1 = centerX - (x1 - centerX);
-        const mirrorX2 = centerX - (x2 - centerX);
-        
-        if (state.brushHardness < 1) {
-          const gradient = ctx.createRadialGradient(mirrorX2, y2, 0, mirrorX2, y2, size / 2);
-          gradient.addColorStop(0, state.color);
-          gradient.addColorStop(state.brushHardness, state.color);
-          gradient.addColorStop(1, state.color + '00');
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(mirrorX2, y2, size / 2, 0, Math.PI * 2);
-          ctx.fill();
-        } else {
-          ctx.beginPath();
-          ctx.moveTo(mirrorX1, y1);
-          ctx.lineTo(mirrorX2, y2);
-          ctx.stroke();
-        }
-      }
-
-      ctx.shadowBlur = 0;
-      ctx.filter = 'none';
-      ctx.globalAlpha = 1;
-    }
-
-    function drawEraser(x1, y1, x2, y2, size) {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.globalAlpha = state.brushOpacity;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.globalAlpha = 1;
-    }
-
-    function drawMix(x1, y1, x2, y2, size) {
-      // Get pixel data
-      const imageData = ctx.getImageData(x2 - size/2, y2 - size/2, size, size);
-      const data = imageData.data;
-      
-      // Average colors
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        r += data[i];
-        g += data[i + 1];
-        b += data[i + 2];
-        count++;
-      }
-      
-      const avgColor = `rgb(${Math.round(r/count)}, ${Math.round(g/count)}, ${Math.round(b/count)})`;
-      
-      ctx.globalAlpha = state.brushOpacity * 0.3;
-      ctx.fillStyle = avgColor;
-      ctx.beginPath();
-      ctx.arc(x2, y2, size / 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-
-    function drawSpray(x, y, size) {
-      const density = 50;
-      ctx.globalAlpha = state.brushOpacity * 0.1;
-      ctx.fillStyle = state.color;
-      
-      for (let i = 0; i < density; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * size / 2;
-        const px = x + Math.cos(angle) * radius;
-        const py = y + Math.sin(angle) * radius;
-        
-        ctx.beginPath();
-        ctx.arc(px, py, 1, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      
-      ctx.globalAlpha = 1;
-    }
-
-    function floodFill(startX, startY) {
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      
-      const startPos = (Math.floor(startY) * canvas.width + Math.floor(startX)) * 4;
-      const startR = data[startPos];
-      const startG = data[startPos + 1];
-      const startB = data[startPos + 2];
-      
-      const fillColor = hexToRgb(state.color);
-      
-      if (startR === fillColor.r && startG === fillColor.g && startB === fillColor.b) return;
-      
-      const stack = [[Math.floor(startX), Math.floor(startY)]];
-      
-      while (stack.length > 0) {
-        const [x, y] = stack.pop();
-        const pos = (y * canvas.width + x) * 4;
-        
-        if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
-        if (data[pos] !== startR || data[pos + 1] !== startG || data[pos + 2] !== startB) continue;
-        
-        data[pos] = fillColor.r;
-        data[pos + 1] = fillColor.g;
-        data[pos + 2] = fillColor.b;
-        data[pos + 3] = 255;
-        
-        stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-      }
-      
-      ctx.putImageData(imageData, 0, 0);
-    }
-
-    function pickColor(x, y) {
-      const imageData = ctx.getImageData(x, y, 1, 1);
-      const data = imageData.data;
-      const color = rgbToHex(data[0], data[1], data[2]);
-      state.color = color;
-      document.getElementById('colorPicker').value = color;
-    }
-
-    function hexToRgb(hex) {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-      } : null;
-    }
-
-    function rgbToHex(r, g, b) {
-      return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    }
-
-    // History Management
-    function saveState() {
-      state.historyStep++;
-      if (state.historyStep < state.history.length) {
-        state.history.length = state.historyStep;
-      }
-      state.history.push(canvas.toDataURL());
-      if (state.history.length > 50) {
-        state.history.shift();
-        state.historyStep--;
-      }
-    }
-
-    function undo() {
-      if (state.historyStep > 0) {
-        state.historyStep--;
-        const img = new Image();
-        img.onload = function() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-        };
-        img.src = state.history[state.historyStep];
-      }
-    }
-
-    function redo() {
-      if (state.historyStep < state.history.length - 1) {
-        state.historyStep++;
-        const img = new Image();
-        img.onload = function() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-        };
-        img.src = state.history[state.historyStep];
-      }
-    }
-
-    function clearCanvas() {
-      if (confirm('Clear the entire canvas?')) {
-        ctx.fillStyle = state.bgColor;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        saveState();
-      }
-    }
-
-    function resetAll() {
-      if (confirm('Reset all settings and clear canvas?')) {
-        location.reload();
-      }
-    }
-
-    function redrawCanvas() {
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = state.bgColor;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.putImageData(imageData, 0, 0);
-      
-      if (state.showGrid) {
-        drawGrid();
-      }
-    }
-
-    function drawGrid() {
-      const gridSize = 50;
-      ctx.strokeStyle = 'rgba(0, 212, 255, 0.2)';
-      ctx.lineWidth = 1;
-      
-      for (let x = 0; x <= canvas.width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      
-      for (let y = 0; y <= canvas.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-    }
-
-    // Save Functions
-    function savePNG() {
-      const link = document.createElement('a');
-      link.download = `artwork-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    }
-
-    function saveJPG() {
-      const link = document.createElement('a');
-      link.download = `artwork-${Date.now()}.jpg`;
-      link.href = canvas.toDataURL('image/jpeg', 0.95);
-      link.click();
-    }
-
-    function loadImage() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
-      input.onchange = function(e) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = function(event) {
-          const img = new Image();
-          img.onload = function() {
-            ctx.drawImage(img, 0, 0);
-            saveState();
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      };
-      input.click();
-    }
-
-    function downloadProject() {
-      const projectData = {
-        image: canvas.toDataURL(),
-        settings: {
-          brushSize: state.brushSize,
-          brushOpacity: state.brushOpacity,
-          brushHardness: state.brushHardness,
-          color: state.color,
-          bgColor: state.bgColor,
-          canvasWidth: canvas.width,
-          canvasHeight: canvas.height
-        }
-      };
-      
-      const blob = new Blob([JSON.stringify(projectData)], { type: 'application/json' });
-      const link = document.createElement('a');
-      link.download = `project-${Date.now()}.json`;
-      link.href = URL.createObjectURL(blob);
-      link.click();
-    }
-
-    // Event Listeners
-    canvas.addEventListener('mousedown', startDrawing);
-    canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing);
-    canvas.addEventListener('mouseleave', stopDrawing);
-
-    // Prevent context menu
-    canvas.addEventListener('contextmenu', e => e.preventDefault());
-  </script>
+// ══════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════
+document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
