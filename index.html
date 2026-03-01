@@ -1464,8 +1464,7 @@ async function loadSubInfo(sub) {
   bannerText.textContent  = `r/${sub}`;
   bannerStats.textContent = '';
   try {
-    const res  = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(`https://www.reddit.com/r/${sub}/about.json?raw_json=1`)}`);
-    const data = await res.json();
+    const data = await redditFetch(`https://www.reddit.com/r/${sub}/about.json`);
     const d    = data.data || {};
     const members = fmtK(d.subscribers || 0);
     const online  = fmtK(d.active_user_count || 0);
@@ -1534,11 +1533,7 @@ async function loadTab(tab, append = false) {
     const params = new URLSearchParams({ limit, raw_json: '1', after });
     if (['top','controversial'].includes(sort)) params.set('t', tf);
     const redditUrl = `https://www.reddit.com/r/${sub}/${sort}.json?${params.toString()}`;
-    let url = `https://corsproxy.io/?url=${encodeURIComponent(redditUrl)}`;
-
-    const res  = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const data = await redditFetch(redditUrl);
     const children = data.data?.children || [];
     const nextAfter = data.data?.after || null;
 
@@ -1620,11 +1615,7 @@ async function doSearch(append = false) {
     const params = new URLSearchParams({ q, sort, limit, raw_json: '1', after });
     if (sub !== 'all') params.set('restrict_sr', '1');
     const redditUrl = `https://www.reddit.com/r/${sub}/search.json?${params.toString()}`;
-    let url = `https://corsproxy.io/?url=${encodeURIComponent(redditUrl)}`;
-
-    const res  = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    const data = await redditFetch(redditUrl);
     const children  = data.data?.children || [];
     const nextAfter = data.data?.after || null;
 
@@ -2357,6 +2348,41 @@ function escHtml(s) {
 function escAttr(s) {
   if (typeof s !== 'string') return '';
   return s.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════
+//  MULTI-PROXY REDDIT FETCH
+//  Tries proxies in order until one works
+// ═══════════════════════════════════════════
+const PROXIES = [
+  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+];
+
+async function redditFetch(redditUrl) {
+  // Ensure raw_json=1 is always present
+  const sep = redditUrl.includes('?') ? '&' : '?';
+  const fullUrl = redditUrl.includes('raw_json') ? redditUrl : `${redditUrl}${sep}raw_json=1`;
+
+  let lastErr;
+  for (const makeProxy of PROXIES) {
+    try {
+      const proxyUrl = makeProxy(fullUrl);
+      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      // allorigins wraps response in { contents: "..." }
+      if (json && typeof json.contents === 'string') {
+        return JSON.parse(json.contents);
+      }
+      return json;
+    } catch(e) {
+      lastErr = e;
+    }
+  }
+  throw new Error(`All proxies failed: ${lastErr?.message}`);
 }
 
 // ══════════════════════════════════════
