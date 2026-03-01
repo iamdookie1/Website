@@ -1989,7 +1989,7 @@ function showError(msg) {
       <h3 style="color:var(--red)">Error loading posts</h3>
       <p style="color:var(--text2)">${escHtml(msg)}</p>
       <p style="margin-top:8px;font-size:12px;color:var(--text3)">
-        Check your internet connection or try a different subreddit.
+        Check your connection, or the subreddit may be private / banned.
       </p>
     </div>`;
 }
@@ -2354,35 +2354,21 @@ function escAttr(s) {
 //  MULTI-PROXY REDDIT FETCH
 //  Tries proxies in order until one works
 // ═══════════════════════════════════════════
-const PROXIES = [
-  url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  url => `https://thingproxy.freeboard.io/fetch/${url}`,
-];
-
+// ═══════════════════════════════════════════
+//  DIRECT REDDIT FETCH
+//  Reddit's public JSON API allows browser requests directly.
+//  No proxy needed — the 403s were from proxy IPs being blocked.
+// ═══════════════════════════════════════════
 async function redditFetch(redditUrl) {
-  // Ensure raw_json=1 is always present
-  const sep = redditUrl.includes('?') ? '&' : '?';
+  const sep     = redditUrl.includes('?') ? '&' : '?';
   const fullUrl = redditUrl.includes('raw_json') ? redditUrl : `${redditUrl}${sep}raw_json=1`;
 
-  let lastErr;
-  for (const makeProxy of PROXIES) {
-    try {
-      const proxyUrl = makeProxy(fullUrl);
-      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
-      // allorigins wraps response in { contents: "..." }
-      if (json && typeof json.contents === 'string') {
-        return JSON.parse(json.contents);
-      }
-      return json;
-    } catch(e) {
-      lastErr = e;
-    }
-  }
-  throw new Error(`All proxies failed: ${lastErr?.message}`);
+  const res = await fetch(fullUrl, {
+    headers: { 'Accept': 'application/json' },
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
 // ══════════════════════════════════════
