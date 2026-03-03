@@ -103,11 +103,19 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .m-fine{font-size:10px;color:var(--dm);margin-top:12px;line-height:1.5}
 
 /* ── LIGHTBOX ── */
-.lightbox{position:fixed;inset:0;z-index:700;background:#000000cc;display:flex;align-items:center;justify-content:center;cursor:zoom-out;opacity:0;pointer-events:none;transition:opacity .2s}
+.lightbox{position:fixed;inset:0;z-index:700;background:#000000e8;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .22s}
 .lightbox.show{opacity:1;pointer-events:all}
-.lightbox img{max-width:95vw;max-height:93vh;object-fit:contain;border-radius:6px;pointer-events:none}
-.lb-close{position:absolute;top:16px;right:20px;width:38px;height:38px;border-radius:50%;background:#ffffff18;border:1px solid #ffffff30;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
-.lb-close:hover{background:#ffffff30}
+.lb-media{display:flex;align-items:center;justify-content:center;max-width:92vw;max-height:90vh}
+.lb-media img{max-width:92vw;max-height:90vh;object-fit:contain;border-radius:6px;display:block;user-select:none}
+.lb-media video{max-width:92vw;max-height:90vh;border-radius:6px;display:block;outline:none;background:#000}
+.lb-close{position:fixed;top:14px;right:18px;width:40px;height:40px;border-radius:50%;background:#ffffff14;border:1px solid #ffffff28;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:2;line-height:1}
+.lb-close:hover{background:#ffffff28;transform:scale(1.08)}
+.lb-nav{position:fixed;top:50%;transform:translateY(-50%);width:52px;height:52px;border-radius:50%;background:#ffffff14;border:1px solid #ffffff28;color:#fff;font-size:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;z-index:2;line-height:1;user-select:none}
+.lb-nav:hover{background:#ffffff2a;transform:translateY(-50%) scale(1.08)}
+.lb-nav:disabled{opacity:.2;cursor:default;pointer-events:none}
+.lb-prev{left:16px}.lb-next{right:16px}
+.lb-counter{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#00000080;color:#fff;font-size:13px;font-family:'Syne',sans-serif;font-weight:600;padding:5px 16px;border-radius:20px;pointer-events:none;letter-spacing:.5px;white-space:nowrap}
+@media(max-width:600px){.lb-nav{width:40px;height:40px;font-size:24px}.lb-prev{left:6px}.lb-next{right:6px}}
 
 /* ── HERO / SEARCH VIEW ── */
 .view{display:none;position:relative;z-index:1}
@@ -351,8 +359,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 <!-- LIGHTBOX -->
 <div class="lightbox" id="lightbox">
-  <button class="lb-close" id="lbClose">✕</button>
-  <img id="lbImg" src="" alt="">
+  <button class="lb-close" id="lbClose" title="Close (Esc)">&#x2715;</button>
+  <button class="lb-nav lb-prev" id="lbPrev" title="Previous">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" title="Next">&#8250;</button>
+  <div class="lb-media" id="lbMedia"></div>
+  <div class="lb-counter" id="lbCounter"></div>
 </div>
 
 <!-- AGE MODAL -->
@@ -627,11 +638,80 @@ perPageSel.onchange=()=>{perPage=+perPageSel.value};
 // ════════════════════════════════════════════════
 //  LIGHTBOX
 // ════════════════════════════════════════════════
-lightbox.onclick=e=>{if(e.target===lightbox||e.target===lbImg)closeLightbox()};
+// ── LIGHTBOX STATE ──
+let lbItems=[], lbIndex=0;
+
+lightbox.onclick=e=>{if(e.target===lightbox)closeLightbox()};
 $('lbClose').onclick=closeLightbox;
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox()});
-function openLightbox(src){lbImg.src=src;lightbox.classList.add('show')}
-function closeLightbox(){lightbox.classList.remove('show')}
+$('lbPrev').onclick=e=>{e.stopPropagation();lbGo(lbIndex-1)};
+$('lbNext').onclick=e=>{e.stopPropagation();lbGo(lbIndex+1)};
+
+document.addEventListener('keydown',e=>{
+  if(!lightbox.classList.contains('show'))return;
+  if(e.key==='Escape')closeLightbox();
+  if(e.key==='ArrowLeft')lbGo(lbIndex-1);
+  if(e.key==='ArrowRight')lbGo(lbIndex+1);
+});
+
+// Touch/swipe support
+let lbTouchX=null;
+lightbox.addEventListener('touchstart',e=>{lbTouchX=e.touches[0].clientX},{passive:true});
+lightbox.addEventListener('touchend',e=>{
+  if(lbTouchX===null)return;
+  const dx=e.changedTouches[0].clientX-lbTouchX;
+  if(Math.abs(dx)>50){lbGo(dx<0?lbIndex+1:lbIndex-1)}
+  lbTouchX=null;
+},{passive:true});
+
+function openLightbox(src,type,items,startIdx){
+  // items = [{src, type}] array for the current post/gallery
+  lbItems=items||[{src,type:type||'image'}];
+  lbIndex=startIdx||0;
+  lbRender();
+  lightbox.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+window.openLightbox=openLightbox;
+
+function lbGo(idx){
+  if(idx<0||idx>=lbItems.length)return;
+  lbIndex=idx;
+  lbRender();
+}
+
+function lbRender(){
+  const lbMedia=$('lbMedia'), lbCounter=$('lbCounter');
+  const lbPrev=$('lbPrev'), lbNext=$('lbNext');
+  const item=lbItems[lbIndex];
+  // stop any playing video first
+  lbMedia.querySelectorAll('video').forEach(v=>{v.pause();v.src=''});
+  if(item.type==='video'||item.type==='gif'){
+    const isGif=item.type==='gif';
+    lbMedia.innerHTML=`<video src="${item.src}" ${isGif?'autoplay loop muted':'controls'} playsinline style="max-width:92vw;max-height:90vh;border-radius:6px;background:#000;outline:none" onclick="event.stopPropagation()"></video>`;
+    const v=lbMedia.querySelector('video');
+    applyFPSToVideo(v);
+    if(isGif)v.play().catch(()=>{});
+  } else {
+    lbMedia.innerHTML=`<img src="${item.src}" alt="" style="max-width:92vw;max-height:90vh;object-fit:contain;border-radius:6px;display:block;user-select:none" onclick="event.stopPropagation()">`;
+  }
+  // counter
+  if(lbItems.length>1){
+    lbCounter.textContent=`${lbIndex+1} / ${lbItems.length}`;
+    lbCounter.style.display='block';
+  } else {
+    lbCounter.style.display='none';
+  }
+  lbPrev.disabled=lbIndex===0;
+  lbNext.disabled=lbIndex===lbItems.length-1;
+  lbPrev.style.display=lbItems.length>1?'flex':'none';
+  lbNext.style.display=lbItems.length>1?'flex':'none';
+}
+
+function closeLightbox(){
+  lightbox.classList.remove('show');
+  document.body.style.overflow='';
+  $('lbMedia').querySelectorAll('video').forEach(v=>{v.pause();v.src=''});
+}
 
 // ════════════════════════════════════════════════
 //  NAVIGATION
@@ -1025,24 +1105,34 @@ function decodeRedditUrl(u){return(u||'').replace(/&amp;/g,'&')}
 // ════════════════════════════════════════════════
 function buildMedia(p,mtype){
   if(mtype==='image'){
-    const src=p.url||getFullImg(p);
+    const src=decodeRedditUrl(p.url||getFullImg(p));
     if(!src)return'';
-    return`<img class="pm-img" src="${decodeRedditUrl(src)}" alt="" loading="lazy" onclick="openLightbox(this.src)" onerror="this.parentNode.style.display='none'">`;
+    return`<img class="pm-img" src="${src}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${src}','image',[{src:'${src}',type:'image'}],0)" onerror="this.parentNode.style.display='none'" style="cursor:zoom-in">`;
   }
   if(mtype==='video'){
     const v=p.media?.reddit_video||p.secure_media?.reddit_video;
     const src=v?decodeRedditUrl(v.fallback_url||v.scrubber_media_url||''):'';
     if(!src)return'<div style="padding:16px;color:var(--dm);font-size:13px;text-align:center">Video unavailable in-app. <a href="https://www.reddit.com'+esc(p.permalink||'')+'" target="_blank" style="color:var(--acc)">View on Reddit →</a></div>';
-    return`<video class="pm-video" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:560px;background:#000;will-change:transform"></video>`;
+    return`<div style="position:relative;cursor:pointer" onclick="event.stopPropagation();openLightbox('${src}','video',[{src:'${src}',type:'video'}],0)">
+      <video class="pm-video" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:400px;background:#000;will-change:transform;pointer-events:none"></video>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+        <div style="width:54px;height:54px;border-radius:50%;background:#000000aa;border:2px solid #ffffff60;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;transition:transform .15s">▶</div>
+      </div>
+    </div>`;
   }
   if(mtype==='gif'){
     const u=p.url||'';
     let src='';
     if(p.preview?.reddit_video_preview)src=decodeRedditUrl(p.preview.reddit_video_preview.fallback_url||'');
     else if(/\.gifv$/i.test(u))src=u.replace(/\.gifv$/i,'.mp4');
-    else if(/\.gif$/i.test(u))return`<img class="pm-img" src="${u}" alt="" loading="lazy" onclick="openLightbox(this.src)">`;
+    else if(/\.gif$/i.test(u)){
+      return`<img class="pm-img" src="${u}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${u}','image',[{src:'${u}',type:'image'}],0)" style="cursor:zoom-in">`;
+    }
     if(!src)return'';
-    return`<video class="pm-video" src="${src}" autoplay loop muted playsinline style="width:100%;max-height:480px;background:#000;will-change:transform"></video>`;
+    return`<div style="position:relative;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${src}','gif',[{src:'${src}',type:'gif'}],0)">
+      <video class="pm-video" src="${src}" autoplay loop muted playsinline style="width:100%;max-height:480px;background:#000;will-change:transform;pointer-events:none"></video>
+      <div style="position:absolute;top:8px;left:8px;background:#000000aa;color:#fff;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;padding:3px 8px;border-radius:6px;letter-spacing:1px">GIF</div>
+    </div>`;
   }
   if(mtype==='gallery'){
     const items=p.gallery_data?.items||[];
@@ -1053,11 +1143,14 @@ function buildMedia(p,mtype){
       return decodeRedditUrl((m.s?.u||m.s?.gif||''));
     }).filter(Boolean);
     if(!imgs.length)return'';
-    const slides=imgs.map((src,idx)=>`<img class="gallery-img${idx===0?' active':''}" src="${src}" alt="" loading="lazy" onclick="openLightbox(this.src)" onerror="this.style.display='none'">`).join('');
+    // store gallery items in a window map keyed by post id for clean onclick access
+    const gKey='_lb_'+p.id;
+    window[gKey]=imgs.map(s=>({src:s,type:'image'}));
+    const slides=imgs.map((src,idx)=>`<img class="gallery-img${idx===0?' active':''}" src="${src}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${src}','image',window['${gKey}'],${idx})" onerror="this.style.display='none'" style="cursor:zoom-in">`).join('');
     const gid=`g${p.id}`;
     return`<div class="pm-gallery" id="${gid}">
       ${slides}
-      ${imgs.length>1?`<button class="gallery-nav gallery-prev" onclick="event.stopPropagation();galleryNav('${gid}',-1)">‹</button><button class="gallery-nav gallery-next" onclick="event.stopPropagation();galleryNav('${gid}',1)">›</button><div class="gallery-count" id="${gid}-count">1/${imgs.length}</div>`:''}
+      ${imgs.length>1?`<button class="gallery-nav gallery-prev" onclick="event.stopPropagation();galleryNav('${gid}',-1)">&#8249;</button><button class="gallery-nav gallery-next" onclick="event.stopPropagation();galleryNav('${gid}',1)">&#8250;</button><div class="gallery-count" id="${gid}-count">1/${imgs.length}</div>`:''}
     </div>`;
   }
   if(mtype==='self'){
