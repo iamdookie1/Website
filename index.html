@@ -3,2378 +3,1220 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reddit Browser</title>
+<title>SubFind — Reddit Subreddit Explorer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;1,300&family=DM+Sans:wght@300;400;500;600&family=DM+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════
-   VARIABLES & RESET
-═══════════════════════════════════════════ */
-:root {
-  --bg:        #080810;
-  --bg2:       #0d0d1a;
-  --bg3:       #111122;
-  --surface:   #131320;
-  --surface2:  #181828;
-  --surface3:  #1e1e30;
-  --card:      #111120;
-  --card-h:    #161626;
-  --border:    #1e1e32;
-  --border2:   #282840;
-  --border3:   #343458;
-  --accent:    #ff4500;
-  --accent-l:  #ff6533;
-  --accent-d:  #cc3800;
-  --accent-bg: #180900;
-  --text:      #eeeef8;
-  --text2:     #7878a0;
-  --text3:     #3a3a58;
-  --green:     #22c55e;
-  --amber:     #f59e0b;
-  --red:       #ef4444;
-  --blue:      #60a5fa;
-  --purple:    #a78bfa;
-  --gold:      #fbbf24;
-  --nsfw:      #ff1744;
-  --nsfw-bg:   #1a0008;
-  --sidebar-w: 220px;
-  --topbar-h:  54px;
-  --radius:    10px;
-  --radius-sm: 6px;
-  --shadow:    0 4px 24px rgba(0,0,0,.6);
-  --shadow-lg: 0 8px 48px rgba(0,0,0,.8);
-  --font-d:    'Fraunces', Georgia, serif;
-  --font-b:    'DM Sans', system-ui, sans-serif;
-  --font-m:    'DM Mono', monospace;
-}
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d12;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #ffffff0f;
+    --border-hover: #ffffff1f;
+    --accent: #ff4500;
+    --accent-glow: #ff450044;
+    --accent2: #ff6534;
+    --text: #f0eff5;
+    --text-muted: #7c7b8a;
+    --text-dim: #4a4959;
+    --green: #00c896;
+    --card-hover: #1e1e2a;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
 
-html, body {
-  height: 100%; width: 100%;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-b);
-  font-size: 14px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
+  html { scroll-behavior: smooth; }
 
-a { color: inherit; text-decoration: none; }
-button { border: none; background: none; cursor: pointer; font: inherit; color: inherit; }
-input, select, textarea { font: inherit; color: inherit; background: none; border: none; outline: none; }
-img, video { max-width: 100%; display: block; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-/* ═══════════════════════════════════════════
-   SCROLLBAR
-═══════════════════════════════════════════ */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border3); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+  /* ─── BACKGROUND ─── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 800px 500px at 15% 20%, #ff450012 0%, transparent 70%),
+      radial-gradient(ellipse 600px 400px at 85% 80%, #ff650010 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-/* ═══════════════════════════════════════════
-   LAYOUT
-═══════════════════════════════════════════ */
-#app { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+  /* ─── TOP BAR ─── */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #0d0d12ee;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
 
-/* Sidebar */
-#sidebar {
-  width: var(--sidebar-w);
-  min-width: var(--sidebar-w);
-  background: var(--bg2);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  z-index: 20;
-  transition: width .25s ease, min-width .25s ease;
-}
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
 
-/* Main */
-#main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-}
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
 
-/* Topbar */
-#topbar {
-  height: var(--topbar-h);
-  min-height: var(--topbar-h);
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 10px;
-  z-index: 10;
-}
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
 
-/* Banner */
-#banner {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 6px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 34px;
-  font-size: 12px;
-  color: var(--text2);
-  transition: opacity .3s;
-}
+  .logo-text span { color: var(--accent); }
 
-/* Feed area */
-#feed-area {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 16px 20px 60px;
-  scroll-behavior: smooth;
-}
+  /* ─── SEARCH BAR ─── */
+  .search-wrap {
+    flex: 1;
+    max-width: 680px;
+    position: relative;
+  }
 
-/* Status bar */
-#statusbar {
-  height: 34px;
-  min-height: 34px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  padding: 0 16px;
-  gap: 12px;
-  font-size: 11px;
-  color: var(--text3);
-}
+  .search-input {
+    width: 100%;
+    height: 44px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    padding: 0 48px 0 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    outline: none;
+    transition: all 0.2s;
+  }
 
-/* ═══════════════════════════════════════════
-   SIDEBAR INTERNALS
-═══════════════════════════════════════════ */
-.sidebar-logo {
-  padding: 20px 18px 16px;
-  border-bottom: 1px solid var(--border);
-}
-.sidebar-logo-title {
-  font-family: var(--font-d);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--accent);
-  letter-spacing: -.5px;
-  line-height: 1;
-}
-.sidebar-logo-sub {
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 3px;
-  color: var(--text3);
-  text-transform: uppercase;
-  margin-top: 3px;
-}
+  .search-input::placeholder { color: var(--text-dim); }
 
-.sidebar-section {
-  padding: 14px 18px 6px;
-}
-.sidebar-section-label {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text3);
-  margin-bottom: 6px;
-}
+  .search-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+    background: var(--surface);
+  }
 
-/* Sub input */
-.sub-input-wrap {
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 0 8px;
-  transition: border-color .2s;
-}
-.sub-input-wrap:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-bg);
-}
-.sub-prefix {
-  color: var(--text2);
-  font-size: 13px;
-  user-select: none;
-}
-.sub-input {
-  flex: 1;
-  padding: 7px 4px;
-  font-size: 13px;
-  background: transparent;
-  color: var(--text);
-  min-width: 0;
-}
-.sub-input::placeholder { color: var(--text3); }
+  .search-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: white;
+  }
 
-/* Sort / time rows */
-.sort-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-}
-.sort-row label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); flex: none; }
-.sort-select {
-  flex: 1;
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  padding: 5px 8px;
-  font-size: 12px;
-  color: var(--text);
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237878a0'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 8px center;
-  padding-right: 24px;
-}
-.sort-select option { background: var(--surface3); }
-.sort-select:focus { outline: none; border-color: var(--accent); }
+  .search-btn:hover {
+    background: var(--accent2);
+    box-shadow: 0 0 16px var(--accent-glow);
+    transform: translateY(-50%) scale(1.05);
+  }
 
-/* Nav tabs */
-.nav-tab {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 18px;
-  font-size: 13px;
-  font-weight: 400;
-  color: var(--text2);
-  cursor: pointer;
-  border-radius: 0;
-  width: 100%;
-  text-align: left;
-  transition: background .15s, color .15s;
-  border-left: 2px solid transparent;
-  user-select: none;
-}
-.nav-tab:hover { background: var(--surface2); color: var(--text); }
-.nav-tab.active {
-  background: var(--accent-bg);
-  color: var(--accent);
-  border-left-color: var(--accent);
-  font-weight: 500;
-}
-.nav-tab .tab-icon {
-  font-size: 14px;
-  width: 18px;
-  text-align: center;
-  flex-shrink: 0;
-}
+  .search-btn svg { width: 16px; height: 16px; fill: white; }
 
-/* History items */
-.history-item {
-  display: block;
-  padding: 6px 18px 6px 36px;
-  font-size: 12px;
-  color: var(--text3);
-  cursor: pointer;
-  transition: color .15s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.history-item:hover { color: var(--accent); }
+  /* ─── NSFW TOGGLE ─── */
+  .nsfw-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 22px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    transition: all 0.2s;
+    user-select: none;
+  }
 
-/* Sidebar bottom */
-.sidebar-bottom {
-  margin-top: auto;
-  border-top: 1px solid var(--border);
-  padding: 8px 0;
-}
-.sidebar-spacer { flex: 1; overflow-y: auto; }
+  .nsfw-toggle:hover { border-color: var(--border-hover); background: var(--surface); }
 
-/* ═══════════════════════════════════════════
-   TOPBAR
-═══════════════════════════════════════════ */
-.search-wrap {
-  display: flex;
-  align-items: center;
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: 99px;
-  padding: 0 14px;
-  gap: 8px;
-  flex: 1;
-  max-width: 480px;
-  transition: border-color .2s, box-shadow .2s;
-}
-.search-wrap:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-bg);
-}
-.search-wrap svg { color: var(--text3); flex-shrink: 0; }
-.search-input {
-  flex: 1;
-  padding: 8px 0;
-  font-size: 13px;
-  background: transparent;
-  color: var(--text);
-  min-width: 0;
-}
-.search-input::placeholder { color: var(--text3); }
+  .nsfw-toggle.active {
+    border-color: #ff006655;
+    background: #ff006610;
+  }
 
-.search-sort {
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: 99px;
-  padding: 7px 28px 7px 12px;
-  font-size: 12px;
-  color: var(--text2);
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237878a0'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-}
-.search-sort option { background: #1a1a2e; }
+  .toggle-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    transition: color 0.2s;
+  }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 16px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .15s;
-  white-space: nowrap;
-  user-select: none;
-}
-.btn-accent { background: var(--accent); color: #fff; }
-.btn-accent:hover { background: var(--accent-l); }
-.btn-ghost { background: var(--surface3); color: var(--text2); border: 1px solid var(--border2); }
-.btn-ghost:hover { background: var(--surface2); color: var(--text); border-color: var(--border3); }
+  .nsfw-toggle.active .toggle-label { color: #ff4d88; }
 
-.nsfw-badge {
-  padding: 4px 10px;
-  border-radius: 99px;
-  background: var(--nsfw-bg);
-  color: var(--nsfw);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .5px;
-  border: 1px solid var(--nsfw);
-  cursor: pointer;
-  transition: all .15s;
-  user-select: none;
-}
-.nsfw-badge:hover { background: var(--nsfw); color: #fff; }
-.nsfw-off { background: var(--surface3); color: var(--text3); border-color: var(--border2); }
-.nsfw-off:hover { background: var(--surface2); color: var(--text2); }
+  .toggle-pill {
+    width: 34px;
+    height: 18px;
+    background: var(--surface);
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    position: relative;
+    transition: all 0.2s;
+  }
 
-/* ═══════════════════════════════════════════
-   CARDS
-═══════════════════════════════════════════ */
-#cards-container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-width: 860px;
-}
+  .nsfw-toggle.active .toggle-pill {
+    background: #ff006640;
+    border-color: #ff006688;
+  }
 
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  transition: border-color .2s, transform .15s, box-shadow .2s;
-  animation: cardIn .25s ease both;
-}
-.card:hover {
-  border-color: var(--border3);
-  box-shadow: 0 2px 20px rgba(0,0,0,.5);
-}
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+  .toggle-dot {
+    width: 12px;
+    height: 12px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
 
-.card-inner { padding: 14px 16px; }
+  .nsfw-toggle.active .toggle-dot {
+    transform: translateX(16px);
+    background: #ff4d88;
+    box-shadow: 0 0 8px #ff006688;
+  }
 
-.card-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-  font-size: 11px;
-}
-.card-sub {
-  color: var(--accent);
-  font-weight: 600;
-  cursor: pointer;
-  transition: color .15s;
-}
-.card-sub:hover { color: var(--accent-l); text-decoration: underline; }
-.card-dot { color: var(--text3); }
-.card-author { color: var(--text2); }
-.card-age { color: var(--text3); }
+  /* ─── LAYOUT ─── */
+  .layout {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    gap: 24px;
+    position: relative;
+    z-index: 1;
+  }
 
-.badge {
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .3px;
-}
-.badge-nsfw { background: var(--nsfw-bg); color: var(--nsfw); border: 1px solid #ff174422; }
-.badge-flair { background: #2a1a4a; color: var(--purple); }
-.badge-kind  { background: var(--surface3); color: var(--text3); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 88px;
+    height: fit-content;
+  }
 
-.card-title {
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.4;
-  color: var(--text);
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: color .15s;
-  font-family: var(--font-b);
-}
-.card-title:hover { color: var(--accent-l); }
+  .sidebar-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    padding-left: 4px;
+  }
 
-/* Media area */
-.card-media {
-  position: relative;
-  background: var(--bg);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  margin-bottom: 12px;
-  cursor: pointer;
-}
-.card-media img {
-  width: 100%;
-  max-height: 480px;
-  object-fit: cover;
-  display: block;
-  border-radius: var(--radius-sm);
-  transition: transform .3s;
-}
-.card-media:hover img { transform: scale(1.01); }
-.card-media video {
-  width: 100%;
-  max-height: 480px;
-  border-radius: var(--radius-sm);
-  background: #000;
-  display: block;
-}
-.media-overlay {
-  position: absolute;
-  top: 10px; right: 10px;
-  background: rgba(0,0,0,.7);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
-  backdrop-filter: blur(4px);
-  pointer-events: none;
-}
-.play-btn-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0,0,0,.4);
-  border-radius: var(--radius-sm);
-  opacity: 0;
-  transition: opacity .2s;
-  pointer-events: none;
-}
-.card-media:hover .play-btn-overlay { opacity: 1; }
-.play-btn-overlay svg { width: 52px; height: 52px; filter: drop-shadow(0 2px 8px rgba(0,0,0,.8)); }
+  .sidebar-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
 
-/* Selftext */
-.card-selftext {
-  font-size: 13px;
-  color: var(--text2);
-  line-height: 1.6;
-  margin-bottom: 12px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-}
+  .filter-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+  }
 
-/* Card actions */
-.card-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-wrap: wrap;
-}
-.card-score {
-  font-size: 13px;
-  font-weight: 600;
-  min-width: 48px;
-  margin-right: 6px;
-}
-.action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: var(--text2);
-  cursor: pointer;
-  transition: background .15s, color .15s;
-  user-select: none;
-}
-.action-btn:hover { background: var(--surface3); color: var(--text); }
-.action-btn.saved { color: var(--gold); }
-.action-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
-.card-domain {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--text3);
-  font-family: var(--font-m);
-}
+  .filter-btn:last-child { border-bottom: none; }
 
-/* Awards */
-.card-awards {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: var(--gold);
-  margin-left: auto;
-}
+  .filter-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
 
-/* ═══════════════════════════════════════════
-   VIDEO CARD
-═══════════════════════════════════════════ */
-.video-container {
-  position: relative;
-  background: #000;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-.video-container video {
-  width: 100%;
-  max-height: 500px;
-  display: block;
-}
-.video-no-audio {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0,0,0,.75);
-  color: var(--amber);
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 99px;
-  pointer-events: none;
-  backdrop-filter: blur(4px);
-}
+  .filter-btn.active {
+    color: var(--accent);
+    background: #ff450010;
+    font-weight: 500;
+  }
 
-/* ═══════════════════════════════════════════
-   SKELETONS
-═══════════════════════════════════════════ */
-.skeleton-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  animation: cardIn .2s ease both;
-}
-.skel {
-  background: var(--surface2);
-  border-radius: 4px;
-  margin-bottom: 10px;
-}
-.skel-sm { height: 8px; }
-.skel-md { height: 14px; }
-.skel-lg { height: 22px; }
-.skel-img { height: 180px; border-radius: var(--radius-sm); margin-bottom: 12px; }
-@keyframes shimmer {
-  0%   { opacity: .6; }
-  50%  { opacity: 1; }
-  100% { opacity: .6; }
-}
-.skeleton-card .skel { animation: shimmer 1.4s ease infinite; }
-.skeleton-card:nth-child(2) .skel { animation-delay: .15s; }
-.skeleton-card:nth-child(3) .skel { animation-delay: .3s; }
-.skeleton-card:nth-child(4) .skel { animation-delay: .45s; }
-.skeleton-card:nth-child(5) .skel { animation-delay: .6s; }
+  .filter-btn .icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
 
-/* ═══════════════════════════════════════════
-   LIGHTBOX
-═══════════════════════════════════════════ */
-#lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(0,0,0,.94);
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(8px);
-  animation: fadeIn .2s ease;
-}
-#lightbox.open { display: flex; }
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-.lightbox-top {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: linear-gradient(to bottom, rgba(0,0,0,.8), transparent);
-}
-.lightbox-title {
-  flex: 1;
-  font-size: 13px;
-  color: var(--text2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#lightbox-img {
-  max-width: calc(100vw - 40px);
-  max-height: calc(100vh - 100px);
-  object-fit: contain;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-lg);
-  animation: zoomIn .25s ease;
-}
-@keyframes zoomIn {
-  from { transform: scale(.95); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
-}
-.lightbox-loading {
-  color: var(--text2);
-  font-size: 14px;
-  display: none;
-}
-.lightbox-loading.show { display: block; }
+  .filter-btn.active .icon {
+    background: var(--accent-glow);
+  }
 
-/* ═══════════════════════════════════════════
-   MODAL (Settings, Age Gate)
-═══════════════════════════════════════════ */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 500;
-  background: rgba(0,0,0,.85);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(6px);
-  animation: fadeIn .2s ease;
-}
-.modal-overlay.open { display: flex; }
+  .sidebar-group2 {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
 
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border2);
-  border-radius: 16px;
-  width: min(540px, calc(100vw - 32px));
-  max-height: calc(100vh - 64px);
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
-  animation: slideUp .25s ease;
-}
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
-}
-.modal-header {
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid var(--border);
-}
-.modal-header h2 {
-  font-family: var(--font-d);
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--text);
-}
-.modal-header p {
-  font-size: 13px;
-  color: var(--text2);
-  margin-top: 4px;
-}
-.modal-body { padding: 20px 24px; }
-.modal-footer {
-  padding: 16px 24px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
+  .sidebar-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-muted);
+  }
 
-.settings-section-title {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin: 18px 0 10px;
-}
-.settings-section-title:first-child { margin-top: 0; }
+  .sidebar-stat:last-child { border-bottom: none; }
+  .sidebar-stat strong { color: var(--text); font-weight: 500; }
 
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
-}
-.setting-row:last-child { border-bottom: none; }
-.setting-label { font-size: 13px; color: var(--text); }
-.setting-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  /* ─── RESULTS AREA ─── */
+  .results-area { flex: 1; min-width: 0; }
 
-/* Toggle switch */
-.toggle {
-  position: relative;
-  width: 40px;
-  height: 22px;
-  flex-shrink: 0;
-}
-.toggle input { display: none; }
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  background: var(--surface3);
-  border-radius: 99px;
-  border: 1px solid var(--border2);
-  cursor: pointer;
-  transition: background .2s;
-}
-.toggle-thumb {
-  position: absolute;
-  top: 3px; left: 3px;
-  width: 14px; height: 14px;
-  background: var(--text3);
-  border-radius: 99px;
-  transition: transform .2s, background .2s;
-  pointer-events: none;
-}
-.toggle input:checked ~ .toggle-track { background: var(--accent-bg); border-color: var(--accent); }
-.toggle input:checked ~ .toggle-thumb { transform: translateX(18px); background: var(--accent); }
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
 
-/* Select input in modal */
-.modal-select {
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  padding: 7px 30px 7px 12px;
-  font-size: 13px;
-  color: var(--text);
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237878a0'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  min-width: 130px;
-}
-.modal-select option { background: #1e1e30; }
-.modal-select:focus { outline: none; border-color: var(--accent); }
+  .results-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
 
-.modal-input {
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-sm);
-  padding: 7px 12px;
-  font-size: 13px;
-  color: var(--text);
-  width: 180px;
-  transition: border-color .2s;
-}
-.modal-input:focus { border-color: var(--accent); }
-.modal-input::placeholder { color: var(--text3); }
+  .results-title span { color: var(--accent); }
 
-/* Age gate modal */
-.age-gate { text-align: center; padding: 32px 24px; }
-.age-gate-icon {
-  font-family: var(--font-d);
-  font-size: 64px;
-  font-weight: 600;
-  color: var(--nsfw);
-  line-height: 1;
-  margin-bottom: 12px;
-}
-.age-gate h2 { font-family: var(--font-d); font-size: 24px; margin-bottom: 8px; }
-.age-gate p { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 20px; max-width: 340px; margin-inline: auto; }
-.age-gate-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-.btn-nsfw { background: var(--nsfw); color: #fff; }
-.btn-nsfw:hover { background: #ff4466; }
-.btn-nsfw { border-radius: 99px; }
+  .results-count {
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+  }
 
-/* ═══════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════ */
-#toast-container {
-  position: fixed;
-  bottom: 48px;
-  right: 20px;
-  z-index: 2000;
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 8px;
-  pointer-events: none;
-}
-.toast {
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-size: 13px;
-  color: var(--text);
-  box-shadow: var(--shadow);
-  animation: toastIn .25s ease;
-  pointer-events: none;
-  max-width: 300px;
-  backdrop-filter: blur(8px);
-}
-.toast.accent { border-color: var(--accent); }
-.toast.amber  { border-color: var(--amber); color: var(--amber); }
-.toast.green  { border-color: var(--green); color: var(--green); }
-@keyframes toastIn {
-  from { transform: translateX(20px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-@keyframes toastOut {
-  from { transform: translateX(0);    opacity: 1; }
-  to   { transform: translateX(20px); opacity: 0; }
-}
-.toast.out { animation: toastOut .25s ease forwards; }
+  /* ─── CARDS ─── */
+  .cards-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
-/* ═══════════════════════════════════════════
-   MISC
-═══════════════════════════════════════════ */
-.empty-state {
-  text-align: center;
-  padding: 80px 20px;
-  color: var(--text3);
-}
-.empty-state-icon { font-size: 48px; margin-bottom: 12px; font-family: var(--font-d); }
-.empty-state h3 { font-size: 18px; font-family: var(--font-d); color: var(--text2); margin-bottom: 6px; }
-.empty-state p { font-size: 13px; line-height: 1.6; }
+  .sub-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: all 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    animation: fadeUp 0.35s ease both;
+  }
 
-.load-more-wrap {
-  padding: 20px 0;
-  display: flex;
-  justify-content: center;
-}
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
-#scroll-anchor { height: 1px; }
+  .sub-card:hover {
+    background: var(--card-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px #00000044;
+  }
 
-.kbd {
-  font-family: var(--font-m);
-  font-size: 11px;
-  background: var(--surface3);
-  color: var(--text2);
-  border: 1px solid var(--border2);
-  border-radius: 4px;
-  padding: 2px 6px;
-}
+  .sub-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 20px;
+    color: white;
+    overflow: hidden;
+    position: relative;
+  }
 
-/* Score colors */
-.score-great { color: var(--green); }
-.score-good  { color: var(--text); }
-.score-ok    { color: var(--amber); }
-.score-bad   { color: var(--red); }
+  .sub-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
 
-/* Help panel */
-#help-panel {
-  position: fixed;
-  bottom: 48px; left: 50%;
-  transform: translateX(-50%);
-  z-index: 300;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 16px 20px;
-  box-shadow: var(--shadow-lg);
-  display: none;
-  grid-template-columns: auto 1fr;
-  gap: 8px 20px;
-  font-size: 12px;
-  animation: slideUp .2s ease;
-  max-width: 360px;
-  width: calc(100vw - 32px);
-}
-#help-panel.open { display: grid; }
-#help-panel dt { font-family: var(--font-m); }
-#help-panel dd { color: var(--text2); }
+  .sub-info { flex: 1; min-width: 0; }
 
-/* Saved dot indicator */
-.saved-dot {
-  width: 6px; height: 6px;
-  border-radius: 99px;
-  background: var(--gold);
-  display: inline-block;
-  margin-left: 2px;
-}
+  .sub-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    flex-wrap: wrap;
+  }
+
+  .sub-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+  }
+
+  .sub-handle {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .badge {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
+  .badge-nsfw {
+    background: #ff006620;
+    color: #ff4d88;
+    border: 1px solid #ff006640;
+  }
+
+  .badge-verified {
+    background: #00c89620;
+    color: var(--green);
+    border: 1px solid #00c89640;
+  }
+
+  .sub-desc {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    margin-bottom: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .sub-meta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .meta-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+
+  .meta-chip svg { width: 13px; height: 13px; opacity: 0.7; }
+
+  .meta-chip strong { color: var(--text-muted); font-weight: 500; }
+
+  .sub-action {
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  .visit-btn {
+    padding: 8px 18px;
+    background: var(--accent);
+    border: none;
+    border-radius: 20px;
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  .visit-btn:hover {
+    background: var(--accent2);
+    box-shadow: 0 4px 16px var(--accent-glow);
+    transform: scale(1.03);
+  }
+
+  /* ─── PLACEHOLDER STATES ─── */
+  .state-box {
+    text-align: center;
+    padding: 80px 40px;
+    color: var(--text-muted);
+  }
+
+  .state-icon {
+    font-size: 52px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .state-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .state-sub {
+    font-size: 14px;
+    color: var(--text-dim);
+    max-width: 320px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ─── LOADER ─── */
+  .loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 60px;
+  }
+
+  .loader-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1s ease infinite;
+    opacity: 0.7;
+  }
+
+  .loader-dot:nth-child(2) { animation-delay: 0.15s; }
+  .loader-dot:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-10px); opacity: 1; }
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    text-align: center;
+    padding: 48px 20px 56px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+  }
+
+  .hero-title .highlight {
+    color: var(--accent);
+    position: relative;
+  }
+
+  .hero-sub {
+    font-size: 16px;
+    color: var(--text-muted);
+    max-width: 520px;
+    margin: 0 auto 36px;
+    line-height: 1.65;
+  }
+
+  .hero-search {
+    max-width: 580px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .hero-input {
+    width: 100%;
+    height: 56px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    padding: 0 60px 0 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    color: var(--text);
+    outline: none;
+    transition: all 0.2s;
+  }
+
+  .hero-input::placeholder { color: var(--text-dim); }
+
+  .hero-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-glow), 0 8px 40px #ff450020;
+  }
+
+  .hero-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 42px;
+    height: 42px;
+    background: var(--accent);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    transition: all 0.2s;
+  }
+
+  .hero-search-btn:hover {
+    background: var(--accent2);
+    box-shadow: 0 0 20px var(--accent-glow);
+    transform: translateY(-50%) scale(1.08);
+  }
+
+  .hero-search-btn svg { width: 18px; height: 18px; fill: white; }
+
+  .hero-tags {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .hero-tag {
+    padding: 5px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .hero-tag:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  /* ─── AGE VERIFICATION MODAL ─── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: #00000088;
+    backdrop-filter: blur(12px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: overlayIn 0.2s ease;
+  }
+
+  @keyframes overlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-overlay.hidden { display: none; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 40px 36px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    animation: modalIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 32px 80px #00000080;
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.88) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .modal-emoji { font-size: 48px; margin-bottom: 20px; display: block; }
+
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+
+  .modal-body {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin-bottom: 28px;
+  }
+
+  .modal-body strong { color: #ff4d88; }
+
+  .modal-btns {
+    display: flex;
+    gap: 12px;
+  }
+
+  .modal-btn {
+    flex: 1;
+    height: 46px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .modal-btn-yes {
+    background: #ff006640;
+    color: #ff4d88;
+    border: 1px solid #ff006660;
+  }
+
+  .modal-btn-yes:hover {
+    background: #ff006660;
+    box-shadow: 0 4px 20px #ff006640;
+    transform: translateY(-1px);
+  }
+
+  .modal-btn-no {
+    background: var(--surface2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+
+  .modal-btn-no:hover {
+    background: var(--surface);
+    color: var(--text);
+    transform: translateY(-1px);
+  }
+
+  .modal-disclaimer {
+    margin-top: 16px;
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* ─── SCROLL HINT ─── */
+  .load-more {
+    text-align: center;
+    padding: 28px;
+  }
+
+  .load-more-btn {
+    padding: 12px 32px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .load-more-btn:hover {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .nsfw-badge-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ff006612;
+    border: 1px solid #ff006630;
+    border-radius: 10px;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #ff4d88;
+  }
+
+  .nsfw-badge-bar svg { width: 15px; height: 15px; fill: #ff4d88; flex-shrink: 0; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 768px) {
+    .topbar { padding: 0 16px; gap: 12px; }
+    .logo-text { display: none; }
+    .layout { flex-direction: column; padding: 20px 16px; gap: 16px; }
+    .sidebar { width: 100%; position: static; }
+    .sidebar-group { display: flex; overflow-x: auto; }
+    .filter-btn { border-bottom: none; border-right: 1px solid var(--border); white-space: nowrap; }
+    .filter-btn:last-child { border-right: none; }
+    .hero { padding: 32px 16px 40px; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ══════════════════════════════════════
-     HTML STRUCTURE
-══════════════════════════════════════ -->
-<div id="app">
+<!-- AGE VERIFICATION MODAL -->
+<div class="modal-overlay hidden" id="ageModal">
+  <div class="modal">
+    <span class="modal-emoji">🔞</span>
+    <div class="modal-title">Age Verification</div>
+    <div class="modal-body">
+      You're about to enable <strong>NSFW content</strong>. This includes mature and adult-oriented subreddits.<br><br>
+      Are you <strong>18 years of age or older?</strong>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn modal-btn-no" id="ageNo">No, I'm under 18</button>
+      <button class="modal-btn modal-btn-yes" id="ageYes">Yes, I'm 18+</button>
+    </div>
+    <div class="modal-disclaimer">
+      By confirming, you take full responsibility for accessing age-restricted content. This site uses Reddit's public API.
+    </div>
+  </div>
+</div>
 
+<!-- TOP BAR -->
+<header class="topbar">
+  <a class="logo" href="#">
+    <div class="logo-icon">🔍</div>
+    <div class="logo-text">Sub<span>Find</span></div>
+  </a>
+
+  <div class="search-wrap" id="topSearchWrap" style="display:none;">
+    <input class="search-input" id="topSearch" type="text" placeholder="Search subreddits…" autocomplete="off">
+    <button class="search-btn" id="topSearchBtn" title="Search">
+      <svg viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <div style="flex:1;"></div>
+
+  <div class="nsfw-toggle" id="nsfwToggle" title="Toggle NSFW content">
+    <span class="toggle-label">NSFW</span>
+    <div class="toggle-pill">
+      <div class="toggle-dot"></div>
+    </div>
+  </div>
+</header>
+
+<!-- HERO (shown before first search) -->
+<section class="hero" id="hero">
+  <div class="hero-eyebrow">Reddit Subreddit Explorer</div>
+  <h1 class="hero-title">Find your next<br><span class="highlight">community</span></h1>
+  <p class="hero-sub">Search millions of active subreddits. Filter by relevance, popularity, and more. Only active communities shown.</p>
+  <div class="hero-search">
+    <input class="hero-input" id="heroSearch" type="text" placeholder="Try 'gaming', 'science', 'cooking'…" autocomplete="off">
+    <button class="hero-search-btn" id="heroSearchBtn">
+      <svg viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" stroke="white" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="hero-tags" id="heroTags">
+    <span class="hero-tag">🎮 gaming</span>
+    <span class="hero-tag">🔬 science</span>
+    <span class="hero-tag">🍳 cooking</span>
+    <span class="hero-tag">🎵 music</span>
+    <span class="hero-tag">💻 programming</span>
+    <span class="hero-tag">📸 photography</span>
+    <span class="hero-tag">🏋️ fitness</span>
+    <span class="hero-tag">🎨 art</span>
+  </div>
+</section>
+
+<!-- MAIN LAYOUT -->
+<main class="layout" id="mainLayout" style="display:none;">
   <!-- SIDEBAR -->
-  <aside id="sidebar">
-    <div class="sidebar-logo">
-      <div class="sidebar-logo-title">Reddit</div>
-      <div class="sidebar-logo-sub">Browser</div>
+  <aside class="sidebar">
+    <div class="sidebar-title">Sort By</div>
+    <div class="sidebar-group">
+      <button class="filter-btn active" data-sort="relevance" onclick="setSort('relevance',this)">
+        <span class="icon">⭐</span> Relevance
+      </button>
+      <button class="filter-btn" data-sort="activity" onclick="setSort('activity',this)">
+        <span class="icon">🔥</span> Activity
+      </button>
+      <button class="filter-btn" data-sort="subscribers" onclick="setSort('subscribers',this)">
+        <span class="icon">👥</span> Members
+      </button>
+      <button class="filter-btn" data-sort="new" onclick="setSort('new',this)">
+        <span class="icon">✨</span> Newest
+      </button>
     </div>
 
-    <div class="sidebar-section">
-      <div class="sidebar-section-label">Subreddit</div>
-      <div class="sub-input-wrap">
-        <span class="sub-prefix">r/</span>
-        <input class="sub-input" id="sub-input" type="text"
-               placeholder="popular" autocomplete="off"
-               autocorrect="off" spellcheck="false">
+    <div class="sidebar-title">Info</div>
+    <div class="sidebar-group2">
+      <div class="sidebar-stat">
+        <span>Results</span>
+        <strong id="statCount">—</strong>
       </div>
-      <div class="sort-row">
-        <label>Sort</label>
-        <select class="sort-select" id="sort-select">
-          <option value="hot">Hot</option>
-          <option value="new">New</option>
-          <option value="top">Top</option>
-          <option value="rising">Rising</option>
-          <option value="controversial">Controversial</option>
-        </select>
+      <div class="sidebar-stat">
+        <span>NSFW</span>
+        <strong id="statNsfw" style="color: var(--text-dim);">Hidden</strong>
       </div>
-      <div class="sort-row" id="time-row" style="display:none">
-        <label>Time</label>
-        <select class="sort-select" id="time-select">
-          <option value="hour">Hour</option>
-          <option value="day" selected>Day</option>
-          <option value="week">Week</option>
-          <option value="month">Month</option>
-          <option value="year">Year</option>
-          <option value="all">All time</option>
-        </select>
+      <div class="sidebar-stat">
+        <span>Source</span>
+        <strong style="color: var(--accent);">Reddit</strong>
       </div>
     </div>
 
-    <div style="border-top:1px solid var(--border); margin: 0"></div>
-
-    <div class="sidebar-section" style="padding-bottom:2px">
-      <div class="sidebar-section-label">Browse</div>
-    </div>
-    <nav id="nav-tabs">
-      <button class="nav-tab active" data-tab="feed">
-        <span class="tab-icon">⊞</span> Feed
-      </button>
-      <button class="nav-tab" data-tab="images">
-        <span class="tab-icon">⬚</span> Images
-      </button>
-      <button class="nav-tab" data-tab="videos">
-        <span class="tab-icon">▷</span> Videos
-      </button>
-      <button class="nav-tab" data-tab="gifs">
-        <span class="tab-icon">◈</span> GIFs
-      </button>
-      <button class="nav-tab" data-tab="text">
-        <span class="tab-icon">≡</span> Text Posts
-      </button>
-      <button class="nav-tab" data-tab="links">
-        <span class="tab-icon">⤴</span> Links
-      </button>
-    </nav>
-
-    <div style="border-top:1px solid var(--border); margin: 8px 0 0"></div>
-    <div class="sidebar-section" style="padding-bottom:2px">
-      <div class="sidebar-section-label">Saved</div>
-    </div>
-    <nav>
-      <button class="nav-tab" data-tab="bookmarks">
-        <span class="tab-icon">◈</span> Bookmarks <span id="bm-count"></span>
-      </button>
-      <button class="nav-tab" id="search-results-tab" data-tab="search" style="display:none">
-        <span class="tab-icon">◎</span> Results
-      </button>
-    </nav>
-
-    <div class="sidebar-spacer">
-      <div style="border-top:1px solid var(--border); margin: 8px 0 0"></div>
-      <div class="sidebar-section" style="padding-bottom:2px">
-        <div class="sidebar-section-label">Recent</div>
-      </div>
-      <div id="history-list"></div>
-    </div>
-
-    <div class="sidebar-bottom">
-      <button class="nav-tab" onclick="openSettings()">
-        <span class="tab-icon">⚙</span> Settings
-      </button>
-      <button class="nav-tab" onclick="toggleHelp()">
-        <span class="tab-icon">?</span> Shortcuts
-      </button>
+    <div class="sidebar-title">About</div>
+    <div class="sidebar-group2" style="font-size:12.5px; color: var(--text-dim); line-height:1.65;">
+      SubFind only shows <strong style="color:var(--text-muted)">active, non-deleted</strong> subreddits using Reddit's public search API. Deleted or private communities won't appear.
     </div>
   </aside>
 
-  <!-- MAIN AREA -->
-  <div id="main">
-    <!-- TOPBAR -->
-    <div id="topbar">
-      <div class="search-wrap">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"/>
-        </svg>
-        <input class="search-input" id="search-input" type="text"
-               placeholder="Search Reddit..." autocomplete="off">
-      </div>
-      <select class="search-sort" id="search-sort-select">
-        <option value="relevance">Relevance</option>
-        <option value="new">New</option>
-        <option value="top">Top</option>
-        <option value="comments">Comments</option>
-      </select>
-      <button class="btn btn-accent" onclick="doSearch()">Search</button>
-      <button class="nsfw-badge nsfw-off" id="nsfw-badge" onclick="toggleNSFW()">18+</button>
+  <!-- RESULTS -->
+  <section class="results-area">
+    <div class="results-header">
+      <div class="results-title">Results for <span id="queryLabel">"…"</span></div>
+      <div class="results-count" id="resultCount">0 found</div>
     </div>
-
-    <!-- BANNER -->
-    <div id="banner">
-      <span id="banner-text">r/popular — Reddit front page</span>
-      <span id="banner-stats" style="color:var(--green);font-size:11px"></span>
+    <div id="nsfwBar" class="nsfw-badge-bar" style="display:none;">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      NSFW content is enabled. Some results may contain adult or mature themes.
     </div>
-
-    <!-- FEED -->
-    <div id="feed-area">
-      <div id="cards-container"></div>
-      <div id="scroll-anchor"></div>
+    <div class="cards-grid" id="cardsGrid"></div>
+    <div class="load-more" id="loadMoreWrap" style="display:none;">
+      <button class="load-more-btn" id="loadMoreBtn">Load more results</button>
     </div>
+  </section>
+</main>
 
-    <!-- STATUS BAR -->
-    <div id="statusbar">
-      <span id="status-text">Ready</span>
-      <button class="btn btn-ghost" id="load-more-btn"
-              style="padding:3px 12px;font-size:11px;display:none"
-              onclick="loadMore()">Load more</button>
-      <button class="btn btn-ghost" id="top-btn"
-              style="margin-left:auto;padding:3px 12px;font-size:11px"
-              onclick="scrollTop()">↑ Top</button>
-    </div>
-  </div>
-</div>
-
-<!-- LIGHTBOX -->
-<div id="lightbox" onclick="closeLightbox(event)">
-  <div class="lightbox-top">
-    <span class="lightbox-title" id="lightbox-title"></span>
-    <a class="btn btn-ghost" id="lightbox-open" target="_blank" rel="noopener"
-       style="font-size:12px">Open ↗</a>
-    <button class="btn btn-ghost" onclick="closeLightboxDirect()"
-            style="font-size:12px">✕ Close</button>
-  </div>
-  <div class="lightbox-loading" id="lightbox-loading">Loading...</div>
-  <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
-</div>
-
-<!-- SETTINGS MODAL -->
-<div class="modal-overlay" id="settings-modal" onclick="closeModal('settings-modal', event)">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Settings</h2>
-      <p>Customize your Reddit Browser experience</p>
-    </div>
-    <div class="modal-body">
-      <div class="settings-section-title">Content</div>
-
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">NSFW Content <span style="color:var(--nsfw);font-size:11px">(18+)</span></div>
-          <div class="setting-desc">Show adult-only posts — requires age verification</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="setting-nsfw" onchange="onNSFWToggle(this)">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Show Previews</div>
-          <div class="setting-desc">Load image / video previews in cards</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="setting-previews" checked>
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Autoplay Videos</div>
-          <div class="setting-desc">Play videos automatically (muted)</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="setting-autoplay">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Compact Cards</div>
-          <div class="setting-desc">Denser layout, no media previews</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="setting-compact">
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Infinite Scroll</div>
-          <div class="setting-desc">Auto-load more posts when scrolling</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="setting-infinite" checked>
-          <div class="toggle-track"></div>
-          <div class="toggle-thumb"></div>
-        </label>
-      </div>
-
-      <div class="settings-section-title">Defaults</div>
-
-      <div class="setting-row">
-        <div class="setting-label">Default Subreddit</div>
-        <input class="modal-input" id="setting-default-sub"
-               placeholder="popular" style="width:160px">
-      </div>
-      <div class="setting-row">
-        <div class="setting-label">Default Sort</div>
-        <select class="modal-select" id="setting-default-sort">
-          <option value="hot">Hot</option>
-          <option value="new">New</option>
-          <option value="top">Top</option>
-          <option value="rising">Rising</option>
-        </select>
-      </div>
-      <div class="setting-row">
-        <div class="setting-label">Posts per load</div>
-        <select class="modal-select" id="setting-limit">
-          <option value="15">15</option>
-          <option value="25" selected>25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
-      </div>
-
-      <div class="settings-section-title">Bookmarks</div>
-      <div class="setting-row">
-        <div>
-          <div class="setting-label">Clear All Bookmarks</div>
-          <div class="setting-desc">Permanently delete all saved posts</div>
-        </div>
-        <button class="btn btn-ghost" onclick="clearBookmarks()"
-                style="font-size:12px;color:var(--red)">Clear</button>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeModal('settings-modal')">Cancel</button>
-      <button class="btn btn-accent" onclick="saveSettings()">Save Changes</button>
-    </div>
-  </div>
-</div>
-
-<!-- AGE GATE MODAL -->
-<div class="modal-overlay" id="age-modal">
-  <div class="modal" onclick="event.stopPropagation()">
-    <div class="age-gate">
-      <div class="age-gate-icon">18+</div>
-      <h2>Age Verification</h2>
-      <p>NSFW content is intended for adults only.<br>
-         By continuing you confirm you are 18 or older,
-         that viewing such content is legal where you are,
-         and that you consent to viewing mature material.</p>
-      <div class="age-gate-btns">
-        <button class="btn btn-nsfw" onclick="confirmAge()">I am 18+ — Continue</button>
-        <button class="btn btn-ghost" onclick="denyAge()">Cancel</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- TOAST CONTAINER -->
-<div id="toast-container"></div>
-
-<!-- HELP PANEL -->
-<dl id="help-panel">
-  <dt><kbd class="kbd">J / K</kbd></dt><dd>Scroll down / up</dd>
-  <dt><kbd class="kbd">R</kbd></dt><dd>Refresh feed</dd>
-  <dt><kbd class="kbd">/</kbd></dt><dd>Focus search</dd>
-  <dt><kbd class="kbd">B</kbd></dt><dd>Go to bookmarks</dd>
-  <dt><kbd class="kbd">Esc</kbd></dt><dd>Close popups / clear search</dd>
-  <dt><kbd class="kbd">F1</kbd></dt><dd>Toggle this panel</dd>
-</dl>
-
-<!-- ══════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════ -->
 <script>
-// ═══════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════
-const S = {
-  activeTab:    'feed',
-  sub:          '',
-  sort:         'hot',
-  timef:        'day',
-  after:        {},   // tab -> next page cursor
-  loading:      {},   // tab -> bool
-  cards:        {},   // tab -> [{...}]
-  searchAfter:  null,
-  searchQuery:  '',
-  debounceTimer: null,
-  autoLock:     {},   // prevent double auto-load
-  history:      [],
-  bookmarks:    [],
-  settings: {
-    nsfw:          false,
-    ageVerified:   false,
-    showPreviews:  true,
-    autoplay:      false,
-    compact:       false,
-    infinite:      true,
-    defaultSub:    '',
-    defaultSort:   'hot',
-    limit:         25,
-  },
-};
+  // ─── STATE ───
+  let nsfwEnabled = false;
+  let currentSort = 'relevance';
+  let currentQuery = '';
+  let currentAfter = null;
+  let allResults = [];
+  let displayCount = 0;
+  const PER_PAGE = 10;
 
-// Tab type filters
-const TAB_KIND = {
-  images: 'image',
-  videos: 'video',
-  gifs:   'gif',
-  text:   'text',
-  links:  'link',
-};
+  // ─── ELEMENTS ───
+  const hero = document.getElementById('hero');
+  const mainLayout = document.getElementById('mainLayout');
+  const topSearchWrap = document.getElementById('topSearchWrap');
+  const heroSearch = document.getElementById('heroSearch');
+  const topSearch = document.getElementById('topSearch');
+  const nsfwToggle = document.getElementById('nsfwToggle');
+  const ageModal = document.getElementById('ageModal');
+  const cardsGrid = document.getElementById('cardsGrid');
+  const queryLabel = document.getElementById('queryLabel');
+  const resultCount = document.getElementById('resultCount');
+  const statCount = document.getElementById('statCount');
+  const statNsfw = document.getElementById('statNsfw');
+  const loadMoreWrap = document.getElementById('loadMoreWrap');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  const nsfwBar = document.getElementById('nsfwBar');
 
-// ═══════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════
-function init() {
-  loadPersistedData();
-  applySettings();
-  bindEvents();
-
-  const defaultSub  = S.settings.defaultSub || '';
-  const defaultSort = S.settings.defaultSort || 'hot';
-  document.getElementById('sub-input').value  = defaultSub;
-  document.getElementById('sort-select').value = defaultSort;
-  S.sub  = defaultSub;
-  S.sort = defaultSort;
-
-  // Init after maps
-  ['feed','images','videos','gifs','text','links','search','bookmarks'].forEach(t => {
-    S.after[t]    = null;
-    S.loading[t]  = false;
-    S.cards[t]    = [];
-    S.autoLock[t] = false;
-  });
-
-  loadSubInfo(S.sub);
-  switchTab('feed');
-  loadTab('feed');
-
-  // Infinite scroll observer
-  const anchor = document.getElementById('scroll-anchor');
-  const observer = new IntersectionObserver(entries => {
-    if (!S.settings.infinite) return;
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      if (S.autoLock[S.activeTab]) return;
-      if (!S.after[S.activeTab]) return;
-      S.autoLock[S.activeTab] = true;
-      loadMore();
+  // ─── HERO TAGS ───
+  document.querySelectorAll('.hero-tag').forEach(tag => {
+    tag.addEventListener('click', () => {
+      const q = tag.textContent.replace(/^[\W]+/, '').trim().split(' ').slice(-1)[0];
+      heroSearch.value = q;
+      doSearch(q);
     });
-  }, { rootMargin: '200px' });
-  observer.observe(anchor);
-}
-
-// ═══════════════════════════════════════════
-//  PERSIST
-// ═══════════════════════════════════════════
-function loadPersistedData() {
-  try {
-    const saved = localStorage.getItem('rbs3_settings');
-    if (saved) Object.assign(S.settings, JSON.parse(saved));
-    const bm = localStorage.getItem('rbs3_bookmarks');
-    if (bm) S.bookmarks = JSON.parse(bm);
-    const hist = localStorage.getItem('rbs3_history');
-    if (hist) S.history = JSON.parse(hist);
-  } catch(e) {}
-}
-
-function persistSettings() {
-  try { localStorage.setItem('rbs3_settings', JSON.stringify(S.settings)); } catch(e) {}
-}
-function persistBookmarks() {
-  try { localStorage.setItem('rbs3_bookmarks', JSON.stringify(S.bookmarks)); } catch(e) {}
-}
-function persistHistory() {
-  try { localStorage.setItem('rbs3_history', JSON.stringify(S.history)); } catch(e) {}
-}
-
-// ═══════════════════════════════════════════
-//  EVENTS
-// ═══════════════════════════════════════════
-function bindEvents() {
-  // Sub input with debounce
-  const subInput = document.getElementById('sub-input');
-  subInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { clearTimeout(S.debounceTimer); onSubChange(true); }
-  });
-  subInput.addEventListener('input', () => {
-    clearTimeout(S.debounceTimer);
-    S.debounceTimer = setTimeout(() => onSubChange(false), 650);
   });
 
-  // Sort / time
-  document.getElementById('sort-select').addEventListener('change', () => {
-    S.sort = document.getElementById('sort-select').value;
-    const showTime = ['top','controversial'].includes(S.sort);
-    document.getElementById('time-row').style.display = showTime ? 'flex' : 'none';
-    reloadAll();
-  });
-  document.getElementById('time-select').addEventListener('change', () => {
-    S.timef = document.getElementById('time-select').value;
-    reloadAll();
+  // ─── SEARCH TRIGGERS ───
+  heroSearch.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(heroSearch.value.trim()); });
+  document.getElementById('heroSearchBtn').addEventListener('click', () => doSearch(heroSearch.value.trim()));
+  topSearch.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(topSearch.value.trim()); });
+  document.getElementById('topSearchBtn').addEventListener('click', () => doSearch(topSearch.value.trim()));
+
+  // ─── NSFW TOGGLE ───
+  nsfwToggle.addEventListener('click', () => {
+    if (!nsfwEnabled) {
+      ageModal.classList.remove('hidden');
+    } else {
+      nsfwEnabled = false;
+      nsfwToggle.classList.remove('active');
+      updateNsfwUI();
+      if (currentQuery) doSearch(currentQuery);
+    }
   });
 
-  // Nav tabs
-  document.getElementById('nav-tabs').addEventListener('click', e => {
-    const btn = e.target.closest('[data-tab]');
-    if (btn) switchTab(btn.dataset.tab);
-  });
-  document.getElementById('search-results-tab').addEventListener('click', () => {
-    switchTab('search');
-  });
-  document.getElementById('nav-tabs').querySelectorAll('[data-tab="bookmarks"]').forEach(b => {
-    b.addEventListener('click', () => switchTab('bookmarks'));
-  });
-  // also the bookmarks tab outside nav-tabs
-  document.querySelectorAll('[data-tab="bookmarks"]').forEach(b => {
-    b.addEventListener('click', () => switchTab('bookmarks'));
+  document.getElementById('ageYes').addEventListener('click', () => {
+    nsfwEnabled = true;
+    nsfwToggle.classList.add('active');
+    ageModal.classList.add('hidden');
+    updateNsfwUI();
+    if (currentQuery) doSearch(currentQuery);
   });
 
-  // Search
-  document.getElementById('search-input').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doSearch();
+  document.getElementById('ageNo').addEventListener('click', () => {
+    ageModal.classList.add('hidden');
   });
 
-  // Keyboard shortcuts
-  document.addEventListener('keydown', e => {
-    const tag = document.activeElement.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
-      if (e.key === 'Escape') {
-        document.activeElement.blur();
-        closeLightboxDirect();
+  // close modal on overlay click
+  ageModal.addEventListener('click', e => {
+    if (e.target === ageModal) ageModal.classList.add('hidden');
+  });
+
+  function updateNsfwUI() {
+    statNsfw.textContent = nsfwEnabled ? 'Shown' : 'Hidden';
+    statNsfw.style.color = nsfwEnabled ? '#ff4d88' : 'var(--text-dim)';
+    nsfwBar.style.display = nsfwEnabled ? 'flex' : 'none';
+  }
+
+  // ─── SORT ───
+  function setSort(sort, btn) {
+    currentSort = sort;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (currentQuery) doSearch(currentQuery);
+  }
+
+  // ─── LOAD MORE ───
+  loadMoreBtn.addEventListener('click', () => {
+    displayCount += PER_PAGE;
+    renderCards();
+  });
+
+  // ─── SEARCH FUNCTION ───
+  async function doSearch(q) {
+    if (!q) return;
+    currentQuery = q;
+    currentAfter = null;
+    allResults = [];
+    displayCount = 0;
+
+    // Switch to main layout
+    hero.style.display = 'none';
+    mainLayout.style.display = 'flex';
+    topSearchWrap.style.display = 'block';
+    topSearch.value = q;
+
+    queryLabel.textContent = `"${q}"`;
+    resultCount.textContent = 'Searching…';
+    statCount.textContent = '…';
+    cardsGrid.innerHTML = `<div class="loader"><div class="loader-dot"></div><div class="loader-dot"></div><div class="loader-dot"></div></div>`;
+    loadMoreWrap.style.display = 'none';
+
+    await fetchResults(q);
+  }
+
+  async function fetchResults(q) {
+    try {
+      const url = `https://www.reddit.com/subreddits/search.json?q=${encodeURIComponent(q)}&sort=${currentSort}&limit=25&include_over_18=${nsfwEnabled ? 1 : 0}&raw_json=1`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('API error');
+      const data = await res.json();
+
+      let subs = (data.data.children || [])
+        .map(c => c.data)
+        .filter(s => !s.subreddit_type || s.subreddit_type !== 'private'); // filter private
+
+      // If NSFW disabled, hide nsfw subs
+      if (!nsfwEnabled) {
+        subs = subs.filter(s => !s.over18);
       }
+
+      allResults = subs;
+      currentAfter = data.data.after;
+      displayCount = Math.min(PER_PAGE, subs.length);
+
+      renderCards();
+
+      const total = subs.length;
+      resultCount.textContent = `${total} found`;
+      statCount.textContent = total;
+    } catch (err) {
+      cardsGrid.innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">⚠️</div>
+          <div class="state-title">Something went wrong</div>
+          <div class="state-sub">Couldn't reach Reddit's API. Check your connection and try again.</div>
+        </div>`;
+      resultCount.textContent = 'Error';
+    }
+  }
+
+  // ─── RENDER CARDS ───
+  function renderCards() {
+    if (allResults.length === 0) {
+      cardsGrid.innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">🔍</div>
+          <div class="state-title">No subreddits found</div>
+          <div class="state-sub">Try a different search term or adjust your filters.</div>
+        </div>`;
+      loadMoreWrap.style.display = 'none';
       return;
     }
-    switch(e.key.toLowerCase()) {
-      case 'j': document.getElementById('feed-area').scrollBy({top:250, behavior:'smooth'}); break;
-      case 'k': document.getElementById('feed-area').scrollBy({top:-250, behavior:'smooth'}); break;
-      case 'r': reloadAll(); break;
-      case '/': e.preventDefault(); document.getElementById('search-input').focus(); break;
-      case 'b': switchTab('bookmarks'); break;
-      case 'f1': e.preventDefault(); toggleHelp(); break;
-      case 'escape':
-        closeLightboxDirect();
-        closeAllModals();
-        document.getElementById('help-panel').classList.remove('open');
-        break;
-    }
-  });
-}
 
-// ═══════════════════════════════════════════
-//  SUB CHANGE
-// ═══════════════════════════════════════════
-function onSubChange(force) {
-  const val = document.getElementById('sub-input').value.trim();
-  S.sub = val;
-  if (force || val.length >= 2 || val.length === 0) {
-    pushHistory(val);
-    loadSubInfo(val);
-    reloadAll();
-  }
-}
+    const slice = allResults.slice(0, displayCount);
+    cardsGrid.innerHTML = '';
 
-function reloadAll() {
-  ['feed','images','videos','gifs','text','links'].forEach(tab => {
-    S.after[tab]    = null;
-    S.loading[tab]  = false;
-    S.autoLock[tab] = false;
-    S.cards[tab]    = [];
-  });
+    slice.forEach((sub, i) => {
+      const delay = (i % PER_PAGE) * 40;
+      const card = buildCard(sub, delay);
+      cardsGrid.appendChild(card);
+    });
 
-  const currentTab = S.activeTab;
-  if (currentTab === 'search' || currentTab === 'bookmarks') {
-    switchTab('feed');
-  } else {
-    loadTab(currentTab);
-  }
-}
-
-// ═══════════════════════════════════════════
-//  SUB INFO BANNER
-// ═══════════════════════════════════════════
-async function loadSubInfo(sub) {
-  const bannerText  = document.getElementById('banner-text');
-  const bannerStats = document.getElementById('banner-stats');
-  if (!sub || sub === '') {
-    bannerText.textContent  = 'r/popular — Reddit front page';
-    bannerStats.textContent = '';
-    return;
-  }
-  bannerText.textContent  = `r/${sub}`;
-  bannerStats.textContent = '';
-  try {
-    const data = await redditFetch(`https://www.reddit.com/r/${sub}/about.json`);
-    const d    = data.data || {};
-    const members = fmtK(d.subscribers || 0);
-    const online  = fmtK(d.active_user_count || 0);
-    const title   = (d.title || sub).slice(0, 60);
-    bannerText.textContent  = `r/${sub} — ${title}`;
-    bannerStats.textContent = `${members} members · ${online} online`;
-  } catch(e) {
-    bannerText.textContent = `r/${sub || 'popular'}`;
-  }
-}
-
-// ═══════════════════════════════════════════
-//  TAB SWITCHING
-// ═══════════════════════════════════════════
-function switchTab(tab) {
-  S.activeTab = tab;
-
-  // Update nav highlights
-  document.querySelectorAll('.nav-tab[data-tab]').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tab);
-  });
-
-  // Show search tab if switching to it
-  if (tab === 'search') {
-    document.getElementById('search-results-tab').style.display = 'flex';
-  }
-
-  // Render
-  if (tab === 'bookmarks') {
-    renderBookmarks();
-  } else if (!S.cards[tab] || S.cards[tab].length === 0) {
-    if (tab !== 'search') {
-      loadTab(tab);
+    // Load more button
+    if (displayCount < allResults.length) {
+      loadMoreWrap.style.display = 'block';
     } else {
-      renderEmpty('No search results yet. Try searching above.');
-    }
-  } else {
-    renderCards(tab, false);
-  }
-
-  updateLoadMore();
-}
-
-// ═══════════════════════════════════════════
-//  DATA LOADING
-// ═══════════════════════════════════════════
-async function loadTab(tab, append = false) {
-  if (S.loading[tab]) return;
-  S.loading[tab]  = true;
-  S.autoLock[tab] = false;
-
-  const sub   = S.sub || 'popular';
-  const sort  = S.sort;
-  const tf    = S.timef;
-  const after = append ? (S.after[tab] || '') : '';
-  const limit = S.settings.limit;
-
-  if (!append) {
-    setStatus(`Loading ${tab}...`);
-    showSkeletons();
-  } else {
-    setStatus(`Loading more...`);
-  }
-
-  try {
-    const params = new URLSearchParams({ limit, raw_json: '1', after });
-    if (['top','controversial'].includes(sort)) params.set('t', tf);
-    const redditUrl = `https://www.reddit.com/r/${sub}/${sort}.json?${params.toString()}`;
-    const data = await redditFetch(redditUrl);
-    const children = data.data?.children || [];
-    const nextAfter = data.data?.after || null;
-
-    let posts = children.map(c => parsePost(c.data));
-
-    // NSFW filter
-    if (!S.settings.nsfw) {
-      posts = posts.filter(p => !p.nsfw);
-    }
-
-    // Kind filter
-    const kind = TAB_KIND[tab];
-    if (kind) posts = posts.filter(p => p.kind === kind);
-
-    S.after[tab] = nextAfter;
-
-    if (append) {
-      S.cards[tab] = [...(S.cards[tab] || []), ...posts];
-    } else {
-      S.cards[tab] = posts;
-    }
-
-    if (S.activeTab === tab) {
-      renderCards(tab, append);
-    }
-
-    const n = S.cards[tab].length;
-    const nsfwNote = S.settings.nsfw ? '' : '  (NSFW hidden)';
-    setStatus(`${n} post${n !== 1 ? 's' : ''} — r/${S.sub || 'popular'}${nsfwNote}`);
-
-  } catch(err) {
-    console.error(err);
-    setStatus(`Error: ${err.message}`);
-    if (!append) showError(err.message);
-  } finally {
-    S.loading[tab]  = false;
-    S.autoLock[tab] = false;
-    updateLoadMore();
-  }
-}
-
-function loadMore() {
-  const tab = S.activeTab;
-  if (tab === 'search') {
-    doSearch(true);
-  } else if (tab !== 'bookmarks') {
-    loadTab(tab, true);
-  }
-}
-
-// ═══════════════════════════════════════════
-//  SEARCH
-// ═══════════════════════════════════════════
-async function doSearch(append = false) {
-  const q = document.getElementById('search-input').value.trim();
-  if (!q) return;
-
-  if (!append) {
-    S.searchAfter = null;
-    S.searchQuery = q;
-    S.cards['search'] = [];
-    S.after['search'] = null;
-  }
-
-  S.loading['search'] = true;
-  setStatus(`Searching "${q}"...`);
-
-  document.getElementById('search-results-tab').style.display = 'flex';
-  switchTab('search');
-
-  if (!append) showSkeletons();
-
-  const sub   = S.sub || 'all';
-  const sort  = document.getElementById('search-sort-select').value;
-  const limit = S.settings.limit;
-  const after = append ? (S.searchAfter || '') : '';
-
-  try {
-    const params = new URLSearchParams({ q, sort, limit, raw_json: '1', after });
-    if (sub !== 'all') params.set('restrict_sr', '1');
-    const redditUrl = `https://www.reddit.com/r/${sub}/search.json?${params.toString()}`;
-    const data = await redditFetch(redditUrl);
-    const children  = data.data?.children || [];
-    const nextAfter = data.data?.after || null;
-
-    let posts = children.map(c => parsePost(c.data));
-    if (!S.settings.nsfw) posts = posts.filter(p => !p.nsfw);
-
-    S.searchAfter    = nextAfter;
-    S.after['search'] = nextAfter;
-
-    if (append) {
-      S.cards['search'] = [...(S.cards['search'] || []), ...posts];
-    } else {
-      S.cards['search'] = posts;
-    }
-
-    renderCards('search', append);
-    setStatus(`${S.cards['search'].length} results for "${q}"`);
-
-  } catch(err) {
-    setStatus(`Search error: ${err.message}`);
-    if (!append) showError(err.message);
-  } finally {
-    S.loading['search'] = false;
-    updateLoadMore();
-  }
-}
-
-// ═══════════════════════════════════════════
-//  PARSE POST
-// ═══════════════════════════════════════════
-function parsePost(p) {
-  const kind = classifyPost(p);
-  const post = {
-    id:       p.id,
-    title:    p.title || '',
-    author:   p.author || '[deleted]',
-    sub:      p.subreddit || '',
-    score:    p.score || 0,
-    ratio:    p.upvote_ratio || 0,
-    comments: p.num_comments || 0,
-    created:  p.created_utc || 0,
-    nsfw:     p.over_18 || false,
-    url:      p.url || '',
-    permalink:`https://reddit.com${p.permalink || ''}`,
-    selftext: (p.selftext || '').slice(0, 600),
-    kind,
-    domain:   p.domain || '',
-    flair:    p.link_flair_text || '',
-    awards:   (p.all_awardings || []).length,
-    img:      '',
-    video:    '',
-    videoAudio: '',
-    gif:      '',
-    thumb:    '',
-  };
-
-  // Extract preview thumbnail
-  try {
-    const imgs = p.preview?.images?.[0];
-    if (imgs) {
-      const resolutions = imgs.resolutions || [];
-      // Pick a medium resolution for thumbnails
-      const medRes = resolutions.find(r => r.width >= 640) ||
-                     resolutions[resolutions.length - 1] ||
-                     imgs.source;
-      if (medRes) post.thumb = medRes.url;
-      // Also keep full source for lightbox
-      if (imgs.source) post.imgFull = imgs.source.url;
-    }
-  } catch(e) {}
-
-  if (kind === 'image') {
-    post.img     = p.url;
-    post.imgFull = post.imgFull || p.url;
-  }
-
-  if (kind === 'video') {
-    try {
-      const rv = p.media?.reddit_video;
-      if (rv) {
-        // fallback_url = video without audio (Reddit DASH)
-        post.video = rv.fallback_url || '';
-        // Try to get audio track from DASH manifest
-        // Audio is at same base URL with DASH_audio.mp4
-        if (post.video) {
-          const base = post.video.split('DASH_')[0];
-          post.videoAudio = base + 'DASH_audio.mp4';
-        }
-        post.videoDuration = rv.duration || 0;
-        post.videoDash     = rv.dash_url || '';
-      }
-    } catch(e) {}
-  }
-
-  if (kind === 'gif') {
-    post.gif = p.url;
-    // Prefer MP4 version for smooth playback
-    try {
-      const mp4 = p.preview?.images?.[0]?.variants?.mp4;
-      if (mp4?.source?.url) {
-        post.gif     = mp4.source.url;
-        post.gifIsMP4= true;
-      }
-    } catch(e) {}
-  }
-
-  return post;
-}
-
-function classifyPost(p) {
-  const url  = (p.url || '').toLowerCase();
-  const hint = p.post_hint || '';
-  const dom  = p.domain   || '';
-
-  if (p.is_video || dom.includes('v.redd.it'))              return 'video';
-  if (hint === 'image' || /\.(jpg|jpeg|png|webp)$/.test(url)) return 'image';
-  if (/\.(gif|gifv)$/.test(url) || hint === 'rich:video' && dom.includes('gfycat'))
-                                                             return 'gif';
-  if (p.is_self || hint === 'self')                          return 'text';
-  return 'link';
-}
-
-// ═══════════════════════════════════════════
-//  RENDER
-// ═══════════════════════════════════════════
-function renderCards(tab, append) {
-  const container = document.getElementById('cards-container');
-
-  if (!append) {
-    container.innerHTML = '';
-    document.getElementById('feed-area').scrollTop = 0;
-  }
-
-  const posts = S.cards[tab] || [];
-
-  if (posts.length === 0 && !append) {
-    renderEmpty('No posts found. Try a different subreddit or filter.');
-    return;
-  }
-
-  const startIdx = append ? (S.cards[tab].length - (posts.length)) : 0;
-  const newPosts = append ? posts.slice(-(posts.length - startIdx + posts.length)) : posts;
-
-  // If appending, only render the newly added cards
-  const toRender = append
-    ? posts.slice(container.children.length)
-    : posts;
-
-  toRender.forEach((post, i) => {
-    const card = buildCard(post);
-    card.style.animationDelay = `${Math.min(i * 30, 300)}ms`;
-    container.appendChild(card);
-  });
-
-  updateLoadMore();
-}
-
-function buildCard(post) {
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.dataset.id = post.id;
-
-  const isSaved = S.bookmarks.some(b => b.id === post.id);
-  const compact = S.settings.compact;
-  const showPrev = S.settings.showPreviews && !compact;
-
-  const scoreClass = post.ratio >= 0.95 ? 'score-great'
-                   : post.ratio >= 0.75 ? 'score-good'
-                   : post.ratio >= 0.50 ? 'score-ok'
-                   : 'score-bad';
-
-  let mediaHTML = '';
-  if (showPrev) {
-    if (post.kind === 'video' && post.video) {
-      mediaHTML = buildVideoHTML(post);
-    } else if (post.kind === 'gif' && post.gif) {
-      mediaHTML = buildGifHTML(post);
-    } else if ((post.kind === 'image') && (post.thumb || post.img)) {
-      mediaHTML = buildImageHTML(post);
-    } else if (post.thumb && post.kind !== 'text' && post.kind !== 'link') {
-      mediaHTML = buildImageHTML(post);
+      loadMoreWrap.style.display = 'none';
     }
   }
 
-  const selftextHTML = (!compact && post.selftext)
-    ? `<div class="card-selftext">${escHtml(post.selftext)}</div>`
-    : '';
-
-  const flairHTML = post.flair
-    ? `<span class="badge badge-flair">${escHtml(post.flair)}</span>`
-    : '';
-
-  const nsfwHTML = post.nsfw
-    ? `<span class="badge badge-nsfw">NSFW</span>`
-    : '';
-
-  const awardsHTML = post.awards > 0
-    ? `<span class="card-awards">🏆 ${post.awards}</span>`
-    : '';
-
-  const kindLabel = { image:'IMG', video:'VID', gif:'GIF', text:'TXT', link:'LINK' }[post.kind] || '';
-
-  card.innerHTML = `
-    <div class="card-inner">
-      <div class="card-meta">
-        <span class="card-sub" onclick="navToSub('${escAttr(post.sub)}')"
-              title="Go to r/${escHtml(post.sub)}">r/${escHtml(post.sub)}</span>
-        <span class="card-dot">·</span>
-        <span class="card-author">u/${escHtml(post.author)}</span>
-        <span class="card-dot">·</span>
-        <span class="card-age">${fmtAge(post.created)}</span>
-        ${nsfwHTML}
-        ${flairHTML}
-        <span class="badge badge-kind">${kindLabel}</span>
-        ${awardsHTML}
-      </div>
-      <div class="card-title" onclick="openPost('${escAttr(post.permalink)}')">${escHtml(post.title)}</div>
-      ${mediaHTML}
-      ${selftextHTML}
-      <div class="card-actions">
-        <span class="card-score ${scoreClass}">▲ ${fmtK(post.score)}</span>
-        <button class="action-btn" onclick="openPost('${escAttr(post.permalink)}')">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>
-          ${fmtK(post.comments)}
-        </button>
-        <button class="action-btn" onclick="copyLink('${escAttr(post.permalink)}')">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"/></svg>
-          Copy
-        </button>
-        <button class="action-btn" onclick="openURL('${escAttr(post.url || post.permalink)}')">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
-          Open
-        </button>
-        ${post.kind === 'image' ? `
-        <button class="action-btn" onclick="openLightbox('${escAttr(post.imgFull||post.img||post.thumb)}','${escAttr(post.title)}')">
-          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"/></svg>
-          View Full
-        </button>` : ''}
-        <button class="action-btn ${isSaved ? 'saved' : ''}" id="bm-${escAttr(post.id)}"
-                onclick="toggleBookmark(${JSON.stringify(escHtml(post.id))})">
-          <svg viewBox="0 0 20 20" fill="${isSaved ? 'currentColor' : 'none'}" stroke="${isSaved ? 'none' : 'currentColor'}" stroke-width="1.5">
-            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
-          </svg>
-          ${isSaved ? 'Saved' : 'Save'}
-        </button>
-        <span class="card-domain">${escHtml(post.domain)}</span>
-      </div>
-    </div>`;
-
-  return card;
-}
-
-// ── Media builders ──────────────────────────
-function buildImageHTML(post) {
-  const src  = post.thumb || post.img || '';
-  const full = post.imgFull || post.img || src;
-  if (!src) return '';
-  return `
-    <div class="card-media" onclick="openLightbox('${escAttr(full)}','${escAttr(post.title)}')">
-      <img src="${escAttr(src)}" alt="" loading="lazy"
-           onerror="this.closest('.card-media').style.display='none'">
-      <div class="play-btn-overlay">
-        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="24" fill="rgba(0,0,0,.5)"/>
-          <path d="M18 16l16 8-16 8V16z" fill="white"/></svg>
-      </div>
-      ${post.kind === 'image' ? '<div class="media-overlay">IMAGE</div>' : ''}
-    </div>`;
-}
-
-function buildVideoHTML(post) {
-  if (!post.video) return '';
-  const autoplay = S.settings.autoplay ? 'autoplay' : '';
-  // Reddit videos: fallback_url is video-only (no audio).
-  // We render it with controls and add audio track attempt via JS.
-  return `
-    <div class="video-container card-media" style="margin-bottom:12px">
-      <video controls ${autoplay} muted loop preload="metadata"
-             src="${escAttr(post.video)}"
-             poster="${escAttr(post.thumb || '')}"
-             onerror="handleVideoError(this,'${escAttr(post.permalink)}')"
-             onloadeddata="onVideoLoaded(this)">
-        Your browser does not support HTML5 video.
-      </video>
-      <div class="video-no-audio" id="audio-note-${escAttr(post.id)}" style="display:none">
-        🔇 Video-only — <a href="${escAttr(post.permalink)}" target="_blank" rel="noopener"
-          style="color:var(--accent)">Open on Reddit</a> for audio
-      </div>
-    </div>`;
-}
-
-function buildGifHTML(post) {
-  if (!post.gif) return '';
-  if (post.gifIsMP4) {
-    return `
-      <div class="card-media" style="margin-bottom:12px">
-        <video autoplay muted loop playsinline preload="auto"
-               style="max-height:400px;width:100%;border-radius:var(--radius-sm)"
-               src="${escAttr(post.gif)}"
-               onerror="this.closest('.card-media').style.display='none'">
-        </video>
-        <div class="media-overlay">GIF</div>
-      </div>`;
-  }
-  return `
-    <div class="card-media" style="margin-bottom:12px">
-      <img src="${escAttr(post.gif)}" alt=""
-           style="max-height:400px;width:100%;object-fit:contain"
-           loading="lazy"
-           onerror="this.closest('.card-media').style.display='none'">
-      <div class="media-overlay">GIF</div>
-    </div>`;
-}
-
-// After video loads, check if it has audio
-function onVideoLoaded(video) {
-  // Show "no audio" note for Reddit-hosted videos
-  if (video.src && video.src.includes('v.redd.it')) {
-    const postId = video.closest('.video-container')?.id?.replace('vc-','');
-    // Reddit fallback URLs have no audio — always show note
-    const note = video.closest('.video-container')?.querySelector('.video-no-audio');
-    if (note) {
-      note.style.display = 'block';
-      setTimeout(() => { if (note) note.style.opacity = '0.5'; }, 4000);
-    }
-  }
-}
-
-function handleVideoError(video, permalink) {
-  const wrap = video.closest('.card-media, .video-container');
-  if (wrap) {
-    wrap.innerHTML = `
-      <div style="padding:20px;text-align:center;background:var(--surface);border-radius:var(--radius-sm)">
-        <div style="color:var(--text3);margin-bottom:8px;font-size:13px">Video unavailable in browser</div>
-        <a href="${permalink}" target="_blank" rel="noopener" class="btn btn-ghost"
-           style="font-size:12px;display:inline-flex">Open on Reddit ↗</a>
-      </div>`;
-  }
-}
-
-// ═══════════════════════════════════════════
-//  SKELETON + EMPTY STATES
-// ═══════════════════════════════════════════
-function showSkeletons() {
-  const c = document.getElementById('cards-container');
-  c.innerHTML = '';
-  for (let i = 0; i < 5; i++) {
-    c.innerHTML += `
-      <div class="skeleton-card">
-        <div class="skel skel-sm" style="width:${120+i*20}px"></div>
-        <div class="skel skel-lg" style="width:${90-i*5}%;margin-top:8px"></div>
-        <div class="skel skel-md" style="width:${75-i*3}%;margin-top:4px"></div>
-        ${i % 2 === 0 ? '<div class="skel skel-img"></div>' : ''}
-        <div class="skel skel-sm" style="width:220px;margin-top:4px"></div>
-      </div>`;
-  }
-}
-
-function renderEmpty(msg) {
-  document.getElementById('cards-container').innerHTML = `
-    <div class="empty-state">
-      <div class="empty-state-icon">◈</div>
-      <h3>Nothing here</h3>
-      <p>${escHtml(msg)}</p>
-    </div>`;
-}
-
-function showError(msg) {
-  document.getElementById('cards-container').innerHTML = `
-    <div class="empty-state">
-      <div class="empty-state-icon" style="color:var(--red)">⚠</div>
-      <h3 style="color:var(--red)">Error loading posts</h3>
-      <p style="color:var(--text2)">${escHtml(msg)}</p>
-      <p style="margin-top:8px;font-size:12px;color:var(--text3)">
-        Check your connection, or the subreddit may be private / banned.
-      </p>
-    </div>`;
-}
-
-// ═══════════════════════════════════════════
-//  LIGHTBOX
-// ═══════════════════════════════════════════
-function openLightbox(url, title) {
-  if (!url) return;
-  const lb    = document.getElementById('lightbox');
-  const img   = document.getElementById('lightbox-img');
-  const lbl   = document.getElementById('lightbox-loading');
-  const tspan = document.getElementById('lightbox-title');
-  const olink = document.getElementById('lightbox-open');
-
-  tspan.textContent = title || '';
-  olink.href        = url;
-  img.style.display = 'none';
-  lbl.classList.add('show');
-  lb.classList.add('open');
-
-  img.onload = () => {
-    lbl.classList.remove('show');
-    img.style.display = 'block';
-  };
-  img.onerror = () => {
-    lbl.textContent = 'Could not load image.';
-  };
-  img.src = url;
-}
-
-function closeLightbox(e) {
-  if (e.target === document.getElementById('lightbox')) {
-    closeLightboxDirect();
-  }
-}
-
-function closeLightboxDirect() {
-  document.getElementById('lightbox').classList.remove('open');
-  document.getElementById('lightbox-img').src = '';
-}
-
-// ═══════════════════════════════════════════
-//  BOOKMARKS
-// ═══════════════════════════════════════════
-function toggleBookmark(id) {
-  const idx = S.bookmarks.findIndex(b => b.id === id);
-  const tab = S.activeTab;
-  const post = (S.cards[tab] || []).find(p => p.id === id)
-            || S.bookmarks.find(b => b.id === id);
-
-  if (idx >= 0) {
-    S.bookmarks.splice(idx, 1);
-    persistBookmarks();
-    updateBookmarkBtn(id, false);
-    toast('Removed from saved', 'amber');
-    if (tab === 'bookmarks') renderBookmarks();
-  } else if (post) {
-    S.bookmarks.unshift(post);
-    if (S.bookmarks.length > 500) S.bookmarks.length = 500;
-    persistBookmarks();
-    updateBookmarkBtn(id, true);
-    toast(`Saved: ${post.title.slice(0,40)}...`, 'green');
-  }
-  updateBMCount();
-}
-
-function updateBookmarkBtn(id, saved) {
-  const btn = document.getElementById(`bm-${id}`);
-  if (!btn) return;
-  btn.className = 'action-btn' + (saved ? ' saved' : '');
-  btn.innerHTML = `
-    <svg viewBox="0 0 20 20" fill="${saved ? 'currentColor' : 'none'}"
-         stroke="${saved ? 'none' : 'currentColor'}" stroke-width="1.5">
-      <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
-    </svg>
-    ${saved ? 'Saved' : 'Save'}`;
-}
-
-function renderBookmarks() {
-  const c = document.getElementById('cards-container');
-  c.innerHTML = '';
-  document.getElementById('feed-area').scrollTop = 0;
-
-  if (S.bookmarks.length === 0) {
-    renderEmpty('No saved posts yet. Click "Save" on any post to bookmark it.');
-    return;
-  }
-
-  S.bookmarks.forEach((post, i) => {
-    const card = buildCard(post);
-    card.style.animationDelay = `${Math.min(i * 20, 200)}ms`;
-    c.appendChild(card);
-  });
-  setStatus(`${S.bookmarks.length} saved post${S.bookmarks.length !== 1 ? 's' : ''}`);
-}
-
-function clearBookmarks() {
-  if (!confirm('Delete all saved posts? This cannot be undone.')) return;
-  S.bookmarks = [];
-  persistBookmarks();
-  updateBMCount();
-  toast('All bookmarks cleared', 'amber');
-  if (S.activeTab === 'bookmarks') renderBookmarks();
-}
-
-function updateBMCount() {
-  const el = document.getElementById('bm-count');
-  if (el) el.textContent = S.bookmarks.length > 0
-    ? ` (${S.bookmarks.length})` : '';
-}
-
-// ═══════════════════════════════════════════
-//  HISTORY
-// ═══════════════════════════════════════════
-function pushHistory(sub) {
-  if (!sub) return;
-  S.history = [sub, ...S.history.filter(h => h !== sub)].slice(0, 10);
-  persistHistory();
-  renderHistory();
-}
-
-function renderHistory() {
-  const list = document.getElementById('history-list');
-  list.innerHTML = '';
-  S.history.slice(0, 6).forEach(sub => {
+  function buildCard(sub, delay) {
     const a = document.createElement('a');
-    a.className = 'history-item';
-    a.textContent = `r/${sub}`;
-    a.onclick = () => {
-      document.getElementById('sub-input').value = sub;
-      S.sub = sub;
-      loadSubInfo(sub);
-      reloadAll();
-    };
-    list.appendChild(a);
-  });
-}
+    a.className = 'sub-card';
+    a.href = `https://www.reddit.com/r/${sub.display_name}/`;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.style.animationDelay = `${delay}ms`;
 
-// ═══════════════════════════════════════════
-//  SETTINGS
-// ═══════════════════════════════════════════
-function openSettings() {
-  const s = S.settings;
-  document.getElementById('setting-nsfw').checked          = s.nsfw;
-  document.getElementById('setting-previews').checked      = s.showPreviews;
-  document.getElementById('setting-autoplay').checked      = s.autoplay;
-  document.getElementById('setting-compact').checked       = s.compact;
-  document.getElementById('setting-infinite').checked      = s.infinite;
-  document.getElementById('setting-default-sub').value     = s.defaultSub;
-  document.getElementById('setting-default-sort').value    = s.defaultSort;
-  document.getElementById('setting-limit').value           = s.limit;
-  openModal('settings-modal');
-}
+    const members = formatNumber(sub.subscribers || 0);
+    const online = formatNumber(sub.active_user_count || 0);
+    const created = new Date((sub.created_utc || 0) * 1000).getFullYear();
+    const desc = (sub.public_description || sub.description || 'No description available.').trim();
+    const initials = sub.display_name.slice(0, 2).toUpperCase();
+    const color = avatarColor(sub.display_name);
+    const imgSrc = sub.icon_img || sub.community_icon || '';
+    const cleanImg = imgSrc.replace(/\?.*$/, '');
 
-function saveSettings() {
-  const nsfw = document.getElementById('setting-nsfw').checked;
+    const avatarInner = cleanImg
+      ? `<img src="${cleanImg}" onerror="this.style.display='none'; this.parentNode.style.background='${color}'; this.parentNode.insertAdjacentHTML('beforeend', '<span>${initials}</span>');" loading="lazy">`
+      : `<span>${initials}</span>`;
 
-  if (nsfw && !S.settings.ageVerified) {
-    document.getElementById('setting-nsfw').checked = false;
-    toast('Age verification required to enable NSFW', 'amber');
-    closeModal('settings-modal');
-    openModal('age-modal');
-    return;
+    const nsfwBadge = sub.over18 ? `<span class="badge badge-nsfw">NSFW</span>` : '';
+    const verifiedBadge = (sub.user_is_moderator || sub.subreddit_type === 'public') ? '' : '';
+
+    a.innerHTML = `
+      <div class="sub-avatar" style="background: ${cleanImg ? 'var(--surface2)' : color}">${avatarInner}</div>
+      <div class="sub-info">
+        <div class="sub-name-row">
+          <span class="sub-name">r/${sub.display_name}</span>
+          ${nsfwBadge}
+        </div>
+        <div class="sub-handle" style="margin-bottom:8px;">${sub.title || ''}</div>
+        <div class="sub-desc">${escHtml(desc)}</div>
+        <div class="sub-meta">
+          <div class="meta-chip">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+            <strong>${members}</strong> members
+          </div>
+          <div class="meta-chip">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+            <strong>${online}</strong> online
+          </div>
+          <div class="meta-chip">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+            Since <strong>${created}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="sub-action">
+        <span class="visit-btn">Visit →</span>
+      </div>`;
+
+    return a;
   }
 
-  S.settings.nsfw         = nsfw;
-  S.settings.showPreviews = document.getElementById('setting-previews').checked;
-  S.settings.autoplay     = document.getElementById('setting-autoplay').checked;
-  S.settings.compact      = document.getElementById('setting-compact').checked;
-  S.settings.infinite     = document.getElementById('setting-infinite').checked;
-  S.settings.defaultSub   = document.getElementById('setting-default-sub').value.trim();
-  S.settings.defaultSort  = document.getElementById('setting-default-sort').value;
-  S.settings.limit        = parseInt(document.getElementById('setting-limit').value);
-
-  persistSettings();
-  applySettings();
-  closeModal('settings-modal');
-  toast('Settings saved', 'green');
-  reloadAll();
-}
-
-function applySettings() {
-  updateNSFWBadge();
-  updateBMCount();
-  renderHistory();
-}
-
-function toggleNSFW() {
-  if (!S.settings.nsfw) {
-    if (!S.settings.ageVerified) {
-      openModal('age-modal');
-    } else {
-      S.settings.nsfw = true;
-      persistSettings();
-      updateNSFWBadge();
-      reloadAll();
-      toast('NSFW content enabled', 'amber');
-    }
-  } else {
-    S.settings.nsfw = false;
-    persistSettings();
-    updateNSFWBadge();
-    reloadAll();
-    toast('NSFW content hidden');
+  // ─── UTILS ───
+  function formatNumber(n) {
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+    return n.toString();
   }
-}
 
-function onNSFWToggle(checkbox) {
-  if (checkbox.checked && !S.settings.ageVerified) {
-    checkbox.checked = false;
-    closeModal('settings-modal');
-    openModal('age-modal');
+  function avatarColor(name) {
+    const colors = ['#ff4500','#ff6534','#e63950','#d4467e','#7c3aed','#2563eb','#0891b2','#059669','#d97706','#dc2626'];
+    let hash = 0;
+    for (let c of name) hash = (hash * 31 + c.charCodeAt(0)) % colors.length;
+    return colors[Math.abs(hash)];
   }
-}
 
-function updateNSFWBadge() {
-  const badge = document.getElementById('nsfw-badge');
-  if (S.settings.nsfw) {
-    badge.className = 'nsfw-badge';
-    badge.title     = 'NSFW ON — click to disable';
-  } else {
-    badge.className = 'nsfw-badge nsfw-off';
-    badge.title     = 'Click to enable NSFW content (18+)';
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-}
-
-// ═══════════════════════════════════════════
-//  AGE GATE
-// ═══════════════════════════════════════════
-function confirmAge() {
-  S.settings.ageVerified = true;
-  S.settings.nsfw        = true;
-  persistSettings();
-  closeModal('age-modal');
-  updateNSFWBadge();
-  reloadAll();
-  toast('NSFW content enabled', 'amber');
-
-  // Also re-open settings if it was from settings
-  document.getElementById('setting-nsfw').checked = true;
-}
-
-function denyAge() {
-  S.settings.nsfw = false;
-  document.getElementById('setting-nsfw').checked = false;
-  closeModal('age-modal');
-}
-
-// ═══════════════════════════════════════════
-//  MODALS
-// ═══════════════════════════════════════════
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-}
-function closeModal(id, e) {
-  if (e && e.target !== document.getElementById(id)) return;
-  document.getElementById(id).classList.remove('open');
-}
-function closeAllModals() {
-  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
-}
-
-// ═══════════════════════════════════════════
-//  TOAST
-// ═══════════════════════════════════════════
-function toast(msg, type = '') {
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.textContent = msg;
-  const container = document.getElementById('toast-container');
-  container.appendChild(el);
-  setTimeout(() => {
-    el.classList.add('out');
-    setTimeout(() => el.remove(), 300);
-  }, 2500);
-}
-
-// ═══════════════════════════════════════════
-//  HELP
-// ═══════════════════════════════════════════
-function toggleHelp() {
-  document.getElementById('help-panel').classList.toggle('open');
-}
-
-// ═══════════════════════════════════════════
-//  MISC ACTIONS
-// ═══════════════════════════════════════════
-function navToSub(sub) {
-  document.getElementById('sub-input').value = sub;
-  S.sub = sub;
-  pushHistory(sub);
-  loadSubInfo(sub);
-  reloadAll();
-  if (S.activeTab === 'search' || S.activeTab === 'bookmarks') {
-    switchTab('feed');
-  }
-}
-
-function openPost(url)  { window.open(url, '_blank', 'noopener'); }
-function openURL(url)   { window.open(url, '_blank', 'noopener'); }
-
-function copyLink(url) {
-  navigator.clipboard.writeText(url).then(() => {
-    toast('Link copied to clipboard', 'green');
-  }).catch(() => {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = url;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
-    toast('Link copied', 'green');
-  });
-}
-
-function scrollTop() {
-  document.getElementById('feed-area').scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function updateLoadMore() {
-  const tab = S.activeTab;
-  const has = !!S.after[tab];
-  document.getElementById('load-more-btn').style.display = has ? 'inline-flex' : 'none';
-}
-
-function setStatus(msg) {
-  document.getElementById('status-text').textContent = msg;
-}
-
-// ═══════════════════════════════════════════
-//  UTILS
-// ═══════════════════════════════════════════
-function fmtK(n) {
-  if (n >= 1e6) return `${(n/1e6).toFixed(1)}M`;
-  if (n >= 1e3) return `${(n/1e3).toFixed(1)}k`;
-  return String(n);
-}
-
-function fmtAge(ts) {
-  const d = Date.now()/1000 - ts;
-  if (d < 60)     return 'just now';
-  if (d < 3600)   return `${Math.floor(d/60)}m`;
-  if (d < 86400)  return `${Math.floor(d/3600)}h`;
-  if (d < 604800) return `${Math.floor(d/86400)}d`;
-  return `${Math.floor(d/604800)}w`;
-}
-
-function escHtml(s) {
-  if (typeof s !== 'string') return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-          .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-
-function escAttr(s) {
-  if (typeof s !== 'string') return '';
-  return s.replace(/'/g,'&#39;').replace(/"/g,'&quot;');
-}
-
-// ═══════════════════════════════════════════
-//  MULTI-PROXY REDDIT FETCH
-//  Tries proxies in order until one works
-// ═══════════════════════════════════════════
-// ═══════════════════════════════════════════
-//  DIRECT REDDIT FETCH
-//  Reddit's public JSON API allows browser requests directly.
-//  No proxy needed — the 403s were from proxy IPs being blocked.
-// ═══════════════════════════════════════════
-async function redditFetch(redditUrl) {
-  const sep     = redditUrl.includes('?') ? '&' : '?';
-  const fullUrl = redditUrl.includes('raw_json') ? redditUrl : `${redditUrl}${sep}raw_json=1`;
-
-  const res = await fetch(fullUrl, {
-    headers: { 'Accept': 'application/json' },
-  });
-
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
-
-// ══════════════════════════════════════
-//  BOOT
-// ══════════════════════════════════════
-document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
