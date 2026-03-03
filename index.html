@@ -176,6 +176,23 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .lm-btn{padding:10px 26px;background:var(--sf2);border:1px solid var(--br);border-radius:20px;color:var(--mu);font-family:'Instrument Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .18s}
 .lm-btn:hover{border-color:var(--acc);color:var(--acc);background:var(--acc-d)}
 
+/* ── FPS BADGE ── */
+.fps-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:8px;background:var(--sf2);border:1px solid var(--br);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--dm);user-select:none;flex-shrink:0;transition:all .3s}
+.fps-badge.good{color:#00c896;border-color:#00c89640;background:#00c89612}
+.fps-badge.mid{color:#f5c518;border-color:#f5c51840;background:#f5c51812}
+.fps-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:fpspulse 2s ease infinite}
+@keyframes fpspulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ── MEDIA FILTER BAR ── */
+.media-filter-bar{display:flex;align-items:center;gap:6px;padding:10px 20px;border-bottom:1px solid var(--br);background:var(--bg);overflow-x:auto;flex-shrink:0}
+.media-filter-bar::-webkit-scrollbar{height:0}
+.mf-chip{display:flex;align-items:center;gap:5px;padding:5px 13px;background:var(--sf2);border:1px solid var(--br);border-radius:20px;font-family:'Instrument Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--mu);cursor:pointer;transition:all .15s;white-space:nowrap;user-select:none;flex-shrink:0}
+.mf-chip:hover{border-color:var(--brh);color:var(--tx)}
+.mf-chip.active{background:var(--acc-d);border-color:var(--acc);color:var(--acc);font-weight:600}
+.mf-chip .mf-count{font-size:10.5px;color:var(--dm);background:var(--sf3);padding:1px 6px;border-radius:9px;margin-left:2px;transition:all .15s}
+.mf-chip.active .mf-count{background:var(--acc-g);color:var(--acc)}
+.mf-divider{width:1px;height:18px;background:var(--br);flex-shrink:0;margin:0 2px}
+
 /* ── SUBREDDIT VIEW ── */
 .sub-view{display:none;flex-direction:column;position:relative;z-index:1;min-height:calc(100vh - 60px)}
 .sub-view.vis{display:flex}
@@ -403,6 +420,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button class="tb-go" id="tbGo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg></button>
   </div>
   <div class="tb-space"></div>
+  <div class="fps-badge" id="fpsBadge" title="Detected screen refresh rate"><div class="fps-dot"></div><span id="fpsVal">…</span> Hz</div>
   <button class="icon-btn" id="settingsBtn" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06-.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
 </header>
 
@@ -470,6 +488,18 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
     <button class="sort-tab" data-sort="rising" onclick="setSubSort('rising',this)">🚀 Rising</button>
     <button class="sort-tab" data-sort="controversial" onclick="setSubSort('controversial',this)">⚡ Controversial</button>
   </div>
+  <div class="media-filter-bar" id="mediaFilterBar">
+    <div class="mf-chip active" data-filter="all" onclick="setMediaFilter('all',this)">🌐 All <span class="mf-count" id="mfc-all">0</span></div>
+    <div class="mf-divider"></div>
+    <div class="mf-chip" data-filter="image" onclick="setMediaFilter('image',this)">🖼 Photos <span class="mf-count" id="mfc-image">0</span></div>
+    <div class="mf-chip" data-filter="gif" onclick="setMediaFilter('gif',this)">🎞 GIFs <span class="mf-count" id="mfc-gif">0</span></div>
+    <div class="mf-chip" data-filter="video" onclick="setMediaFilter('video',this)">🎬 Videos <span class="mf-count" id="mfc-video">0</span></div>
+    <div class="mf-chip" data-filter="gallery" onclick="setMediaFilter('gallery',this)">🗂 Galleries <span class="mf-count" id="mfc-gallery">0</span></div>
+    <div class="mf-divider"></div>
+    <div class="mf-chip" data-filter="self" onclick="setMediaFilter('self',this)">📝 Text <span class="mf-count" id="mfc-self">0</span></div>
+    <div class="mf-chip" data-filter="youtube" onclick="setMediaFilter('youtube',this)">▶️ YouTube <span class="mf-count" id="mfc-youtube">0</span></div>
+    <div class="mf-chip" data-filter="link" onclick="setMediaFilter('link',this)">🔗 Links <span class="mf-count" id="mfc-link">0</span></div>
+  </div>
   <div class="sub-body">
     <button class="sidebar-open-btn" id="sidebarOpenBtn" title="Open sidebar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
     <aside class="sub-sidebar" id="subSidebar">
@@ -504,7 +534,607 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 // ════════════════════════════════════════════════
 let nsfw=false, activeOnly=true, autoplay=true, curSort='relevance', curQ='', searchResults=[], searchAfter=null, perPage=100;
 let curSub='', subSort='hot', subAfter=null, subAbout=null, sidebarOpen=true;
+let mediaFilter='all', loadedPosts=[], detectedFPS=60;
 let isMobile=()=>window.innerWidth<=900;
+
+// ════════════════════════════════════════════════
+//  FPS DETECTION + VIDEO FRAME SYNC
+// ════════════════════════════════════════════════
+(function detectRefreshRate(){
+  const samples=[];
+  let last=null, count=0;
+  function tick(ts){
+    if(last!==null)samples.push(ts-last);
+    last=ts; count++;
+    if(count<60){requestAnimationFrame(tick);return}
+    // median of samples for accuracy
+    samples.sort((a,b)=>a-b);
+    const med=samples[Math.floor(samples.length/2)];
+    detectedFPS=Math.round(1000/med);
+    // clamp to common values: 60,90,120,144,165,240
+    const common=[60,90,120,144,165,240];
+    detectedFPS=common.reduce((a,b)=>Math.abs(b-detectedFPS)<Math.abs(a-detectedFPS)?b:a);
+    const badge=$('fpsBadge'), val=$('fpsVal');
+    val.textContent=detectedFPS;
+    badge.classList.toggle('good',detectedFPS>=120);
+    badge.classList.toggle('mid',detectedFPS>=90&&detectedFPS<120);
+  }
+  requestAnimationFrame(tick);
+})();
+
+// Apply detected FPS to a video element via requestVideoFrameCallback (if supported)
+// Also sets the playback canvas hint so the compositor uses the right rate
+function applyFPSToVideo(vid){
+  if(!vid)return;
+  // requestVideoFrameCallback keeps rendering in sync with display vsync
+  if('requestVideoFrameCallback' in vid){
+    const loop=(now,meta)=>{
+      // just re-request each frame — this keeps the video renderer ticked at display rate
+      vid._rvfcId=vid.requestVideoFrameCallback(loop);
+    };
+    vid.addEventListener('play',()=>{if(!vid._rvfcId)vid._rvfcId=vid.requestVideoFrameCallback(loop)},{once:false});
+    vid.addEventListener('pause',()=>{if(vid._rvfcId){vid.cancelVideoFrameCallback(vid._rvfcId);vid._rvfcId=null}});
+    vid.addEventListener('ended',()=>{if(vid._rvfcId){vid.cancelVideoFrameCallback(vid._rvfcId);vid._rvfcId=null}});
+  }
+  // CSS hints for smooth rendering
+  vid.style.imageRendering='auto';
+  vid.style.willChange='transform';
+}
+
+// ════════════════════════════════════════════════
+//  ELEMENTS
+// ════════════════════════════════════════════════
+const $=id=>document.getElementById(id);
+const viewSearch=$('viewSearch'), viewSub=$('viewSub');
+const heroSec=$('heroSec'), searchLayout=$('searchLayout');
+const heroIn=$('heroIn'), tbIn=$('tbIn'), tbSearch=$('tbSearch');
+const tbSubName=$('tbSubName'), tbDivider=$('tbDivider');
+const subCards=$('subCards'), qLabel=$('qLabel'), rChip=$('rChip'), stLoaded=$('stLoaded'), stNsfw=$('stNsfw');
+const lmWrap=$('lmWrap'), lmBtn=$('lmBtn'), nsfwBar=$('nsfwBar');
+const subFeed=$('subFeed'), subSidebar=$('subSidebar'), sidebarOpenBtn=$('sidebarOpenBtn');
+const lightbox=$('lightbox'), lbImg=$('lbImg');
+const ageModal=$('ageModal'), sOv=$('sOv'), sPnl=$('sPnl');
+const nsfwPill=$('nsfwPill'), activePill=$('activePill'), autoplayPill=$('autoplayPill'), perPageSel=$('perPageSel');
+
+// ════════════════════════════════════════════════
+//  SETTINGS
+// ════════════════════════════════════════════════
+$('settingsBtn').onclick=()=>{sPnl.classList.add('open');sOv.classList.add('open')};
+function closeS(){sPnl.classList.remove('open');sOv.classList.remove('open')}
+$('sClose').onclick=closeS; sOv.onclick=closeS;
+
+document.querySelectorAll('.th-sw').forEach(sw=>{
+  sw.onclick=()=>{
+    document.querySelectorAll('.th-sw').forEach(s=>s.classList.remove('active'));
+    sw.classList.add('active');
+    document.body.setAttribute('data-theme',sw.dataset.theme);
+    try{localStorage.setItem('sf-theme',sw.dataset.theme)}catch(e){}
+  }
+});
+(()=>{try{const t=localStorage.getItem('sf-theme');if(t){document.body.setAttribute('data-theme',t);document.querySelectorAll('.th-sw').forEach(s=>s.classList.toggle('active',s.dataset.theme===t))}}catch(e){}})();
+
+nsfwPill.onclick=()=>{nsfw?turnOffNsfw():ageModal.classList.add('show')};
+$('ageYes').onclick=()=>{nsfw=true;nsfwPill.classList.add('on');ageModal.classList.remove('show');syncNsfw();if(curQ)doSearch(curQ);if(curSub)loadSubPosts(true)};
+$('ageNo').onclick=()=>ageModal.classList.remove('show');
+ageModal.onclick=e=>{if(e.target===ageModal)ageModal.classList.remove('show')};
+function turnOffNsfw(){nsfw=false;nsfwPill.classList.remove('on');syncNsfw();if(curQ)doSearch(curQ);if(curSub)loadSubPosts(true)}
+function syncNsfw(){stNsfw.textContent=nsfw?'On':'Off';stNsfw.style.color=nsfw?'#ff4d88':'var(--dm)';nsfwBar.classList.toggle('show',nsfw)}
+
+activePill.onclick=()=>{activeOnly=!activeOnly;activePill.classList.toggle('on',activeOnly);if(curQ)doSearch(curQ)};
+autoplayPill.onclick=()=>{autoplay=!autoplay;autoplayPill.classList.toggle('on',autoplay)};
+perPageSel.onchange=()=>{perPage=+perPageSel.value};
+
+// ════════════════════════════════════════════════
+//  LIGHTBOX
+// ════════════════════════════════════════════════
+lightbox.onclick=e=>{if(e.target===lightbox||e.target===lbImg)closeLightbox()};
+$('lbClose').onclick=closeLightbox;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox()});
+function openLightbox(src){lbImg.src=src;lightbox.classList.add('show')}
+function closeLightbox(){lightbox.classList.remove('show')}
+
+// ════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════
+$('logoHome').onclick=()=>goHome();
+function goHome(){
+  viewSearch.classList.add('vis'); viewSub.classList.remove('vis');
+  tbSearch.classList.add('vis'); tbSubName.classList.remove('vis'); tbDivider.style.display='none';
+  heroSec.style.display=''; searchLayout.style.display=searchResults.length?'flex':'none';
+  sidebarOpenBtn.classList.remove('vis');
+}
+function showSubView(){
+  viewSearch.classList.remove('vis'); viewSub.classList.add('vis');
+  tbSearch.classList.add('vis'); tbSubName.classList.add('vis'); tbDivider.style.display='block';
+  if(isMobile()){sidebarOpenBtn.classList.add('vis')}else{sidebarOpenBtn.classList.remove('vis')}
+}
+function openSubInReddit(){if(curSub)window.open(`https://www.reddit.com/r/${curSub}/`,'_blank')}
+window.openSubInReddit=openSubInReddit;
+
+// ════════════════════════════════════════════════
+//  SEARCH TRIGGERS
+// ════════════════════════════════════════════════
+heroIn.onkeydown=e=>{if(e.key==='Enter')doSearch(heroIn.value.trim())};
+$('heroGo').onclick=()=>doSearch(heroIn.value.trim());
+tbIn.onkeydown=e=>{if(e.key==='Enter')doSearch(tbIn.value.trim())};
+$('tbGo').onclick=()=>doSearch(tbIn.value.trim());
+document.querySelectorAll('.tpill').forEach(p=>p.onclick=()=>doSearch(p.dataset.q));
+
+// ════════════════════════════════════════════════
+//  SORT (SEARCH)
+// ════════════════════════════════════════════════
+function setSort(s,btn){curSort=s;document.querySelectorAll('.filt').forEach(b=>b.classList.remove('active'));btn.classList.add('active');if(curQ)doSearch(curQ)}
+window.setSort=setSort;
+
+// ════════════════════════════════════════════════
+//  MEDIA FILTER
+// ════════════════════════════════════════════════
+window.setMediaFilter=setMediaFilter;
+function setMediaFilter(type, btn){
+  mediaFilter=type;
+  document.querySelectorAll('.mf-chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  applyMediaFilter();
+}
+function applyMediaFilter(){
+  const posts=subFeed.querySelectorAll('.post');
+  posts.forEach(p=>{
+    const t=p.dataset.mtype||'link';
+    const show=mediaFilter==='all'||t===mediaFilter;
+    p.style.display=show?'':'none';
+  });
+}
+function updateFilterCounts(posts){
+  const counts={all:0,image:0,gif:0,video:0,gallery:0,self:0,youtube:0,link:0};
+  posts.forEach(p=>{
+    counts.all++;
+    const t=p.dataset.mtype||'link';
+    if(t in counts)counts[t]++;
+    else counts.link++;
+  });
+  Object.entries(counts).forEach(([k,v])=>{
+    const el=$(`mfc-${k}`);
+    if(el)el.textContent=v||0;
+  });
+}
+
+// ════════════════════════════════════════════════
+//  API FETCH (multi-proxy fallback)
+// ════════════════════════════════════════════════
+async function apiFetch(url){
+  const proxies=[
+    url,
+    `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    `https://thingproxy.freeboard.io/fetch/${url}`
+  ];
+  for(const u of proxies){
+    try{
+      const ctrl=new AbortController();
+      const tid=setTimeout(()=>ctrl.abort(),10000);
+      const r=await fetch(u,{headers:{'Accept':'application/json'},signal:ctrl.signal});
+      clearTimeout(tid);
+      if(!r.ok)continue;
+      const j=await r.json();
+      if(j)return j;
+    }catch(e){/* try next */}
+  }
+  return null;
+}
+
+// ════════════════════════════════════════════════
+//  SEARCH SUBREDDITS
+// ════════════════════════════════════════════════
+lmBtn.onclick=()=>loadMoreSearch();
+
+async function doSearch(q){
+  if(!q)return;
+  curQ=q; searchResults=[]; searchAfter=null;
+  heroSec.style.display='none'; searchLayout.style.display='flex';
+  tbIn.value=q; tbSearch.classList.add('vis');
+  qLabel.textContent=`"${q}"`; rChip.textContent='…'; stLoaded.textContent='…';
+  subCards.innerHTML='<div class="feed-loading"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>';
+  lmWrap.style.display='none';
+  const data=await apiFetch(`https://www.reddit.com/subreddits/search.json?q=${encodeURIComponent(q)}&sort=${curSort}&limit=${perPage}&include_over_18=${nsfw?1:0}&raw_json=1`);
+  if(!data){subCards.innerHTML=errBox('Search failed','Could not reach Reddit. Check your connection.',()=>doSearch(q));rChip.textContent='Error';return}
+  searchAfter=data.data.after;
+  processSearchResults(data.data.children||[]);
+  lmWrap.style.display=searchAfter?'block':'none';
+}
+
+async function loadMoreSearch(){
+  if(!searchAfter)return;
+  lmBtn.textContent='Loading…'; lmBtn.disabled=true;
+  const data=await apiFetch(`https://www.reddit.com/subreddits/search.json?q=${encodeURIComponent(curQ)}&sort=${curSort}&limit=${perPage}&after=${searchAfter}&include_over_18=${nsfw?1:0}&raw_json=1`);
+  lmBtn.textContent='Load more results ↓'; lmBtn.disabled=false;
+  if(!data)return;
+  searchAfter=data.data.after;
+  processSearchResults(data.data.children||[]);
+  lmWrap.style.display=searchAfter?'block':'none';
+}
+
+function processSearchResults(children){
+  let subs=children.map(c=>c.data);
+  subs=subs.filter(s=>s.subreddit_type==='public'||s.subreddit_type==='restricted');
+  if(!nsfw)subs=subs.filter(s=>!s.over18);
+  if(activeOnly)subs=subs.filter(s=>(s.subscribers||0)>100);
+  searchResults=[...searchResults,...subs];
+  if(!searchResults.length){subCards.innerHTML=`<div class="state-box"><div class="st-ico">🔍</div><div class="st-ttl">No results</div><div class="st-msg">Try different keywords or toggle filters.</div></div>`;return}
+  if(subCards.querySelector('.feed-loading'))subCards.innerHTML='';
+  subs.forEach((s,i)=>{const card=buildSubCard(s,i);subCards.appendChild(card)});
+  rChip.textContent=`${searchResults.length}${searchAfter?'+':''} found`;
+  stLoaded.textContent=searchResults.length;
+}
+
+function buildSubCard(sub,i){
+  const div=document.createElement('div');
+  div.className='sub-card'; div.style.animationDelay=`${(i%25)*35}ms`;
+  const mem=fmt(sub.subscribers||0), rawImg=(sub.icon_img||sub.community_icon||'').split('?')[0];
+  const init=(sub.display_name||'r').slice(0,2).toUpperCase(), col=palette(sub.display_name);
+  const nB=sub.over18?`<span class="badge b-nsfw">NSFW</span>`:'';
+  const lB=(sub.subscribers||0)>1e6?`<span class="badge b-big">1M+</span>`:'';
+  div.innerHTML=`
+    <div class="sc-ava" style="background:${rawImg?'var(--sf2)':col}">${rawImg?`<img src="${rawImg}" alt="${init}" loading="lazy" onerror="this.style.display='none'">`:''}${rawImg?'':init}</div>
+    <div class="sc-body">
+      <div class="sc-top"><span class="sc-name">r/${esc(sub.display_name)}</span>${nB}${lB}</div>
+      <div class="sc-handle">${esc(sub.title||'')}</div>
+      <div class="sc-desc">${esc((sub.public_description||sub.description||'No description.').trim())}</div>
+      <div class="sc-meta">
+        <span>👥 <b>${mem}</b> members</span>
+        <span>📅 Since <b>${new Date((sub.created_utc||0)*1000).getFullYear()}</b></span>
+      </div>
+    </div>
+    <div class="sc-act">
+      <button class="visit-btn" onclick="event.stopPropagation();window.open('https://www.reddit.com/r/${esc(sub.display_name)}/','_blank')">↗ Reddit</button>
+      <button class="open-btn" onclick="event.stopPropagation();openSub('${esc(sub.display_name)}')">Open here</button>
+    </div>`;
+  return div;
+}
+
+// ════════════════════════════════════════════════
+//  SUBREDDIT VIEWER
+// ════════════════════════════════════════════════
+window.openSub=openSub;
+async function openSub(name){
+  curSub=name; subSort='hot'; subAfter=null; mediaFilter='all'; loadedPosts=[];
+  // reset filter chips
+  document.querySelectorAll('.mf-chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector('.mf-chip[data-filter="all"]').classList.add('active');
+  showSubView();
+  tbSubName.textContent=`r/${name}`;
+  document.querySelectorAll('.sort-tab').forEach(t=>t.classList.toggle('active',t.dataset.sort==='hot'));
+  $('subName').textContent=`r/${name}`;
+  $('subIcon').textContent=name.slice(0,2).toUpperCase();
+  $('subMembers').textContent='—'; $('subOnline').textContent='—';
+  $('subDesc').textContent='Loading…'; $('ssMembers').textContent='—'; $('ssOnline').textContent='—';
+  $('subNsfwTag').style.display='none';
+  $('subBannerFallback').style.display='block';
+  const bannerImg=$('subBanner').querySelector('img.sub-banner-img');
+  if(bannerImg)bannerImg.remove();
+  if(!sidebarOpen&&!isMobile())subSidebar.classList.remove('closed');
+  sidebarOpen=true;
+  subFeed.innerHTML='<div class="feed-loading"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>';
+  loadSubAbout(name); loadSubPosts(true);
+}
+
+async function loadSubAbout(name){
+  const data=await apiFetch(`https://www.reddit.com/r/${name}/about.json?raw_json=1`);
+  if(!data||!data.data)return;
+  const d=data.data;
+  subAbout=d;
+  $('subName').textContent=`r/${d.display_name||name}`;
+  tbSubName.textContent=`r/${d.display_name||name}`;
+  $('subMembers').textContent=fmt(d.subscribers||0);
+  $('subOnline').textContent=fmt(d.active_user_count||0);
+  $('ssMembers').textContent=fmt(d.subscribers||0);
+  $('ssOnline').textContent=fmt(d.active_user_count||0);
+  $('ssCreated').textContent=new Date((d.created_utc||0)*1000).getFullYear();
+  $('ssType').textContent=cap(d.subreddit_type||'public');
+  $('subDesc').textContent=d.public_description||d.description||'No description available.';
+  if(d.over18)$('subNsfwTag').style.display='flex';
+  const icon=(d.community_icon||d.icon_img||'').split('?')[0];
+  if(icon){const ic=$('subIcon');ic.innerHTML=`<img src="${icon}" alt="" onerror="this.style.display='none';this.parentNode.textContent='${name.slice(0,2).toUpperCase()}'">`;}
+  const banner=(d.banner_background_image||d.banner_img||d.header_img||'').split('?')[0];
+  if(banner){
+    $('subBannerFallback').style.display='none';
+    const img=document.createElement('img');
+    img.className='sub-banner-img'; img.src=banner; img.alt='';
+    img.onerror=()=>{img.remove();$('subBannerFallback').style.display='block'};
+    $('subBanner').insertBefore(img,null);
+  }
+}
+
+async function loadSubPosts(reset=false){
+  if(reset){subAfter=null;loadedPosts=[];subFeed.innerHTML='<div class="feed-loading"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>'}
+  const url=`https://www.reddit.com/r/${curSub}/${subSort}.json?limit=25${subAfter?'&after='+subAfter:''}&raw_json=1&include_over_18=${nsfw?1:0}`;
+  const data=await apiFetch(url);
+  if(!data){
+    if(reset)subFeed.innerHTML=errBox('Feed failed','Couldn\'t load posts.',()=>loadSubPosts(true));
+    return;
+  }
+  const posts=(data.data.children||[]).map(c=>c.data).filter(p=>p.name);
+  subAfter=data.data.after;
+  if(reset)subFeed.innerHTML='';
+  posts.forEach((p,i)=>{
+    const card=buildPost(p,i);
+    subFeed.appendChild(card);
+    loadedPosts.push(card);
+  });
+  // remove old load-more btn
+  const oldLm=$('subLmWrap'); if(oldLm)oldLm.remove();
+  if(subAfter){
+    const lb=document.createElement('div');
+    lb.className='lm-wrap'; lb.id='subLmWrap';
+    lb.innerHTML=`<button class="lm-btn" id="subLmBtn">Load more posts ↓</button>`;
+    subFeed.appendChild(lb);
+    $('subLmBtn').onclick=()=>{$('subLmWrap').remove();loadSubPosts(false)};
+  }
+  if(!posts.length&&reset)subFeed.innerHTML=`<div class="state-box"><div class="st-ico">📭</div><div class="st-ttl">No posts</div><div class="st-msg">This subreddit appears to be empty.</div></div>`;
+  updateFilterCounts(subFeed.querySelectorAll('.post'));
+  applyMediaFilter();
+}
+
+function setSubSort(s,btn){
+  subSort=s;
+  document.querySelectorAll('.sort-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  loadSubPosts(true);
+}
+window.setSubSort=setSubSort;
+
+// ════════════════════════════════════════════════
+//  SIDEBAR TOGGLE
+// ════════════════════════════════════════════════
+window.toggleSidebar=toggleSidebar;
+sidebarOpenBtn.onclick=toggleSidebar;
+function toggleSidebar(){
+  sidebarOpen=!sidebarOpen;
+  if(isMobile()){
+    subSidebar.classList.toggle('open',sidebarOpen);
+    subSidebar.classList.toggle('closed',!sidebarOpen);
+  } else {
+    subSidebar.classList.toggle('closed',!sidebarOpen);
+  }
+  sidebarOpenBtn.classList.toggle('vis',!sidebarOpen||isMobile());
+}
+
+// ════════════════════════════════════════════════
+//  POST BUILDER
+// ════════════════════════════════════════════════
+function buildPost(p,i){
+  const el=document.createElement('div');
+  const mtype=mediaType(p);
+  el.className='post'; el.id=`post-${p.id}`; el.dataset.mtype=mtype;
+  el.style.animationDelay=`${(i%25)*30}ms`;
+  const score=fmt(p.score||0);
+  const cmts=fmt(p.num_comments||0);
+  const ago=timeAgo(p.created_utc||0);
+  const thumb=getThumb(p);
+  const nsfwTag=p.over18?`<span class="nsfw-inline">NSFW</span>`:'';
+  const pinnedTag=p.stickied?`<span class="pinned-tag">📌 Pinned</span>`:'';
+  const flair=p.link_flair_text?`<span class="post-flair">${esc(p.link_flair_text)}</span>`:'';
+  const typeIcon={'image':'🖼','video':'🎬','gif':'🎞','gallery':'🗂','self':'📝','youtube':'▶️','link':'🔗'}[mtype]||'🔗';
+  const thumbHtml=thumb?`<img class="post-thumb" src="${thumb}" alt="" loading="lazy" onclick="event.stopPropagation();togglePost('${p.id}',true)" onerror="this.style.display='none'">`:'';
+
+  el.innerHTML=`
+    <div class="post-top" onclick="togglePost('${p.id}')">
+      <div class="post-meta-row">
+        ${pinnedTag}
+        <span style="font-size:13px">${typeIcon}</span>
+        <span class="post-author">u/${esc(p.author||'[deleted]')}</span>
+        <span class="post-dot"></span>
+        <span class="post-time">${ago}</span>
+        ${flair}
+      </div>
+      ${thumbHtml}
+      <div class="post-title">${nsfwTag}${esc(p.title||'Untitled')}</div>
+    </div>
+    <div class="post-media" id="pm-${p.id}">${buildMedia(p,mtype)}</div>
+    <div class="post-footer">
+      <span class="pf-score">▲ ${score}</span>
+      <button class="pf-btn" onclick="event.stopPropagation();togglePost('${p.id}')">▶ Expand</button>
+      <button class="pf-btn" onclick="event.stopPropagation();toggleComments('${p.id}','${encodeURIComponent(p.permalink||'')}')">💬 ${cmts}</button>
+      <div class="pf-space"></div>
+      <a class="pf-ext" href="https://www.reddit.com${p.permalink||''}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Reddit</a>
+    </div>
+    <div class="post-comments" id="pc-${p.id}"><div class="cmt-loading">Click 💬 to load comments</div></div>`;
+
+  // Apply FPS sync to any videos in this post after DOM insertion
+  requestAnimationFrame(()=>{
+    el.querySelectorAll('video').forEach(v=>applyFPSToVideo(v));
+  });
+  return el;
+}
+
+function togglePost(id,forceOpen){
+  const el=$(`post-${id}`);
+  if(!el)return;
+  const wasExpanded=el.classList.contains('expanded');
+  if(forceOpen&&wasExpanded)return;
+  el.classList.toggle('expanded',forceOpen||!wasExpanded);
+  if(autoplay){
+    const v=el.querySelector('.pm-video');
+    if(v){
+      applyFPSToVideo(v);
+      if(el.classList.contains('expanded'))v.play().catch(()=>{});
+      else{v.pause();v.currentTime=0}
+    }
+  }
+}
+window.togglePost=togglePost;
+
+let cmtLoaded={};
+async function toggleComments(id,encPermalink){
+  const el=$(`post-${id}`);
+  if(!el)return;
+  const pc=$(`pc-${id}`);
+  const wasOpen=el.classList.contains('comments-open');
+  el.classList.toggle('comments-open',!wasOpen);
+  if(!wasOpen&&!cmtLoaded[id]){
+    cmtLoaded[id]=true;
+    pc.innerHTML='<div class="cmt-loading">Loading comments…</div>';
+    const permalink=decodeURIComponent(encPermalink);
+    const data=await apiFetch(`https://www.reddit.com${permalink}.json?limit=15&depth=1&raw_json=1`);
+    if(!data||!Array.isArray(data)||data.length<2){pc.innerHTML='<div class="cmt-loading">No comments found.</div>';return}
+    const cmts=(data[1].data.children||[]).filter(c=>c.kind==='t1').slice(0,15);
+    if(!cmts.length){pc.innerHTML='<div class="cmt-loading">No comments yet.</div>';return}
+    pc.innerHTML=cmts.map(c=>`
+      <div class="cmt">
+        <div class="cmt-meta">
+          <span class="cmt-author">u/${esc(c.data.author||'[deleted]')}</span>
+          <span class="cmt-score">▲ ${fmt(c.data.score||0)}</span>
+          <span class="cmt-time">· ${timeAgo(c.data.created_utc||0)}</span>
+        </div>
+        <div class="cmt-body">${esc(c.data.body||'').replace(/\n/g,'<br>')}</div>
+      </div>`).join('');
+  }
+}
+window.toggleComments=toggleComments;
+
+// ════════════════════════════════════════════════
+//  MEDIA TYPE DETECTION
+// ════════════════════════════════════════════════
+function mediaType(p){
+  if(p.is_video||(p.media&&p.media.reddit_video))return'video';
+  if(p.is_gallery)return'gallery';
+  const u=p.url||'';
+  if(/\.gifv$/i.test(u))return'gif';
+  if(p.preview&&p.preview.reddit_video_preview)return'gif';
+  if(/\.(jpg|jpeg|png|webp)(\?|$)/i.test(u)||p.post_hint==='image')return'image';
+  if(/\.(gif)(\?|$)/i.test(u))return'gif';
+  if(/youtube\.com\/watch|youtu\.be\//i.test(u))return'youtube';
+  if(p.is_self)return'self';
+  if(p.thumbnail&&p.thumbnail!=='self'&&p.thumbnail!=='default'&&p.thumbnail!=='nsfw'&&p.thumbnail!=='spoiler')return'link';
+  return'link';
+}
+
+function getThumb(p){
+  const t=p.thumbnail;
+  if(t&&t.startsWith('http'))return t;
+  if(p.preview&&p.preview.images&&p.preview.images[0]){
+    const resolutions=p.preview.images[0].resolutions;
+    if(resolutions&&resolutions.length)return decodeRedditUrl(resolutions[resolutions.length>2?resolutions.length-3:0].url);
+  }
+  return null;
+}
+
+function decodeRedditUrl(u){return(u||'').replace(/&amp;/g,'&')}
+
+// ════════════════════════════════════════════════
+//  MEDIA BUILDER
+// ════════════════════════════════════════════════
+function buildMedia(p,mtype){
+  if(mtype==='image'){
+    const src=p.url||getFullImg(p);
+    if(!src)return'';
+    return`<img class="pm-img" src="${decodeRedditUrl(src)}" alt="" loading="lazy" onclick="openLightbox(this.src)" onerror="this.parentNode.style.display='none'">`;
+  }
+  if(mtype==='video'){
+    const v=p.media?.reddit_video||p.secure_media?.reddit_video;
+    const src=v?decodeRedditUrl(v.fallback_url||v.scrubber_media_url||''):'';
+    if(!src)return'<div style="padding:16px;color:var(--dm);font-size:13px;text-align:center">Video unavailable in-app. <a href="https://www.reddit.com'+esc(p.permalink||'')+'" target="_blank" style="color:var(--acc)">View on Reddit →</a></div>';
+    return`<video class="pm-video" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:560px;background:#000;will-change:transform"></video>`;
+  }
+  if(mtype==='gif'){
+    const u=p.url||'';
+    let src='';
+    if(p.preview?.reddit_video_preview)src=decodeRedditUrl(p.preview.reddit_video_preview.fallback_url||'');
+    else if(/\.gifv$/i.test(u))src=u.replace(/\.gifv$/i,'.mp4');
+    else if(/\.gif$/i.test(u))return`<img class="pm-img" src="${u}" alt="" loading="lazy" onclick="openLightbox(this.src)">`;
+    if(!src)return'';
+    return`<video class="pm-video" src="${src}" autoplay loop muted playsinline style="width:100%;max-height:480px;background:#000;will-change:transform"></video>`;
+  }
+  if(mtype==='gallery'){
+    const items=p.gallery_data?.items||[];
+    const meta=p.media_metadata||{};
+    const imgs=items.map(it=>{
+      const m=meta[it.media_id];
+      if(!m)return null;
+      return decodeRedditUrl((m.s?.u||m.s?.gif||''));
+    }).filter(Boolean);
+    if(!imgs.length)return'';
+    const slides=imgs.map((src,idx)=>`<img class="gallery-img${idx===0?' active':''}" src="${src}" alt="" loading="lazy" onclick="openLightbox(this.src)" onerror="this.style.display='none'">`).join('');
+    const gid=`g${p.id}`;
+    return`<div class="pm-gallery" id="${gid}">
+      ${slides}
+      ${imgs.length>1?`<button class="gallery-nav gallery-prev" onclick="event.stopPropagation();galleryNav('${gid}',-1)">‹</button><button class="gallery-nav gallery-next" onclick="event.stopPropagation();galleryNav('${gid}',1)">›</button><div class="gallery-count" id="${gid}-count">1/${imgs.length}</div>`:''}
+    </div>`;
+  }
+  if(mtype==='self'){
+    const text=p.selftext||'';
+    if(!text||text==='[deleted]'||text==='[removed]')return`<div class="pm-text"><em style="color:var(--dm)">No text content.</em></div>`;
+    return`<div class="pm-text">${mdToHtml(text)}</div>`;
+  }
+  if(mtype==='youtube'){
+    const vid=extractYT(p.url||'');
+    if(!vid)return'';
+    return`<div style="position:relative;padding-bottom:56.25%;background:#000"><iframe src="https://www.youtube.com/embed/${vid}?autoplay=0" style="position:absolute;inset:0;width:100%;height:100%;border:none" allowfullscreen allow="accelerometer;clipboard-write;encrypted-media;gyroscope;picture-in-picture"></iframe></div>`;
+  }
+  if(mtype==='link'){
+    const thumb=getThumb(p), url=p.url||'';
+    return`<a class="pm-link-card" href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+      ${thumb?`<img class="pm-link-thumb" src="${thumb}" alt="" onerror="this.style.display='none'">`:'<div class="pm-link-thumb" style="display:flex;align-items:center;justify-content:center;font-size:22px">🔗</div>'}
+      <div class="pm-link-info"><div class="pm-link-title">${esc(p.title||url)}</div><div class="pm-link-url">${esc(url.replace(/^https?:\/\//,'').slice(0,60))}</div></div>
+    </a>`;
+  }
+  return'';
+}
+
+function getFullImg(p){
+  if(p.preview?.images?.[0]?.source?.url)return p.preview.images[0].source.url;
+  return p.url;
+}
+
+// ════════════════════════════════════════════════
+//  GALLERY NAV
+// ════════════════════════════════════════════════
+window.galleryNav=galleryNav;
+function galleryNav(gid,dir){
+  const g=$(gid); if(!g)return;
+  const imgs=g.querySelectorAll('.gallery-img');
+  let idx=0;
+  imgs.forEach((im,i)=>{if(im.classList.contains('active'))idx=i});
+  imgs[idx].classList.remove('active');
+  idx=(idx+dir+imgs.length)%imgs.length;
+  imgs[idx].classList.add('active');
+  const cnt=$(`${gid}-count`);
+  if(cnt)cnt.textContent=`${idx+1}/${imgs.length}`;
+}
+
+// ════════════════════════════════════════════════
+//  MARKDOWN (basic)
+// ════════════════════════════════════════════════
+function mdToHtml(text){
+  let h=esc(text);
+  h=h.replace(/^### (.+)$/gm,'<h3>$1</h3>');
+  h=h.replace(/^## (.+)$/gm,'<h2>$1</h2>');
+  h=h.replace(/^# (.+)$/gm,'<h1>$1</h1>');
+  h=h.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  h=h.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  h=h.replace(/`([^`]+)`/g,'<code>$1</code>');
+  h=h.replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>');
+  h=h.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  h=h.replace(/(^|\s)(https?:\/\/\S+)/g,'$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+  h='<p>'+h.replace(/\n\n+/g,'</p><p>').replace(/\n/g,'<br>')+'</p>';
+  return h;
+}
+
+// ════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════
+function fmt(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return''+n}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function cap(s){return s?s[0].toUpperCase()+s.slice(1):s}
+function palette(n){const p=['#e63946','#f4a261','#2a9d8f','#457b9d','#6a4c93','#e9c46a','#3d405b','#81b29a','#f4845f','#264653'];let h=0;for(const c of(n||''))h=(h*31+c.charCodeAt(0))%p.length;return p[Math.abs(h)]}
+function timeAgo(ts){const s=Math.floor(Date.now()/1000)-ts;if(s<60)return`${s}s`;if(s<3600)return`${Math.floor(s/60)}m`;if(s<86400)return`${Math.floor(s/3600)}h`;if(s<2592000)return`${Math.floor(s/86400)}d`;if(s<31536000)return`${Math.floor(s/2592000)}mo`;return`${Math.floor(s/31536000)}y`}
+function extractYT(u){const m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/);return m?m[1]:null}
+function errBox(ttl,msg,retry){return`<div class="state-box"><div class="st-ico">⚠️</div><div class="st-ttl">${ttl}</div><div class="st-msg">${msg}</div>${retry?`<button class="st-retry" onclick="(${retry.toString()})()">Try again</button>`:''}</div>`}
+
+// ════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════
+heroIn.focus();
 
 // ════════════════════════════════════════════════
 //  ELEMENTS
