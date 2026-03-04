@@ -409,6 +409,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         <div class="tog-info"><span class="tog-nm">🔁 Autoplay GIFs</span><span class="tog-ds">Autoplay gif/video in feed</span></div>
         <div class="pill on" id="autoplayPill"><div class="knob"></div></div>
       </div>
+      <div class="tog-row">
+        <div class="tog-info"><span class="tog-nm">🔞 NSFW Only</span><span class="tog-ds">Only show NSFW subreddits &amp; posts</span></div>
+        <div class="pill" id="nsfwOnlyPill"><div class="knob"></div></div>
+      </div>
     </div>
     <div class="s-sec">
       <div class="s-lbl">Search results per batch</div>
@@ -543,7 +547,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 // ════════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════════
-let nsfw=false, activeOnly=true, autoplay=true, curSort='relevance', curQ='', searchResults=[], searchAfter=null, perPage=100;
+let nsfw=false, nsfwOnly=false, activeOnly=true, autoplay=true, curSort='relevance', curQ='', searchResults=[], searchAfter=null, perPage=100;
 let curSub='', subSort='hot', subAfter=null, subAbout=null, sidebarOpen=true;
 let mediaFilter='all', loadedPosts=[], detectedFPS=60;
 let isMobile=()=>window.innerWidth<=900;
@@ -605,7 +609,7 @@ const lmWrap=$('lmWrap'), lmBtn=$('lmBtn'), nsfwBar=$('nsfwBar');
 const subFeed=$('subFeed'), subSidebar=$('subSidebar'), sidebarOpenBtn=$('sidebarOpenBtn');
 const lightbox=$('lightbox'), lbImg=$('lbImg');
 const ageModal=$('ageModal'), sOv=$('sOv'), sPnl=$('sPnl');
-const nsfwPill=$('nsfwPill'), activePill=$('activePill'), autoplayPill=$('autoplayPill'), perPageSel=$('perPageSel');
+const nsfwPill=$('nsfwPill'), activePill=$('activePill'), autoplayPill=$('autoplayPill'), perPageSel=$('perPageSel'), nsfwOnlyPill=$('nsfwOnlyPill');
 
 // ════════════════════════════════════════════════
 //  SETTINGS
@@ -625,32 +629,53 @@ document.querySelectorAll('.th-sw').forEach(sw=>{
 (()=>{try{const t=localStorage.getItem('sf-theme');if(t){document.body.setAttribute('data-theme',t);document.querySelectorAll('.th-sw').forEach(s=>s.classList.toggle('active',s.dataset.theme===t))}}catch(e){}})();
 
 nsfwPill.onclick=()=>{nsfw?turnOffNsfw():ageModal.classList.add('show')};
-$('ageYes').onclick=()=>{nsfw=true;nsfwPill.classList.add('on');ageModal.classList.remove('show');syncNsfw();if(curQ)doSearch(curQ);if(curSub)loadSubPosts(true)};
+$('ageYes').onclick=()=>{
+  nsfw=true;nsfwPill.classList.add('on');ageModal.classList.remove('show');syncNsfw();
+  if(ageModal._pendingNsfwOnly){
+    ageModal._pendingNsfwOnly=false;
+    nsfwOnly=true;nsfwOnlyPill.classList.add('on');
+  }
+  if(curQ)doSearch(curQ);if(curSub)loadSubPosts(true);
+};
 $('ageNo').onclick=()=>ageModal.classList.remove('show');
 ageModal.onclick=e=>{if(e.target===ageModal)ageModal.classList.remove('show')};
-function turnOffNsfw(){nsfw=false;nsfwPill.classList.remove('on');syncNsfw();if(curQ)doSearch(curQ);if(curSub)loadSubPosts(true)}
+function turnOffNsfw(){nsfw=false;nsfwPill.classList.remove('on');nsfwOnly=false;nsfwOnlyPill.classList.remove('on');syncNsfw();if(curQ)doSearch(curQ);if(curSub)loadSubPosts(true)}
 function syncNsfw(){stNsfw.textContent=nsfw?'On':'Off';stNsfw.style.color=nsfw?'#ff4d88':'var(--dm)';nsfwBar.classList.toggle('show',nsfw)}
 
 activePill.onclick=()=>{activeOnly=!activeOnly;activePill.classList.toggle('on',activeOnly);if(curQ)doSearch(curQ)};
 autoplayPill.onclick=()=>{autoplay=!autoplay;autoplayPill.classList.toggle('on',autoplay)};
+nsfwOnlyPill.onclick=()=>{
+  if(!nsfwOnly&&!nsfw){
+    // need nsfw enabled first
+    ageModal.classList.add('show');
+    ageModal._pendingNsfwOnly=true;
+    return;
+  }
+  nsfwOnly=!nsfwOnly;
+  nsfwOnlyPill.classList.toggle('on',nsfwOnly);
+  if(curQ)doSearch(curQ);
+  if(curSub)loadSubPosts(true);
+};
 perPageSel.onchange=()=>{perPage=+perPageSel.value};
 
 // ════════════════════════════════════════════════
 //  LIGHTBOX
 // ════════════════════════════════════════════════
 // ── LIGHTBOX STATE ──
-let lbItems=[], lbIndex=0;
+// lbFlat: flat array of ALL media items across ALL visible posts
+// Each entry: { src, type, postId, postTitle, itemIdx, totalInPost }
+let lbFlat=[], lbFlatIdx=0;
 
 lightbox.onclick=e=>{if(e.target===lightbox)closeLightbox()};
 $('lbClose').onclick=closeLightbox;
-$('lbPrev').onclick=e=>{e.stopPropagation();lbGo(lbIndex-1)};
-$('lbNext').onclick=e=>{e.stopPropagation();lbGo(lbIndex+1)};
+$('lbPrev').onclick=e=>{e.stopPropagation();lbGo(lbFlatIdx-1)};
+$('lbNext').onclick=e=>{e.stopPropagation();lbGo(lbFlatIdx+1)};
 
 document.addEventListener('keydown',e=>{
   if(!lightbox.classList.contains('show'))return;
   if(e.key==='Escape')closeLightbox();
-  if(e.key==='ArrowLeft')lbGo(lbIndex-1);
-  if(e.key==='ArrowRight')lbGo(lbIndex+1);
+  if(e.key==='ArrowLeft')lbGo(lbFlatIdx-1);
+  if(e.key==='ArrowRight')lbGo(lbFlatIdx+1);
 });
 
 // Touch/swipe support
@@ -659,14 +684,54 @@ lightbox.addEventListener('touchstart',e=>{lbTouchX=e.touches[0].clientX},{passi
 lightbox.addEventListener('touchend',e=>{
   if(lbTouchX===null)return;
   const dx=e.changedTouches[0].clientX-lbTouchX;
-  if(Math.abs(dx)>50){lbGo(dx<0?lbIndex+1:lbIndex-1)}
+  if(Math.abs(dx)>50){lbGo(dx<0?lbFlatIdx+1:lbFlatIdx-1)}
   lbTouchX=null;
 },{passive:true});
 
-function openLightbox(src,type,items,startIdx){
-  // items = [{src, type}] array for the current post/gallery
-  lbItems=items||[{src,type:type||'image'}];
-  lbIndex=startIdx||0;
+// Rebuild the flat list from all post cards currently in the feed
+function rebuildLbFlat(){
+  lbFlat=[];
+  subFeed.querySelectorAll('.post').forEach(postEl=>{
+    const pid=postEl.id.replace('post-','');
+    const title=postEl.querySelector('.post-title')?.textContent||'';
+    const mtype=postEl.dataset.mtype||'link';
+    if(['image','video','gif','gallery'].includes(mtype)){
+      // gallery: multiple items
+      if(mtype==='gallery'&&window['_lb_'+pid]){
+        window['_lb_'+pid].forEach((it,idx)=>{
+          lbFlat.push({src:it.src,type:it.type,postId:pid,postTitle:title,itemIdx:idx,totalInPost:window['_lb_'+pid].length});
+        });
+      } else {
+        // single item posts - get src from the post's media
+        const vid=postEl.querySelector('.pm-video');
+        const img=postEl.querySelector('.pm-img');
+        const src=(vid?vid.src:'')||(img?img.src:'');
+        if(src)lbFlat.push({src,type:mtype,postId:pid,postTitle:title,itemIdx:0,totalInPost:1});
+      }
+    }
+  });
+}
+
+function openLightbox(src,type,items,startIdx,postId){
+  rebuildLbFlat();
+  // Find this item in the flat list
+  let found=-1;
+  if(postId){
+    // find exact item within this post
+    const base=lbFlat.findIndex(x=>x.postId===postId&&x.itemIdx===(startIdx||0));
+    if(base!==-1)found=base;
+  }
+  if(found===-1){
+    // fallback: match by src
+    found=lbFlat.findIndex(x=>x.src===src);
+  }
+  if(found===-1){
+    // item not in flat list (e.g. collapsed post) - insert inline
+    const fakeItems=(items||[{src,type:type||'image'}]).map((it,idx)=>({...it,postId:'_inline',itemIdx:idx,totalInPost:(items||[]).length}));
+    lbFlat=[...lbFlat,...fakeItems];
+    found=lbFlat.length-fakeItems.length+(startIdx||0);
+  }
+  lbFlatIdx=found;
   lbRender();
   lightbox.classList.add('show');
   document.body.style.overflow='hidden';
@@ -674,16 +739,16 @@ function openLightbox(src,type,items,startIdx){
 window.openLightbox=openLightbox;
 
 function lbGo(idx){
-  if(idx<0||idx>=lbItems.length)return;
-  lbIndex=idx;
+  if(idx<0||idx>=lbFlat.length)return;
+  lbFlatIdx=idx;
   lbRender();
 }
 
 function lbRender(){
   const lbMedia=$('lbMedia'), lbCounter=$('lbCounter');
   const lbPrev=$('lbPrev'), lbNext=$('lbNext');
-  const item=lbItems[lbIndex];
-  // stop any playing video first
+  const item=lbFlat[lbFlatIdx];
+  if(!item)return;
   lbMedia.querySelectorAll('video').forEach(v=>{v.pause();v.src=''});
   if(item.type==='video'||item.type==='gif'){
     const isGif=item.type==='gif';
@@ -694,17 +759,18 @@ function lbRender(){
   } else {
     lbMedia.innerHTML=`<img src="${item.src}" alt="" style="max-width:92vw;max-height:90vh;object-fit:contain;border-radius:6px;display:block;user-select:none" onclick="event.stopPropagation()">`;
   }
-  // counter
-  if(lbItems.length>1){
-    lbCounter.textContent=`${lbIndex+1} / ${lbItems.length}`;
-    lbCounter.style.display='block';
-  } else {
-    lbCounter.style.display='none';
-  }
-  lbPrev.disabled=lbIndex===0;
-  lbNext.disabled=lbIndex===lbItems.length-1;
-  lbPrev.style.display=lbItems.length>1?'flex':'none';
-  lbNext.style.display=lbItems.length>1?'flex':'none';
+  // counter: show position across ALL media
+  const total=lbFlat.length;
+  lbCounter.style.display='block';
+  const inPost=item.totalInPost>1?` (${item.itemIdx+1}/${item.totalInPost} in post)`:'';
+  lbCounter.textContent=`${lbFlatIdx+1} / ${total}${inPost}`;
+  lbPrev.disabled=lbFlatIdx===0;
+  lbNext.disabled=lbFlatIdx===lbFlat.length-1;
+  lbPrev.style.display='flex';
+  lbNext.style.display='flex';
+  // scroll feed so the active post is visible
+  const postEl=$('post-'+item.postId);
+  if(postEl)postEl.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
 function closeLightbox(){
@@ -837,6 +903,7 @@ function processSearchResults(children){
   let subs=children.map(c=>c.data);
   subs=subs.filter(s=>s.subreddit_type==='public'||s.subreddit_type==='restricted');
   if(!nsfw)subs=subs.filter(s=>!s.over18);
+  if(nsfwOnly)subs=subs.filter(s=>s.over18);
   if(activeOnly)subs=subs.filter(s=>(s.subscribers||0)>100);
   searchResults=[...searchResults,...subs];
   if(!searchResults.length){subCards.innerHTML=`<div class="state-box"><div class="st-ico">🔍</div><div class="st-ttl">No results</div><div class="st-msg">Try different keywords or toggle filters.</div></div>`;return}
@@ -932,7 +999,8 @@ async function loadSubPosts(reset=false){
     if(reset)subFeed.innerHTML=errBox('Feed failed','Couldn\'t load posts.',()=>loadSubPosts(true));
     return;
   }
-  const posts=(data.data.children||[]).map(c=>c.data).filter(p=>p.name);
+  let posts=(data.data.children||[]).map(c=>c.data).filter(p=>p.name);
+  if(nsfwOnly)posts=posts.filter(p=>p.over18);
   subAfter=data.data.after;
   if(reset)subFeed.innerHTML='';
   posts.forEach((p,i)=>{
@@ -1104,16 +1172,17 @@ function decodeRedditUrl(u){return(u||'').replace(/&amp;/g,'&')}
 //  MEDIA BUILDER
 // ════════════════════════════════════════════════
 function buildMedia(p,mtype){
+  const pid=p.id||'';
   if(mtype==='image'){
     const src=decodeRedditUrl(p.url||getFullImg(p));
     if(!src)return'';
-    return`<img class="pm-img" src="${src}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${src}','image',[{src:'${src}',type:'image'}],0)" onerror="this.parentNode.style.display='none'" style="cursor:zoom-in">`;
+    return`<img class="pm-img" src="${src}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${src}','image',[{src:'${src}',type:'image'}],0,'${pid}')" onerror="this.parentNode.style.display='none'" style="cursor:zoom-in">`;
   }
   if(mtype==='video'){
     const v=p.media?.reddit_video||p.secure_media?.reddit_video;
     const src=v?decodeRedditUrl(v.fallback_url||v.scrubber_media_url||''):'';
     if(!src)return'<div style="padding:16px;color:var(--dm);font-size:13px;text-align:center">Video unavailable in-app. <a href="https://www.reddit.com'+esc(p.permalink||'')+'" target="_blank" style="color:var(--acc)">View on Reddit →</a></div>';
-    return`<div style="position:relative;cursor:pointer" onclick="event.stopPropagation();openLightbox('${src}','video',[{src:'${src}',type:'video'}],0)">
+    return`<div style="position:relative;cursor:pointer" onclick="event.stopPropagation();openLightbox('${src}','video',[{src:'${src}',type:'video'}],0,'${pid}')">
       <video class="pm-video" src="${src}" controls playsinline preload="metadata" style="width:100%;max-height:400px;background:#000;will-change:transform;pointer-events:none"></video>
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
         <div style="width:54px;height:54px;border-radius:50%;background:#000000aa;border:2px solid #ffffff60;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;transition:transform .15s">▶</div>
@@ -1126,10 +1195,10 @@ function buildMedia(p,mtype){
     if(p.preview?.reddit_video_preview)src=decodeRedditUrl(p.preview.reddit_video_preview.fallback_url||'');
     else if(/\.gifv$/i.test(u))src=u.replace(/\.gifv$/i,'.mp4');
     else if(/\.gif$/i.test(u)){
-      return`<img class="pm-img" src="${u}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${u}','image',[{src:'${u}',type:'image'}],0)" style="cursor:zoom-in">`;
+      return`<img class="pm-img" src="${u}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${u}','image',[{src:'${u}',type:'image'}],0,'${pid}')" style="cursor:zoom-in">`;
     }
     if(!src)return'';
-    return`<div style="position:relative;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${src}','gif',[{src:'${src}',type:'gif'}],0)">
+    return`<div style="position:relative;cursor:zoom-in" onclick="event.stopPropagation();openLightbox('${src}','gif',[{src:'${src}',type:'gif'}],0,'${pid}')">
       <video class="pm-video" src="${src}" autoplay loop muted playsinline style="width:100%;max-height:480px;background:#000;will-change:transform;pointer-events:none"></video>
       <div style="position:absolute;top:8px;left:8px;background:#000000aa;color:#fff;font-size:10px;font-weight:700;font-family:'Syne',sans-serif;padding:3px 8px;border-radius:6px;letter-spacing:1px">GIF</div>
     </div>`;
@@ -1146,7 +1215,7 @@ function buildMedia(p,mtype){
     // store gallery items in a window map keyed by post id for clean onclick access
     const gKey='_lb_'+p.id;
     window[gKey]=imgs.map(s=>({src:s,type:'image'}));
-    const slides=imgs.map((src,idx)=>`<img class="gallery-img${idx===0?' active':''}" src="${src}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${src}','image',window['${gKey}'],${idx})" onerror="this.style.display='none'" style="cursor:zoom-in">`).join('');
+    const slides=imgs.map((src,idx)=>`<img class="gallery-img${idx===0?' active':''}" src="${src}" alt="" loading="lazy" onclick="event.stopPropagation();openLightbox('${src}','image',window['${gKey}'],${idx},'${pid}')" onerror="this.style.display='none'" style="cursor:zoom-in">`).join('');
     const gid=`g${p.id}`;
     return`<div class="pm-gallery" id="${gid}">
       ${slides}
