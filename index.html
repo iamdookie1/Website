@@ -993,7 +993,7 @@ async function loadSubAbout(name){
 
 async function loadSubPosts(reset=false){
   if(reset){subAfter=null;loadedPosts=[];subFeed.innerHTML='<div class="feed-loading"><div class="ld"></div><div class="ld"></div><div class="ld"></div></div>'}
-  const url=`https://www.reddit.com/r/${curSub}/${subSort}.json?limit=25${subAfter?'&after='+subAfter:''}&raw_json=1&include_over_18=${nsfw?1:0}`;
+  const url=`https://www.reddit.com/r/${curSub}/${subSort}.json?limit=50${subAfter?'&after='+subAfter:''}&raw_json=1&include_over_18=${nsfw?1:0}`;
   const data=await apiFetch(url);
   if(!data){
     if(reset)subFeed.innerHTML=errBox('Feed failed','Couldn\'t load posts.',()=>loadSubPosts(true));
