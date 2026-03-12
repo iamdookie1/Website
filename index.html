@@ -53,6 +53,7 @@
   .src-tab { padding:8px 16px; border-radius:9px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); font-size:.8rem; font-weight:700; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:7px; }
   .src-tab:hover { color:var(--text); }
   .src-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 14px rgba(88,101,242,.4); }
+  .src-tab.nsfw-tab.active { background:var(--nsfw); border-color:var(--nsfw); color:#fff; box-shadow:0 2px 14px rgba(237,66,69,.4); }
   .src-tab .dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
 
@@ -175,6 +176,7 @@
     <div class="src-tab" onclick="switchSrc('giphy',this)"><span class="dot" style="animation-delay:.4s"></span>✨ GIPHY Stickers</div>
     <div class="src-tab" onclick="switchSrc('community',this)"><span class="dot" style="animation-delay:.8s"></span>🎨 Discord Community</div>
     <div class="src-tab" onclick="switchSrc('tenor',this)"><span class="dot" style="animation-delay:1.2s"></span>🎬 Tenor GIFs</div>
+    <div class="src-tab nsfw-tab" onclick="switchSrc('nsfwgg',this)" style="border-color:rgba(237,66,69,.4);color:var(--nsfw)"><span class="dot" style="animation-delay:1.6s;background:var(--nsfw)"></span>🔞 NSFW — emoji.gg</div>
   </div>
 
   <div class="cats" id="cats"></div>
@@ -251,6 +253,14 @@ const CATS = {
     {id:'cute',l:'🌸 Cute'},{id:'aww',l:'🥰 Aww'},{id:'fail',l:'💀 Fail'},
     {id:'win',l:'🏆 Win'},{id:'reaction',l:'💬 Reaction'},
   ],
+  nsfwgg:[
+    {id:'all',l:'✦ All NSFW'},
+    {id:'emojis',l:'😈 Emojis'},
+    {id:'stickers',l:'🖼 Stickers'},
+    {id:'animated',l:'✨ Animated'},
+    {id:'pepe',l:'🐸 Pepe'},
+    {id:'lewd',l:'💦 Lewd'},
+  ],
 };
 
 /* ── BOOT ────────────────────────────────────────────────────────── */
@@ -264,14 +274,20 @@ function switchSrc(src, el) {
   document.getElementById('q').value='';
   document.querySelectorAll('.src-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
+  // When switching to NSFW tab, auto-enable NSFW toggle
+  if(src==='nsfwgg' && !S.nsfw) {
+    S.nsfw=true;
+    document.getElementById('nsfwBtn').classList.add('on');
+  }
   buildCats(); fetchData();
 }
 
 function buildCats() {
   const cs = CATS[S.src]||[];
+  const isNsfwSrc = S.src==='nsfwgg';
   document.getElementById('cats').innerHTML = cs.map(c=>{
-    if(c.id==='NSFW' && !S.nsfw) return '';
-    const isN = c.id==='NSFW';
+    if(c.id==='NSFW' && !S.nsfw && !isNsfwSrc) return '';
+    const isN = c.id==='NSFW' || isNsfwSrc;
     return `<div class="cat ${S.cat===c.id?'on':''} ${isN?'nc':''}" onclick="setCat('${c.id}')">${c.l}</div>`;
   }).join('');
 }
@@ -288,7 +304,7 @@ function toggleNSFW(){
 /* ── SEARCH ──────────────────────────────────────────────────────── */
 function onSearch(){
   S.q=document.getElementById('q').value.trim().toLowerCase(); S.page=1;
-  if(S.src==='unicode'||S.src==='community'){ applyFilter(); renderGrid(); renderMeta(); renderPager(); }
+  if(S.src==='unicode'||S.src==='community'||S.src==='nsfwgg'){ applyFilter(); renderGrid(); renderMeta(); renderPager(); }
   else { fetchData(); }
 }
 
@@ -301,6 +317,7 @@ async function fetchData(){
     else if(S.src==='giphy') await fetchGiphy();
     else if(S.src==='community') await fetchCommunity();
     else if(S.src==='tenor') await fetchTenor();
+    else if(S.src==='nsfwgg') await fetchNSFWgg();
   } catch(e){
     showErr('API error: '+e.message+'. Try another source tab or check your connection.');
     document.getElementById('grid').innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">⚠️</div><p>Could not load content.</p></div>';
@@ -383,6 +400,72 @@ async function fetchCommunity(){
   badge('📡 '+(S.cache['community_src']||'discordemoji.com')+' · '+S.items.length+' emojis');
 }
 
+/* ── NSFW emoji.gg ───────────────────────────────────────────────── */
+async function fetchNSFWgg(){
+  // emoji.gg public API — returns ~5000 community emojis, many tagged nsfw
+  const ck='nsfwgg';
+  if(!S.cache[ck]){
+    let data=null;
+    // Try direct
+    try{
+      const r=await fetchWithTimeout('https://emoji.gg/api',5000);
+      if(r.ok) data=await r.json();
+    } catch(_){}
+    // Via CORS proxy fallback
+    if(!data){
+      try{
+        const r=await fetchWithTimeout('https://corsproxy.io/?url='+encodeURIComponent('https://emoji.gg/api'),8000);
+        if(r.ok) data=await r.json();
+      } catch(_){}
+    }
+    // Also fetch stickers from emoji.gg
+    let stickers=null;
+    try{
+      const r=await fetchWithTimeout('https://corsproxy.io/?url='+encodeURIComponent('https://emoji.gg/api?request=stickers'),8000);
+      if(r.ok) stickers=await r.json();
+    } catch(_){}
+
+    if(!data) throw new Error('emoji.gg API unreachable — try enabling a CORS proxy or run locally.');
+
+    const emojis = Array.isArray(data) ? data : (data.emojis||[]);
+    const stickerList = Array.isArray(stickers) ? stickers : (stickers?.stickers||[]);
+
+    // Merge emojis + stickers, flag both types
+    const merged = [
+      ...emojis.map(e=>({...e, _type:'emoji'})),
+      ...stickerList.map(s=>({...s, _type:'sticker', nsfw: s.nsfw??0})),
+    ];
+    S.cache[ck] = merged;
+    S.cache['nsfwgg_src'] = 'emoji.gg/api';
+  }
+
+  // Filter: only keep nsfw items OR all if user wants browsing
+  let items = S.cache[ck];
+  // Always filter to nsfw=1 for this dedicated tab
+  items = items.filter(e => e.nsfw==1 || e.nsfw===true || (e.category_name||'').toLowerCase().includes('nsfw') || (e.tags||[]).some(t=>(t||'').toLowerCase().includes('nsfw')));
+
+  // Sub-category filter
+  if(S.cat==='emojis') items=items.filter(e=>e._type==='emoji');
+  else if(S.cat==='stickers') items=items.filter(e=>e._type==='sticker');
+  else if(S.cat==='animated') items=items.filter(e=>e.animated==1||e.animated===true||(e.image||'').endsWith('.gif'));
+  else if(S.cat==='pepe') items=items.filter(e=>(e.title||e.name||'').toLowerCase().includes('pepe')||(e.tags||[]).some(t=>(t||'').toLowerCase().includes('pepe')));
+  else if(S.cat==='lewd') items=items.filter(e=>(e.title||e.name||'').toLowerCase().match(/lewd|h3ntai|lewd|ecchi|ahegao|thicc/i)||(e.tags||[]).some(t=>(t||'').toLowerCase().match(/lewd|ecchi|ahegao/)));
+
+  // Search
+  if(S.q){
+    items=items.filter(e=>{
+      const h=[e.title||'',e.name||'',e.slug||'',...(e.tags||[])].join(' ').toLowerCase();
+      return h.includes(S.q);
+    });
+  }
+
+  S.filtered=items;
+  renderNSFWGrid(items);
+  renderMeta();
+  renderPager();
+  badge('📡 emoji.gg/api · '+items.length+' NSFW items shown');
+}
+
 /* ── TENOR GIFs ──────────────────────────────────────────────────── */
 async function fetchTenor(){
   const cf = S.nsfw ? 'off' : 'medium';
@@ -428,6 +511,7 @@ function renderGrid(){
   const s=(S.page-1)*S.perPage, items=S.filtered.slice(s,s+S.perPage);
   if(!items.length){g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><p>No results found.</p></div>';return;}
   if(S.src==='unicode') g.innerHTML=items.map((e,i)=>unicodeCard(e,i)).join('');
+  else if(S.src==='nsfwgg') { renderNSFWGrid(S.filtered); return; }
   else g.innerHTML=items.map((e,i)=>communityCard(e,i)).join('');
 }
 
@@ -522,6 +606,57 @@ function renderTenorGrid(items){
   }).join('');
 }
 
+/* ── RENDER: NSFW emoji.gg ───────────────────────────────────────── */
+function renderNSFWGrid(items){
+  const g=document.getElementById('grid');
+  g.className='grid g-'+S.view;
+  const start=(S.page-1)*S.perPage;
+  const page=items.slice(start,start+S.perPage);
+  if(!page.length){
+    g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">🔞</div><p>No NSFW content found. The emoji.gg API may need a CORS proxy — try running the file locally.</p></div>';
+    return;
+  }
+  g.innerHTML=page.map((e,i)=>{
+    const delay=i*12;
+    const isA=e.animated==1||e.animated===true||(e.image||'').endsWith('.gif');
+    const isS=e._type==='sticker';
+    // emoji.gg image URL format
+    const rawImg = e.image || '';
+    // emoji.gg serves images at cdn3.emoji.gg
+    const img = rawImg.startsWith('http') ? rawImg : (rawImg ? `https://cdn3.emoji.gg/${isS?'stickers':'emojis'}/${rawImg}` : '');
+    const name=(e.title||e.name||e.slug||'nsfw').replace(/'/g,"&#39;");
+    const slug=(e.slug||e.title||e.name||'nsfw').replace(/\s+/g,'_').replace(/'/g,'%27');
+    const code=`<:${slug}:${e.id||0}>`;
+    const safeImg=img.replace(/'/g,'%27');
+    const sizeCls = isS ? 'scard' : 'ecard nsfw';
+    return isS
+      ? `<div class="scard nsfw" style="animation-delay:${delay}ms" onclick="openNSFWMod('${safeImg}','${name}','${code.replace(/'/g,'%27')}','${isS}','${isA}')">
+          <div class="nsfwbadge">NSFW</div>
+          ${isA?'<div class="gifbadge">GIF</div>':''}
+          <img class="simg" src="${safeImg}" alt="${name}" loading="lazy" onerror="this.style.display='none'">
+          <div class="sinfo">
+            <div class="sname">${e.title||e.name||'Sticker'}</div>
+            <div class="ssrc">emoji.gg · sticker</div>
+          </div>
+          <div class="stags"><span class="stag tr">NSFW</span>${isA?'<span class="stag tg">GIF</span>':''}</div>
+          <div class="eacts">
+            <div class="ea" onclick="event.stopPropagation();cpTxt('${code.replace(/'/g,'%27')}')">Copy</div>
+            <div class="ea dl" onclick="event.stopPropagation();dlUrl('${safeImg}','${slug}')">⬇</div>
+          </div>
+        </div>`
+      : `<div class="ecard nsfw" style="animation-delay:${delay}ms" onclick="openNSFWMod('${safeImg}','${name}','${code.replace(/'/g,'%27')}','${isS}','${isA}')">
+          <div class="nsfwbadge">NSFW</div>
+          ${isA?'<div class="gifbadge">GIF</div>':''}
+          <img class="eimg" src="${safeImg}" alt="${name}" loading="lazy" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=efb>🔞</div>')">
+          <div class="ename">:${slug}:</div>
+          <div class="eacts">
+            <div class="ea" onclick="event.stopPropagation();cpTxt('${code.replace(/'/g,'%27')}')">Copy</div>
+            <div class="ea dl" onclick="event.stopPropagation();dlUrl('${safeImg}','${slug}')">⬇</div>
+          </div>
+        </div>`;
+  }).join('');
+}
+
 /* ── META & PAGER ────────────────────────────────────────────────── */
 function renderMeta(){
   const tot=S.filtered.length, pages=Math.max(1,Math.ceil(tot/S.perPage));
@@ -579,6 +714,14 @@ function openCMod(raw){
   document.getElementById('mMeta').innerHTML=`${d.isA?'<b>Animated</b> · ':''}${d.isN?'<span style="color:var(--nsfw)">🔞 NSFW</span> · ':''}Source: discordemoji.com`;
   document.getElementById('mCode').textContent=d.code;
   document.getElementById('mDl').onclick=()=>dlUrl(d.img,d.n);
+  document.getElementById('mbk').classList.add('open');
+}
+function openNSFWMod(img, name, code, isSticker, isAnim){
+  document.getElementById('mImg').innerHTML=`<img src="${img}" style="width:${isSticker==='true'?'120':'100'}px;height:${isSticker==='true'?'120':'100'}px;object-fit:contain;${isSticker!=='true'?'image-rendering:pixelated':''}" onerror="this.outerHTML='<div style=font-size:3rem;text-align:center>🔞</div>'">`;
+  document.getElementById('mName').textContent=name;
+  document.getElementById('mMeta').innerHTML=`<span style="color:var(--nsfw)">🔞 NSFW</span> · ${isAnim==='true'?'Animated GIF · ':''}${isSticker==='true'?'Sticker':'Emoji'}<br>Source: emoji.gg`;
+  document.getElementById('mCode').textContent=decodeURIComponent(code);
+  document.getElementById('mDl').onclick=()=>dlUrl(img, name);
   document.getElementById('mbk').classList.add('open');
 }
 function openSMod(id,title,img,rating,pageUrl){
