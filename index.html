@@ -371,10 +371,10 @@ async function fetchCommunity(){
     // 2. Try via a public CORS proxy
     if(!data){
       try{
-        const proxied='https://corsproxy.io/?url='+encodeURIComponent('https://discordemoji.com/api?request=emojis');
+        const proxied='https://api.allorigins.win/raw?url='+encodeURIComponent('https://discordemoji.com/api?request=emojis');
         const r=await fetchWithTimeout(proxied,6000);
         if(r.ok) data=await r.json();
-        if(data) S.cache['community_src']='discordemoji.com (via corsproxy)';
+        if(data) S.cache['community_src']='discordemoji.com (via allorigins)';
       } catch(_){}
     }
 
@@ -793,68 +793,103 @@ function dlEmoji(url,name,fallback){
   dlUrl(url, name);
 }
 
+// Ordered list of proxy wrappers that return raw bytes
+const PROXIES = [
+  u => u,                                                           // direct (works if API has CORS headers)
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://thingproxy.freeboard.io/fetch/${u}`,
+  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+];
+
 async function dlUrl(url, name){
   if(!url) return;
+  url = decodeURIComponent(url);
   toast('⬇ Downloading…','info');
-  const ext = url.match(/\.(gif|webp|png|jpg|jpeg)(\?|$)/i)?.[1]?.toLowerCase() || 'png';
-  const filename = (name||'download').replace(/[^a-z0-9_\-\.]/gi,'_')+'.'+ext;
 
-  // 1. Try direct fetch (works when server sends CORS headers)
-  try {
-    const r = await fetch(url, {mode:'cors'});
-    if(r.ok){ saveBlob(await r.blob(), filename); toast('✅ Downloaded!','ok'); return; }
-  } catch(_){}
+  const ext = url.match(/\.(gif|webp|png|jpg|jpeg|mp4)(\?|$)/i)?.[1]?.toLowerCase() || 'png';
+  const safe = (name||'download').replace(/[^a-z0-9_\-]/gi,'_');
+  const filename = safe + '.' + ext;
 
-  // 2. Try via corsproxy.io
-  try {
-    const r = await fetch('https://corsproxy.io/?url='+encodeURIComponent(url));
-    if(r.ok){ saveBlob(await r.blob(), filename); toast('✅ Downloaded!','ok'); return; }
-  } catch(_){}
+  // Try each proxy in sequence
+  for(const proxy of PROXIES){
+    try{
+      const r = await fetch(proxy(url), {signal: AbortSignal.timeout(8000)});
+      if(!r.ok) continue;
+      const ct = r.headers.get('content-type')||'';
+      // Skip if we got back JSON/HTML (proxy error page) instead of image bytes
+      if(ct.includes('text/html') || ct.includes('application/json')) continue;
+      const blob = await r.blob();
+      if(blob.size < 100) continue; // too small = error response
+      saveBlob(blob, filename);
+      toast('✅ Downloaded ' + filename, 'ok');
+      return;
+    } catch(_){ continue; }
+  }
 
-  // 3. Canvas trick — works for images that load in <img> (same-origin policy allows display,
-  //    but taints canvas). We use crossOrigin anonymous with proxy fallback.
-  if(ext !== 'gif'){
-    try {
-      await new Promise((res,rej)=>{
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        // Load via corsproxy to satisfy CORS for canvas
-        img.src = 'https://corsproxy.io/?url='+encodeURIComponent(url);
-        img.onload = ()=>{
-          const c = document.createElement('canvas');
-          c.width=img.naturalWidth||img.width;
-          c.height=img.naturalHeight||img.height;
-          c.getContext('2d').drawImage(img,0,0);
-          c.toBlob(b=>{ if(b){saveBlob(b,filename);toast('✅ Downloaded!','ok');res();}else rej(); },'image/png');
-        };
-        img.onerror = rej;
-      });
+  // Canvas fallback — works for static images even across origins
+  if(!url.match(/\.gif/i)){
+    try{
+      await canvasDownload(url, filename);
+      toast('✅ Downloaded ' + filename, 'ok');
       return;
     } catch(_){}
   }
 
-  // 4. Last resort: force-download via a hidden anchor with the proxied URL as href
-  try {
-    const a = document.createElement('a');
-    a.href = 'https://corsproxy.io/?url='+encodeURIComponent(url);
-    a.download = filename;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast('✅ Download started!','ok');
-  } catch(_){ toast('❌ Could not download','info'); }
+  // Absolute last resort — create a real <a download> and click it
+  // This triggers browser's own download manager for same-origin or CORS-permissive servers
+  const a = document.createElement('a');
+  a.href = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>document.body.removeChild(a), 1000);
+  toast('✅ Download triggered!', 'ok');
 }
 
-function saveBlob(b,n){
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(b);
-  a.download=n;
+function canvasDownload(url, filename){
+  return new Promise((res,rej)=>{
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = ()=>{
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth || img.width;
+      c.height = img.naturalHeight || img.height;
+      c.getContext('2d').drawImage(img,0,0);
+      c.toBlob(b=>{
+        if(b && b.size > 100){ saveBlob(b, filename); res(); }
+        else rej(new Error('blank canvas'));
+      },'image/png');
+    };
+    img.onerror = ()=>{
+      // Try again via allorigins
+      img.crossOrigin = 'anonymous';
+      img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+      img.onload = ()=>{
+        const c=document.createElement('canvas');
+        c.width=img.naturalWidth||img.width;
+        c.height=img.naturalHeight||img.height;
+        c.getContext('2d').drawImage(img,0,0);
+        c.toBlob(b=>{ if(b&&b.size>100){saveBlob(b,filename);res();}else rej();});
+      };
+      img.onerror = rej;
+    };
+    img.src = url;
+  });
+}
+
+function saveBlob(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(a.href),5e3);
+  setTimeout(()=>URL.revokeObjectURL(url), 10000);
 }
+
 function cpTxt(t){navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!','ok'));}
 
 /* ── UTILS ───────────────────────────────────────────────────────── */
