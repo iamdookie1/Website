@@ -790,18 +790,71 @@ function dlEmoji(url,name,fallback){
     const x=c.getContext('2d');x.font='90px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(fallback,64,72);
     c.toBlob(b=>saveBlob(b,name+'.png'));return;
   }
-  toast('⬇ Downloading…','info');
-  fetch(url).then(r=>r.blob()).then(b=>{saveBlob(b,name+'.png');toast('✅ Downloaded!','ok');})
-    .catch(()=>{window.open(url,'_blank');toast('Opened in new tab','info');});
+  dlUrl(url, name);
 }
-function dlUrl(url,name){
+
+async function dlUrl(url, name){
+  if(!url) return;
   toast('⬇ Downloading…','info');
-  fetch(url).then(r=>r.blob()).then(b=>{
-    const ext=url.includes('.gif')?'gif':url.includes('.webp')?'webp':'png';
-    saveBlob(b,(name||'file')+'.'+ext);toast('✅ Downloaded!','ok');
-  }).catch(()=>{window.open(url,'_blank');toast('Opened in new tab','info');});
+  const ext = url.match(/\.(gif|webp|png|jpg|jpeg)(\?|$)/i)?.[1]?.toLowerCase() || 'png';
+  const filename = (name||'download').replace(/[^a-z0-9_\-\.]/gi,'_')+'.'+ext;
+
+  // 1. Try direct fetch (works when server sends CORS headers)
+  try {
+    const r = await fetch(url, {mode:'cors'});
+    if(r.ok){ saveBlob(await r.blob(), filename); toast('✅ Downloaded!','ok'); return; }
+  } catch(_){}
+
+  // 2. Try via corsproxy.io
+  try {
+    const r = await fetch('https://corsproxy.io/?url='+encodeURIComponent(url));
+    if(r.ok){ saveBlob(await r.blob(), filename); toast('✅ Downloaded!','ok'); return; }
+  } catch(_){}
+
+  // 3. Canvas trick — works for images that load in <img> (same-origin policy allows display,
+  //    but taints canvas). We use crossOrigin anonymous with proxy fallback.
+  if(ext !== 'gif'){
+    try {
+      await new Promise((res,rej)=>{
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        // Load via corsproxy to satisfy CORS for canvas
+        img.src = 'https://corsproxy.io/?url='+encodeURIComponent(url);
+        img.onload = ()=>{
+          const c = document.createElement('canvas');
+          c.width=img.naturalWidth||img.width;
+          c.height=img.naturalHeight||img.height;
+          c.getContext('2d').drawImage(img,0,0);
+          c.toBlob(b=>{ if(b){saveBlob(b,filename);toast('✅ Downloaded!','ok');res();}else rej(); },'image/png');
+        };
+        img.onerror = rej;
+      });
+      return;
+    } catch(_){}
+  }
+
+  // 4. Last resort: force-download via a hidden anchor with the proxied URL as href
+  try {
+    const a = document.createElement('a');
+    a.href = 'https://corsproxy.io/?url='+encodeURIComponent(url);
+    a.download = filename;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast('✅ Download started!','ok');
+  } catch(_){ toast('❌ Could not download','info'); }
 }
-function saveBlob(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5e3);}
+
+function saveBlob(b,n){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download=n;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),5e3);
+}
 function cpTxt(t){navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!','ok'));}
 
 /* ── UTILS ───────────────────────────────────────────────────────── */
