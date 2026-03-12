@@ -1,454 +1,1412 @@
-import { useState, useRef, useCallback } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmojiVault — Discord Emojis & Stickers</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0e12;
+    --bg2: #13151c;
+    --bg3: #1a1d27;
+    --card: #1e2130;
+    --card-hover: #252840;
+    --border: #2d3150;
+    --accent: #5865f2;
+    --accent2: #eb459e;
+    --accent3: #57f287;
+    --accent4: #fee75c;
+    --text: #e8eaf6;
+    --muted: #7b80a0;
+    --nsfw: #ed4245;
+    --tag: #2d3150;
+  }
 
-const METHODS = [
-  { id: "blob", label: "Blob URL", desc: "Fast in-memory object URL" },
-  { id: "base64", label: "Base64 Data URL", desc: "Embeddable data URI" },
-  { id: "anchor", label: "Direct Anchor Link", desc: "Named download anchor" },
-];
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-export default function VidTool() {
-  const [file, setFile] = useState(null);
-  const [method, setMethod] = useState("blob");
-  const [output, setOutput] = useState("");
-  const [status, setStatus] = useState("idle"); // idle | loading | done | error
-  const [copied, setCopied] = useState(false);
-  const [dropActive, setDropActive] = useState(false);
-  const inputRef = useRef();
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-  const handleFile = (f) => {
-    if (!f || !f.type.startsWith("video/")) {
-      setStatus("error");
-      setOutput("Invalid file — please select a video.");
-      return;
-    }
-    setFile(f);
-    setOutput("");
-    setStatus("idle");
-  };
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDropActive(false);
-    const f = e.dataTransfer.files[0];
-    handleFile(f);
-  };
+  /* Ambient glow */
+  .ambient {
+    position: fixed;
+    top: -200px;
+    left: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(88,101,242,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: drift 12s ease-in-out infinite alternate;
+  }
+  .ambient2 {
+    position: fixed;
+    bottom: -200px;
+    right: -100px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(235,69,158,0.10) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: drift2 15s ease-in-out infinite alternate;
+  }
+  @keyframes drift { to { transform: translate(100px, 80px); } }
+  @keyframes drift2 { to { transform: translate(-80px, -60px); } }
 
-  const processFile = useCallback(async () => {
-    if (!file) return;
-    setStatus("loading");
-    setOutput("");
+  /* Header */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,14,18,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+  }
+  .header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+  .logo span { color: var(--accent); }
 
-    try {
-      let result = "";
+  .search-wrap {
+    flex: 1;
+    max-width: 520px;
+    position: relative;
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 16px 9px 40px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(88,101,242,0.15);
+  }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
 
-      if (method === "blob") {
-        const url = URL.createObjectURL(file);
-        result = url;
-      } else if (method === "base64") {
-        result = await new Promise((res, rej) => {
-          const reader = new FileReader();
-          reader.onload = () => res(reader.result);
-          reader.onerror = () => rej(new Error("Read failed"));
-          reader.readAsDataURL(file);
-        });
-      } else if (method === "anchor") {
-        const url = URL.createObjectURL(file);
-        result = `<a href="${url}" download="${file.name}">Download ${file.name}</a>`;
-      }
+  .header-right { display: flex; gap: 10px; margin-left: auto; }
+  .nsfw-toggle {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .nsfw-toggle.active {
+    border-color: var(--nsfw);
+    color: var(--nsfw);
+    background: rgba(237,66,69,0.1);
+  }
+  .nsfw-toggle .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.2s;
+  }
+  .nsfw-toggle.active .dot { background: var(--nsfw); }
 
-      setOutput(result);
-      setStatus("done");
-    } catch (err) {
-      setOutput("Error: " + err.message);
-      setStatus("error");
-    }
-  }, [file, method]);
+  /* Main layout */
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+  }
 
-  const copyOutput = () => {
-    if (!output) return;
-    navigator.clipboard.writeText(output).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    });
-  };
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.5rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    width: fit-content;
+  }
+  .tab {
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    font-family: 'Syne', sans-serif;
+  }
+  .tab.active {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 2px 12px rgba(88,101,242,0.4);
+  }
+  .tab:hover:not(.active) { color: var(--text); background: var(--card); }
 
-  const selectedMethod = METHODS.find((m) => m.id === method);
+  /* Category pills */
+  .categories {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .cat-pill {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .cat-pill:hover { color: var(--text); border-color: var(--accent); }
+  .cat-pill.active {
+    background: rgba(88,101,242,0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
 
-  return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#111213",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "'DM Mono', 'Courier New', monospace",
-      padding: "32px 16px",
-    }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@700;800&display=swap');
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 1.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .stats-bar b { color: var(--text); }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Grid */
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+  }
+  .sticker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
 
-        .card {
-          width: 100%;
-          max-width: 560px;
-          background: #18191b;
-          border: 1px solid #2a2b2d;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 0 0 1px #0a0a0a, 0 32px 64px rgba(0,0,0,0.6);
-        }
+  /* Cards */
+  .emoji-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.4s both;
+  }
+  .emoji-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(88,101,242,0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .emoji-card:hover { transform: translateY(-3px); border-color: var(--accent); background: var(--card-hover); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .emoji-card:hover::before { opacity: 1; }
 
-        .header {
-          padding: 28px 32px 20px;
-          border-bottom: 1px solid #222325;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
+  .emoji-card.nsfw-card { border-color: rgba(237,66,69,0.3); }
+  .emoji-card.nsfw-card:hover { border-color: var(--nsfw); box-shadow: 0 8px 24px rgba(237,66,69,0.2); }
 
-        .dot-cluster {
-          display: flex;
-          gap: 6px;
-        }
-        .dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-        }
+  .nsfw-badge {
+    position: absolute;
+    top: 6px; right: 6px;
+    background: var(--nsfw);
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
 
-        .title {
-          font-family: 'Syne', sans-serif;
-          font-weight: 800;
-          font-size: 13px;
-          letter-spacing: 0.15em;
-          text-transform: uppercase;
-          color: #888;
-          margin-left: auto;
-        }
+  .emoji-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    transition: transform 0.2s;
+  }
+  .emoji-card:hover .emoji-img { transform: scale(1.15); }
 
-        .body {
-          padding: 28px 32px 32px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
+  .emoji-name {
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    text-align: center;
+    word-break: break-all;
+    line-height: 1.3;
+  }
 
-        .drop-zone {
-          border: 1.5px dashed #2f3033;
-          border-radius: 8px;
-          padding: 28px 20px;
-          text-align: center;
-          cursor: pointer;
-          transition: border-color 0.15s, background 0.15s;
-          background: transparent;
-          position: relative;
-        }
-        .drop-zone:hover, .drop-zone.active {
-          border-color: #5a5b5e;
-          background: #1e1f21;
-        }
-        .drop-zone.has-file {
-          border-color: #3d7eff44;
-          background: #1a1f2e;
-        }
+  .emoji-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .e-tag {
+    font-size: 0.6rem;
+    background: var(--tag);
+    color: var(--muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
 
-        .drop-icon {
-          font-size: 26px;
-          margin-bottom: 8px;
-          display: block;
-          filter: grayscale(1) brightness(0.6);
-        }
-        .drop-label {
-          font-size: 12px;
-          color: #555;
-          line-height: 1.6;
-        }
-        .drop-label strong {
-          color: #888;
-          font-weight: 500;
-        }
-        .file-name {
-          font-size: 12px;
-          color: #6a9eff;
-          font-weight: 500;
-          margin-top: 6px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          max-width: 100%;
-        }
+  .card-actions {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: all 0.2s;
+  }
+  .emoji-card:hover .card-actions { opacity: 1; transform: translateY(0); }
 
-        .row {
-          display: flex;
-          gap: 10px;
-          align-items: stretch;
-        }
+  .action-btn {
+    flex: 1;
+    padding: 5px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    font-size: 0.7rem;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .action-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+  .action-btn.dl:hover { background: var(--accent3); border-color: var(--accent3); color: #000; }
 
-        .select-wrap {
-          flex: 1;
-          position: relative;
-        }
-        .select-wrap select {
-          width: 100%;
-          height: 44px;
-          background: #1e1f21;
-          border: 1px solid #2a2b2d;
-          border-radius: 7px;
-          color: #c8c9cc;
-          font-family: 'DM Mono', monospace;
-          font-size: 12px;
-          padding: 0 36px 0 14px;
-          appearance: none;
-          cursor: pointer;
-          outline: none;
-          transition: border-color 0.15s;
-        }
-        .select-wrap select:hover { border-color: #3d3e42; }
-        .select-wrap select:focus { border-color: #4a7fff; }
-        .select-wrap::after {
-          content: '▾';
-          position: absolute;
-          right: 13px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #555;
-          pointer-events: none;
-          font-size: 11px;
-        }
+  /* Sticker card */
+  .sticker-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.4s both;
+  }
+  .sticker-card:hover { transform: translateY(-4px); border-color: var(--accent2); background: var(--card-hover); box-shadow: 0 10px 30px rgba(235,69,158,0.15); }
 
-        .btn-start {
-          height: 44px;
-          padding: 0 24px;
-          background: #2a2b2e;
-          border: 1px solid #3a3b3e;
-          border-radius: 7px;
-          color: #c8c9cc;
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          font-size: 11px;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          cursor: pointer;
-          transition: all 0.12s;
-          white-space: nowrap;
-          position: relative;
-          overflow: hidden;
-        }
-        .btn-start:hover:not(:disabled) {
-          background: #323336;
-          border-color: #505154;
-          color: #e2e3e6;
-        }
-        .btn-start:active:not(:disabled) {
-          transform: scale(0.97);
-        }
-        .btn-start:disabled {
-          opacity: 0.35;
-          cursor: not-allowed;
-        }
-        .btn-start.ready {
-          background: linear-gradient(135deg, #1e3a6e, #1f3d80);
-          border-color: #2a4fa0;
-          color: #7aadff;
-        }
-        .btn-start.ready:hover {
-          background: linear-gradient(135deg, #25417a, #254590);
-          border-color: #3a5fb0;
-          color: #9dc4ff;
-        }
-        .btn-start.loading {
-          pointer-events: none;
-          opacity: 0.7;
-        }
+  .sticker-img {
+    width: 100px; height: 100px;
+    object-fit: contain;
+    transition: transform 0.3s;
+  }
+  .sticker-card:hover .sticker-img { transform: scale(1.1) rotate(-3deg); }
 
-        .method-hint {
-          font-size: 10px;
-          color: #404144;
-          letter-spacing: 0.05em;
-          margin-top: -10px;
-        }
+  .sticker-info { width: 100%; }
+  .sticker-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sticker-pack {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sticker-format {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+  .fmt-png { background: rgba(88,101,242,0.2); color: var(--accent); }
+  .fmt-gif { background: rgba(87,242,135,0.2); color: var(--accent3); }
+  .fmt-apng { background: rgba(254,231,92,0.2); color: var(--accent4); }
+  .fmt-lottie { background: rgba(235,69,158,0.2); color: var(--accent2); }
 
-        .output-wrap {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-        .output-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-        .output-label {
-          font-size: 10px;
-          text-transform: uppercase;
-          letter-spacing: 0.12em;
-          color: #444;
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-        }
-        .output-label.done { color: #3d7eff88; }
-        .output-label.error { color: #ff4444aa; }
+  /* Loading */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    gap: 16px;
+    color: var(--muted);
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-        .btn-copy {
-          height: 26px;
-          padding: 0 12px;
-          background: transparent;
-          border: 1px solid #2a2b2d;
-          border-radius: 5px;
-          color: #555;
-          font-family: 'DM Mono', monospace;
-          font-size: 10px;
-          cursor: pointer;
-          transition: all 0.12s;
-          letter-spacing: 0.06em;
-        }
-        .btn-copy:hover:not(:disabled) {
-          border-color: #3a3b3e;
-          color: #888;
-          background: #1e1f21;
-        }
-        .btn-copy.copied {
-          border-color: #2a7a2a;
-          color: #4aaa4a;
-          background: #1a281a;
-        }
-        .btn-copy:disabled { opacity: 0.3; cursor: not-allowed; }
+  /* Empty */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty .big { font-size: 3rem; margin-bottom: 12px; }
+  .empty p { font-size: 0.9rem; }
 
-        .output-box {
-          background: #141516;
-          border: 1px solid #222325;
-          border-radius: 7px;
-          padding: 14px 16px;
-          min-height: 80px;
-          font-size: 11px;
-          color: #777;
-          word-break: break-all;
-          line-height: 1.7;
-          transition: border-color 0.2s;
-          position: relative;
-        }
-        .output-box.done {
-          border-color: #1e3060;
-          color: #6a9eff;
-        }
-        .output-box.error {
-          border-color: #3d1e1e;
-          color: #ff7777;
-        }
-        .output-box.loading {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          color: #444;
-        }
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 9000;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--accent3); color: var(--accent3); }
+  .toast.info { border-color: var(--accent); color: var(--accent); }
 
-        .spinner {
-          width: 14px;
-          height: 14px;
-          border: 1.5px solid #333;
-          border-top-color: #6a9eff;
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(8px);
+    z-index: 500;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-backdrop.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    max-width: 400px;
+    width: 90%;
+    transform: scale(0.9);
+    transition: transform 0.2s;
+    position: relative;
+  }
+  .modal-backdrop.open .modal { transform: scale(1); }
+  .modal-close {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { color: var(--text); border-color: var(--text); }
+  .modal-img {
+    display: flex; justify-content: center;
+    margin-bottom: 16px;
+  }
+  .modal-img img { width: 120px; height: 120px; object-fit: contain; image-rendering: pixelated; }
+  .modal-name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .modal-meta {
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 16px;
+  }
+  .modal-code {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--accent);
+    margin-bottom: 14px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .modal-code:hover { border-color: var(--accent); background: rgba(88,101,242,0.1); }
+  .modal-btns { display: flex; gap: 8px; }
+  .modal-btn {
+    flex: 1; padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .modal-btn.primary { background: var(--accent); color: white; }
+  .modal-btn.primary:hover { background: #4752c4; box-shadow: 0 4px 12px rgba(88,101,242,0.4); }
+  .modal-btn.secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .modal-btn.secondary:hover { border-color: var(--accent3); color: var(--accent3); }
 
-        .placeholder-text {
-          color: #333;
-          font-size: 11px;
-        }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-        input[type="file"] { display: none; }
-      `}</style>
+  /* Pagination */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 2rem;
+  }
+  .page-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--muted);
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .page-btn:hover, .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
-      <div className="card">
-        <div className="header">
-          <div className="dot-cluster">
-            <div className="dot" style={{ background: "#3a3b3e" }} />
-            <div className="dot" style={{ background: "#3a3b3e" }} />
-            <div className="dot" style={{ background: "#3a3b3e" }} />
-          </div>
-          <span className="title">VidTool</span>
-        </div>
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-        <div className="body">
-          {/* Drop / Import Zone */}
-          <div
-            className={`drop-zone${dropActive ? " active" : ""}${file ? " has-file" : ""}`}
-            onClick={() => inputRef.current.click()}
-            onDragOver={(e) => { e.preventDefault(); setDropActive(true); }}
-            onDragLeave={() => setDropActive(false)}
-            onDrop={handleDrop}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept="video/*"
-              onChange={(e) => handleFile(e.target.files[0])}
-            />
-            <span className="drop-icon">{file ? "🎬" : "📂"}</span>
-            {file ? (
-              <>
-                <div className="drop-label"><strong>File loaded</strong> — click to replace</div>
-                <div className="file-name">{file.name} · {(file.size / 1024 / 1024).toFixed(1)} MB</div>
-              </>
-            ) : (
-              <div className="drop-label">
-                <strong>Click to import</strong> or drag &amp; drop a video
-              </div>
-            )}
-          </div>
+  @media (max-width: 640px) {
+    .header-inner { gap: 1rem; }
+    .logo-text { display: none; }
+    .container { padding: 1rem; }
+    .emoji-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+    .sticker-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  }
+</style>
+</head>
+<body>
 
-          {/* Method + Start */}
-          <div className="row">
-            <div className="select-wrap">
-              <select
-                value={method}
-                onChange={(e) => { setMethod(e.target.value); setOutput(""); setStatus("idle"); }}
-              >
-                {METHODS.map((m) => (
-                  <option key={m.id} value={m.id}>{m.label}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              className={`btn-start${file ? " ready" : ""}${status === "loading" ? " loading" : ""}`}
-              onClick={processFile}
-              disabled={!file || status === "loading"}
-            >
-              {status === "loading" ? "..." : "▶ Start"}
-            </button>
-          </div>
+<div class="ambient"></div>
+<div class="ambient2"></div>
 
-          <div className="method-hint">{selectedMethod?.desc}</div>
-
-          {/* Output */}
-          <div className="output-wrap">
-            <div className="output-header">
-              <span className={`output-label${status === "done" ? " done" : status === "error" ? " error" : ""}`}>
-                Output
-              </span>
-              <button
-                className={`btn-copy${copied ? " copied" : ""}`}
-                onClick={copyOutput}
-                disabled={!output || status !== "done"}
-              >
-                {copied ? "✓ Copied" : "Copy"}
-              </button>
-            </div>
-            <div className={`output-box${status === "done" ? " done" : status === "error" ? " error" : status === "loading" ? " loading" : ""}`}>
-              {status === "loading" && (
-                <>
-                  <div className="spinner" />
-                  <span>Processing…</span>
-                </>
-              )}
-              {status !== "loading" && (output || <span className="placeholder-text">Output will appear here</span>)}
-            </div>
-          </div>
-        </div>
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">✦</div>
+      <span class="logo-text">Emoji<span>Vault</span></span>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="searchInput" placeholder="Search emojis, stickers...">
+    </div>
+    <div class="header-right">
+      <div class="nsfw-toggle" id="nsfwToggle" onclick="toggleNSFW()">
+        <div class="dot"></div>
+        NSFW
       </div>
     </div>
-  );
+  </div>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('emojis', this)">😄 Emojis</button>
+    <button class="tab" onclick="switchTab('stickers', this)">🎨 Stickers</button>
+    <button class="tab" onclick="switchTab('twemoji', this)">🐦 Twemoji</button>
+  </div>
+
+  <div class="categories" id="categoryBar"></div>
+
+  <div class="stats-bar" id="statsBar">
+    <span>Loading...</span>
+  </div>
+
+  <div id="gridContainer"></div>
+
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<!-- Modal -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-img"><img id="modalImg" src="" alt=""></div>
+    <div class="modal-name" id="modalName"></div>
+    <div class="modal-meta" id="modalMeta"></div>
+    <div class="modal-code" id="modalCode" onclick="copyCode()"></div>
+    <div class="modal-btns">
+      <button class="modal-btn primary" id="modalDlBtn">⬇ Download</button>
+      <button class="modal-btn secondary" onclick="copyCode()">📋 Copy Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let state = {
+  tab: 'emojis',
+  category: 'all',
+  search: '',
+  nsfw: false,
+  page: 1,
+  perPage: 80,
+  items: [],
+  filtered: [],
+};
+
+// ─── Data Sources ─────────────────────────────────────────────────────────────
+
+// Emoji categories from Unicode/Discord
+const EMOJI_CATS = [
+  { id: 'all', label: '✦ All' },
+  { id: 'faces', label: '😊 Faces' },
+  { id: 'animals', label: '🐾 Animals' },
+  { id: 'food', label: '🍕 Food' },
+  { id: 'travel', label: '✈️ Travel' },
+  { id: 'objects', label: '💎 Objects' },
+  { id: 'symbols', label: '⚡ Symbols' },
+  { id: 'flags', label: '🏳️ Flags' },
+  { id: 'nsfw', label: '🔞 NSFW' },
+];
+
+const STICKER_CATS = [
+  { id: 'all', label: '✦ All' },
+  { id: 'animated', label: '✨ Animated' },
+  { id: 'static', label: '🖼 Static' },
+  { id: 'meme', label: '💀 Meme' },
+  { id: 'cute', label: '🌸 Cute' },
+  { id: 'nsfw', label: '🔞 NSFW' },
+];
+
+const TWEMOJI_CATS = [
+  { id: 'all', label: '✦ All' },
+  { id: 'smileys', label: '😄 Smileys' },
+  { id: 'people', label: '👥 People' },
+  { id: 'nature', label: '🌿 Nature' },
+  { id: 'activities', label: '⚽ Activities' },
+  { id: 'nsfw', label: '🔞 NSFW' },
+];
+
+// Large emoji dataset using Twemoji CDN (72x72 PNG)
+const TWEMOJI_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/';
+
+// Emoji data: [codepoint, name, category, tags, nsfw?]
+const RAW_EMOJIS = [
+  // FACES
+  ['1f600','grinning','faces',['happy','smile'],false],
+  ['1f601','grin','faces',['big smile'],false],
+  ['1f602','joy','faces',['tears','laugh'],false],
+  ['1f603','smiley','faces',['smile'],false],
+  ['1f604','smile','faces',['eyes','happy'],false],
+  ['1f605','sweat_smile','faces',['nervous'],false],
+  ['1f606','laughing','faces',['lol'],false],
+  ['1f607','innocent','faces',['halo','angel'],false],
+  ['1f608','smiling_imp','faces',['devil','evil'],false],
+  ['1f609','wink','faces',['wink'],false],
+  ['1f60a','blush','faces',['blush','cute'],false],
+  ['1f60b','yum','faces',['food','lick'],false],
+  ['1f60c','relieved','faces',['calm'],false],
+  ['1f60d','heart_eyes','faces',['love'],false],
+  ['1f60e','sunglasses','faces',['cool'],false],
+  ['1f60f','smirk','faces',['smirk'],false],
+  ['1f610','neutral_face','faces',['neutral'],false],
+  ['1f611','expressionless','faces',['blank'],false],
+  ['1f612','unamused','faces',['meh'],false],
+  ['1f613','sweat','faces',['nervous','sweat'],false],
+  ['1f614','pensive','faces',['sad','thinking'],false],
+  ['1f615','confused','faces',['confused'],false],
+  ['1f616','confounded','faces',['embarrassed'],false],
+  ['1f617','kissing','faces',['kiss'],false],
+  ['1f618','kissing_heart','faces',['kiss','love'],false],
+  ['1f619','kissing_smiling_eyes','faces',['kiss'],false],
+  ['1f61a','kissing_closed_eyes','faces',['kiss'],false],
+  ['1f61b','stuck_out_tongue','faces',['tongue'],false],
+  ['1f61c','stuck_out_tongue_winking_eye','faces',['tongue','wink'],false],
+  ['1f61d','stuck_out_tongue_closed_eyes','faces',['tongue'],false],
+  ['1f61e','disappointed','faces',['sad'],false],
+  ['1f61f','worried','faces',['worried'],false],
+  ['1f620','angry','faces',['angry'],false],
+  ['1f621','rage','faces',['mad','angry'],false],
+  ['1f622','cry','faces',['cry','sad'],false],
+  ['1f623','persevere','faces',['effort'],false],
+  ['1f624','triumph','faces',['smug'],false],
+  ['1f625','disappointed_relieved','faces',['sad'],false],
+  ['1f626','frowning','faces',['frown'],false],
+  ['1f627','anguished','faces',['scared'],false],
+  ['1f628','fearful','faces',['fear'],false],
+  ['1f629','weary','faces',['tired'],false],
+  ['1f62a','sleepy','faces',['sleep'],false],
+  ['1f62b','tired_face','faces',['tired'],false],
+  ['1f62c','grimacing','faces',['grimace'],false],
+  ['1f62d','sob','faces',['cry','loud'],false],
+  ['1f62e','open_mouth','faces',['surprised'],false],
+  ['1f62f','hushed','faces',['quiet'],false],
+  ['1f630','cold_sweat','faces',['nervous'],false],
+  ['1f631','scream','faces',['scared','shocked'],false],
+  ['1f632','astonished','faces',['shocked'],false],
+  ['1f633','flushed','faces',['embarrassed'],false],
+  ['1f634','sleeping','faces',['sleep','zzz'],false],
+  ['1f635','dizzy_face','faces',['dizzy'],false],
+  ['1f636','no_mouth','faces',['quiet'],false],
+  ['1f637','mask','faces',['sick','medical'],false],
+  ['1f911','money_mouth_face','faces',['money'],false],
+  ['1f912','face_with_thermometer','faces',['sick'],false],
+  ['1f913','nerd_face','faces',['nerd','glasses'],false],
+  ['1f914','thinking_face','faces',['think'],false],
+  ['1f915','face_with_head_bandage','faces',['hurt'],false],
+  ['1f916','robot_face','faces',['robot'],false],
+  ['1f917','hugging_face','faces',['hug'],false],
+  ['1f922','nauseated_face','faces',['sick','green'],false],
+  ['1f923','rolling_on_the_floor_laughing','faces',['rofl','lol'],false],
+  ['1f924','drooling_face','faces',['drool'],false],
+  ['1f925','lying_face','faces',['lie','pinocchio'],false],
+  ['1f927','sneezing_face','faces',['sneeze','sick'],false],
+  ['1f928','face_with_raised_eyebrow','faces',['sus','skeptical'],false],
+  ['1f929','star_struck','faces',['star','amazing'],false],
+  ['1f92a','zany_face','faces',['crazy'],false],
+  ['1f92b','shushing_face','faces',['quiet','shhh'],false],
+  ['1f92c','face_with_symbols_on_mouth','faces',['swear','angry'],false],
+  ['1f92d','face_with_hand_over_mouth','faces',['oops'],false],
+  ['1f92e','face_vomiting','faces',['gross','sick'],false],
+  ['1f92f','exploding_head','faces',['mindblown'],false],
+  ['1f970','smiling_face_with_3_hearts','faces',['love'],false],
+  ['1f971','yawning_face','faces',['tired','bored'],false],
+  ['1f973','partying_face','faces',['party'],false],
+  ['1f974','woozy_face','faces',['drunk','dizzy'],false],
+  ['1f975','hot_face','faces',['hot','sweating'],false],
+  ['1f976','cold_face','faces',['cold','freezing'],false],
+  ['1f97a','pleading_face','faces',['please','puppy eyes'],false],
+  ['1f90f','pinching_hand','faces',['small','tiny'],false],
+  ['1f9d0','face_with_monocle','faces',['detective','sus'],false],
+
+  // ANIMALS
+  ['1f436','dog','animals',['dog','puppy','pet'],false],
+  ['1f431','cat','animals',['cat','kitty','pet'],false],
+  ['1f42d','mouse','animals',['mouse','rodent'],false],
+  ['1f439','hamster','animals',['hamster','cute'],false],
+  ['1f430','rabbit','animals',['bunny','cute'],false],
+  ['1f98a','fox_face','animals',['fox'],false],
+  ['1f43b','bear','animals',['bear'],false],
+  ['1f43c','panda_face','animals',['panda'],false],
+  ['1f428','koala','animals',['koala','australia'],false],
+  ['1f42f','tiger','animals',['tiger'],false],
+  ['1f981','lion_face','animals',['lion'],false],
+  ['1f42e','cow','animals',['cow','moo'],false],
+  ['1f437','pig','animals',['pig','oink'],false],
+  ['1f43d','pig_nose','animals',['pig','snout'],false],
+  ['1f438','frog','animals',['frog','kermit'],false],
+  ['1f435','monkey_face','animals',['monkey'],false],
+  ['1f648','see_no_evil','animals',['monkey','three wise'],false],
+  ['1f649','hear_no_evil','animals',['monkey'],false],
+  ['1f64a','speak_no_evil','animals',['monkey'],false],
+  ['1f414','chicken','animals',['chicken','bird'],false],
+  ['1f427','penguin','animals',['penguin'],false],
+  ['1f426','bird','animals',['bird','tweet'],false],
+  ['1f986','duck','animals',['duck','quack'],false],
+  ['1f989','owl','animals',['owl','wise'],false],
+  ['1f433','whale','animals',['whale','ocean'],false],
+  ['1f42c','dolphin','animals',['dolphin','ocean'],false],
+  ['1f420','tropical_fish','animals',['fish','colorful'],false],
+  ['1f421','blowfish','animals',['fish','puffer'],false],
+  ['1f422','turtle','animals',['turtle','slow'],false],
+  ['1f40d','snake','animals',['snake'],false],
+  ['1f98e','lizard','animals',['lizard','gecko'],false],
+  ['1f409','dragon','animals',['dragon','fantasy'],false],
+  ['1f432','dragon_face','animals',['dragon'],false],
+  ['1f40e','horse','animals',['horse'],false],
+  ['1f984','unicorn_face','animals',['unicorn','rainbow'],false],
+  ['1f41d','bee','animals',['bee','honey'],false],
+  ['1f41e','lady_beetle','animals',['ladybug'],false],
+  ['1f984','unicorn','animals',['unicorn'],false],
+  ['1f98b','butterfly','animals',['butterfly'],false],
+
+  // FOOD
+  ['1f34e','apple','food',['apple','fruit'],false],
+  ['1f34a','tangerine','food',['orange','fruit'],false],
+  ['1f34b','lemon','food',['lemon','citrus'],false],
+  ['1f347','grapes','food',['grapes','fruit'],false],
+  ['1f353','strawberry','food',['strawberry','red'],false],
+  ['1f351','peach','food',['peach','fruit'],false],
+  ['1f352','cherries','food',['cherries','red'],false],
+  ['1f34c','banana','food',['banana','yellow'],false],
+  ['1f355','pizza','food',['pizza','italy'],false],
+  ['1f354','hamburger','food',['burger','fast food'],false],
+  ['1f35f','fries','food',['fries','mcdonalds'],false],
+  ['1f32d','hotdog','food',['hotdog','sausage'],false],
+  ['1f354','hamburger','food',['burger'],false],
+  ['1f35e','bread','food',['bread','toast'],false],
+  ['1f9c0','cheese_wedge','food',['cheese'],false],
+  ['1f373','egg','food',['egg','breakfast'],false],
+  ['1f950','croissant','food',['croissant','french'],false],
+  ['1f9c1','cupcake','food',['cupcake','sweet'],false],
+  ['1f370','cake','food',['cake','birthday'],false],
+  ['1f382','birthday','food',['birthday','cake'],false],
+  ['1f36a','cookie','food',['cookie','sweet'],false],
+  ['1f36b','chocolate_bar','food',['chocolate'],false],
+  ['1f36d','lollipop','food',['candy','sweet'],false],
+  ['2615','coffee','food',['coffee','hot'],false],
+  ['1f375','tea','food',['tea','hot'],false],
+  ['1f37a','beer','food',['beer','drink'],false],
+  ['1f378','cocktail','food',['cocktail','drink'],false],
+  ['1f377','wine_glass','food',['wine','drink'],false],
+  ['1f382','birthday_cake','food',['birthday'],false],
+  ['1f363','sushi','food',['sushi','japanese'],false],
+  ['1f35c','ramen','food',['ramen','noodles'],false],
+  ['1f35b','curry','food',['curry','indian'],false],
+  ['1f357','poultry_leg','food',['chicken','drumstick'],false],
+  ['1f959','stuffed_flatbread','food',['wrap'],false],
+  ['1f32e','taco','food',['taco','mexican'],false],
+  ['1f32f','burrito','food',['burrito','mexican'],false],
+
+  // TRAVEL
+  ['2708','airplane','travel',['fly','travel'],false],
+  ['1f680','rocket','travel',['space','rocket'],false],
+  ['1f697','car','travel',['car','drive'],false],
+  ['1f68c','bus','travel',['bus','transport'],false],
+  ['1f682','steam_locomotive','travel',['train'],false],
+  ['26f5','sailboat','travel',['boat','sea'],false],
+  ['1f6f8','flying_saucer','travel',['ufo','space'],false],
+  ['1f3d4','snow_capped_mountain','travel',['mountain'],false],
+  ['1f3dd','desert_island','travel',['island','tropical'],false],
+  ['1f3ef','japanese_castle','travel',['castle','japan'],false],
+  ['1f5fc','tokyo_tower','travel',['tower','japan'],false],
+  ['1f5fd','statue_of_liberty','travel',['usa','nyc'],false],
+  ['1f3f0','european_castle','travel',['castle','europe'],false],
+  ['26ea','church','travel',['church','building'],false],
+  ['1f391','moon_ceremony','travel',['japan'],false],
+  ['1f306','cityscape_at_dusk','travel',['city','sunset'],false],
+  ['1f307','sunset_over_buildings','travel',['sunset','city'],false],
+  ['1f305','sunrise','travel',['sunrise','morning'],false],
+  ['1f304','sunrise_over_mountains','travel',['sunrise'],false],
+  ['1f303','night_with_stars','travel',['night','stars'],false],
+
+  // OBJECTS
+  ['1f4f1','iphone','objects',['phone','mobile'],false],
+  ['1f4bb','computer','objects',['laptop','mac'],false],
+  ['1f3ae','video_game','objects',['game','controller'],false],
+  ['1f3b5','musical_note','objects',['music','note'],false],
+  ['1f3b8','guitar','objects',['music','guitar'],false],
+  ['1f3b9','musical_keyboard','objects',['piano','music'],false],
+  ['1f4f8','camera_with_flash','objects',['camera','photo'],false],
+  ['1f4da','books','objects',['books','study'],false],
+  ['1f4b0','moneybag','objects',['money','rich'],false],
+  ['1f48e','gem','objects',['diamond','gem'],false],
+  ['1f451','crown','objects',['crown','king'],false],
+  ['1f484','lipstick','objects',['makeup','beauty'],false],
+  ['1f48a','pill','objects',['medicine','health'],false],
+  ['1f9ea','test_tube','objects',['science','lab'],false],
+  ['1f52e','crystal_ball','objects',['magic','fortune'],false],
+  ['1f9f2','magnet','objects',['magnet'],false],
+  ['1f9f8','teddy_bear','objects',['cute','bear'],false],
+  ['1f9f9','broom','objects',['clean','magic'],false],
+  ['1f9fe','receipt','objects',['receipt','money'],false],
+  ['1f526','flashlight','objects',['light','dark'],false],
+  ['1f527','wrench','objects',['tool','fix'],false],
+  ['1f528','hammer','objects',['hammer','build'],false],
+  ['1f52b','gun','objects',['gun','weapon'],false],
+  ['1f4a3','bomb','objects',['bomb','explosion'],false],
+  ['1f5e1','dagger','objects',['knife','weapon'],false],
+  ['2694','crossed_swords','objects',['swords','fight'],false],
+  ['1f6e1','shield','objects',['shield','protect'],false],
+  ['1f3c6','trophy','objects',['trophy','win'],false],
+  ['1f947','first_place','objects',['gold','medal'],false],
+  ['26a1','zap','objects',['lightning','fast'],false],
+
+  // SYMBOLS
+  ['2764','heart','symbols',['heart','love','red'],false],
+  ['1f9e1','orange_heart','symbols',['heart','orange'],false],
+  ['1f49b','yellow_heart','symbols',['heart','yellow'],false],
+  ['1f49a','green_heart','symbols',['heart','green'],false],
+  ['1f499','blue_heart','symbols',['heart','blue'],false],
+  ['1f49c','purple_heart','symbols',['heart','purple'],false],
+  ['1f5a4','black_heart','symbols',['heart','black','dark'],false],
+  ['1f90d','white_heart','symbols',['heart','white'],false],
+  ['1f4af','100','symbols',['100','perfect'],false],
+  ['2728','sparkles','symbols',['sparkle','magic'],false],
+  ['1f525','fire','symbols',['fire','hot','lit'],false],
+  ['1f4a5','boom','symbols',['explosion','pow'],false],
+  ['1f4ab','dizzy','symbols',['stars','dizzy'],false],
+  ['1f4a2','anger','symbols',['anger','mad'],false],
+  ['1f4a4','zzz','symbols',['sleep','tired'],false],
+  ['1f4a6','sweat_drops','symbols',['sweat','drops'],false],
+  ['1f4a7','droplet','symbols',['drop','water'],false],
+  ['1f4a8','dash','symbols',['fast','running'],false],
+  ['2b50','star','symbols',['star','yellow'],false],
+  ['1f31f','star2','symbols',['star','glowing'],false],
+  ['1f320','stars','symbols',['shooting star'],false],
+  ['1f4e2','loudspeaker','symbols',['announce'],false],
+  ['1f514','bell','symbols',['bell','notification'],false],
+  ['1f3b6','notes','symbols',['music','notes'],false],
+  ['2705','white_check_mark','symbols',['check','yes'],false],
+  ['274c','x','symbols',['no','cross','error'],false],
+  ['2757','exclamation','symbols',['!','alert'],false],
+  ['2753','question','symbols',['?','help'],false],
+  ['1f51e','underage','symbols',['18','adult'],false],
+  ['26d4','no_entry','symbols',['stop','block'],false],
+  ['1f6ab','no_entry_sign','symbols',['banned'],false],
+
+  // FLAGS
+  ['1f1fa-1f1f8','us','flags',['usa','america'],false],
+  ['1f1ec-1f1e7','gb','flags',['uk','britain'],false],
+  ['1f1e8-1f1e6','ca','flags',['canada'],false],
+  ['1f1e6-1f1fa','au','flags',['australia'],false],
+  ['1f1e9-1f1ea','de','flags',['germany'],false],
+  ['1f1eb-1f1f7','fr','flags',['france'],false],
+  ['1f1ef-1f1f5','jp','flags',['japan'],false],
+  ['1f1f0-1f1f7','kr','flags',['korea'],false],
+  ['1f1e7-1f1f7','br','flags',['brazil'],false],
+  ['1f1ee-1f1f3','in','flags',['india'],false],
+  ['1f1e8-1f1f3','cn','flags',['china'],false],
+  ['1f1f7-1f1fa','ru','flags',['russia'],false],
+  ['1f1ea-1f1f8','es','flags',['spain'],false],
+  ['1f1ee-1f1f9','it','flags',['italy'],false],
+  ['1f1f3-1f1f1','nl','flags',['netherlands','dutch'],false],
+
+  // NSFW (suggestive but using existing emoji)
+  ['1f346','eggplant','nsfw',['eggplant','suggestive'],true],
+  ['1f351','peach_nsfw','nsfw',['peach','suggestive','butt'],true],
+  ['1f352','cherries_nsfw','nsfw',['cherries','suggestive'],true],
+  ['1f4a6','sweat_drops_nsfw','nsfw',['drops','suggestive'],true],
+  ['1f444','lips','nsfw',['lips','mouth','suggestive'],true],
+  ['1f445','tongue','nsfw',['tongue','suggestive'],true],
+  ['1f48b','kiss_mark','nsfw',['kiss','lips','suggestive'],true],
+  ['1f525','fire_nsfw','nsfw',['fire','hot','spicy'],true],
+  ['1f608','devil_nsfw','nsfw',['devil','naughty'],true],
+  ['1f920','cowboy_nsfw','nsfw',['cowboy','ride'],true],
+  ['1f975','hot_nsfw','nsfw',['hot','sweating'],true],
+  ['1f92b','shush_nsfw','nsfw',['secret','naughty'],true],
+];
+
+// Sticker data
+const STICKERS = [
+  { id: 1, name: 'Thinking Hard', pack: 'Discord Default', format: 'png', cat: 'meme', nsfw: false, emoji: '🤔', color: '#5865f2' },
+  { id: 2, name: 'PogChamp Extreme', pack: 'Twitch Classic', format: 'gif', cat: 'meme', nsfw: false, emoji: '😮', color: '#eb459e' },
+  { id: 3, name: 'Party Blob', pack: 'Animated Blobs', format: 'gif', cat: 'animated', nsfw: false, emoji: '🎉', color: '#fee75c' },
+  { id: 4, name: 'Catjam', pack: 'Vibe Pack', format: 'gif', cat: 'animated', nsfw: false, emoji: '🐱', color: '#57f287' },
+  { id: 5, name: 'Copium', pack: 'Degen Pack', format: 'png', cat: 'meme', nsfw: false, emoji: '😤', color: '#ed4245' },
+  { id: 6, name: 'Pepe Happy', pack: 'Pepe Emotions', format: 'png', cat: 'meme', nsfw: false, emoji: '🐸', color: '#57f287' },
+  { id: 7, name: 'Pepe Cry', pack: 'Pepe Emotions', format: 'png', cat: 'meme', nsfw: false, emoji: '😢', color: '#5865f2' },
+  { id: 8, name: 'Pepe Hype', pack: 'Pepe Emotions', format: 'gif', cat: 'animated', nsfw: false, emoji: '🐸', color: '#eb459e' },
+  { id: 9, name: 'Nyan Cat', pack: 'Internet Classics', format: 'gif', cat: 'animated', nsfw: false, emoji: '🌈', color: '#fee75c' },
+  { id: 10, name: 'Doge Wow', pack: 'Doge Pack', format: 'png', cat: 'meme', nsfw: false, emoji: '🐶', color: '#eb459e' },
+  { id: 11, name: 'Shiba Wink', pack: 'Doge Pack', format: 'png', cat: 'cute', nsfw: false, emoji: '🐕', color: '#fee75c' },
+  { id: 12, name: 'Bonk', pack: 'Meme Pack 2024', format: 'png', cat: 'meme', nsfw: false, emoji: '🔨', color: '#ed4245' },
+  { id: 13, name: 'Sadge', pack: 'Twitch Classic', format: 'png', cat: 'meme', nsfw: false, emoji: '😔', color: '#5865f2' },
+  { id: 14, name: 'Monkas', pack: 'Twitch Classic', format: 'png', cat: 'meme', nsfw: false, emoji: '😰', color: '#57f287' },
+  { id: 15, name: 'FeelsBadMan', pack: 'Feels Pack', format: 'png', cat: 'meme', nsfw: false, emoji: '🐸', color: '#5865f2' },
+  { id: 16, name: 'FeelsGoodMan', pack: 'Feels Pack', format: 'png', cat: 'meme', nsfw: false, emoji: '😌', color: '#57f287' },
+  { id: 17, name: 'Blob Dance', pack: 'Animated Blobs', format: 'gif', cat: 'animated', nsfw: false, emoji: '💃', color: '#eb459e' },
+  { id: 18, name: 'Blob Wave', pack: 'Animated Blobs', format: 'gif', cat: 'animated', nsfw: false, emoji: '👋', color: '#5865f2' },
+  { id: 19, name: 'Blob Heart', pack: 'Animated Blobs', format: 'apng', cat: 'cute', nsfw: false, emoji: '💜', color: '#eb459e' },
+  { id: 20, name: 'Blob Hug', pack: 'Animated Blobs', format: 'apng', cat: 'cute', nsfw: false, emoji: '🤗', color: '#57f287' },
+  { id: 21, name: 'Sakura Dance', pack: 'Anime Cuties', format: 'gif', cat: 'cute', nsfw: false, emoji: '🌸', color: '#eb459e' },
+  { id: 22, name: 'Nya Cat', pack: 'Anime Cuties', format: 'gif', cat: 'cute', nsfw: false, emoji: '🐱', color: '#fee75c' },
+  { id: 23, name: 'Paimon Shock', pack: 'Genshin Pack', format: 'apng', cat: 'cute', nsfw: false, emoji: '😱', color: '#5865f2' },
+  { id: 24, name: 'Galaxy Brain', pack: 'Degen Pack', format: 'gif', cat: 'meme', nsfw: false, emoji: '🧠', color: '#57f287' },
+  { id: 25, name: 'Stonks', pack: 'Finance Memes', format: 'png', cat: 'meme', nsfw: false, emoji: '📈', color: '#57f287' },
+  { id: 26, name: 'Not Stonks', pack: 'Finance Memes', format: 'png', cat: 'meme', nsfw: false, emoji: '📉', color: '#ed4245' },
+  { id: 27, name: 'This Is Fine', pack: 'Internet Classics', format: 'gif', cat: 'meme', nsfw: false, emoji: '🔥', color: '#ed4245' },
+  { id: 28, name: 'Distracted BF', pack: 'Meme Pack 2024', format: 'png', cat: 'meme', nsfw: false, emoji: '👀', color: '#eb459e' },
+  { id: 29, name: 'Drake Approve', pack: 'Drake Pack', format: 'png', cat: 'meme', nsfw: false, emoji: '👍', color: '#57f287' },
+  { id: 30, name: 'Drake Nope', pack: 'Drake Pack', format: 'png', cat: 'meme', nsfw: false, emoji: '👎', color: '#ed4245' },
+  { id: 31, name: 'Two Buttons', pack: 'Meme Pack 2024', format: 'png', cat: 'meme', nsfw: false, emoji: '😰', color: '#5865f2' },
+  { id: 32, name: 'Change My Mind', pack: 'Meme Pack 2024', format: 'png', cat: 'meme', nsfw: false, emoji: '🤷', color: '#fee75c' },
+  // NSFW stickers (suggestive descriptions only)
+  { id: 33, name: 'Spicy Eggplant', pack: 'NSFW Emojis', format: 'png', cat: 'nsfw', nsfw: true, emoji: '🍆', color: '#9b59b6' },
+  { id: 34, name: 'Peach Vibes', pack: 'NSFW Emojis', format: 'gif', cat: 'nsfw', nsfw: true, emoji: '🍑', color: '#e67e22' },
+  { id: 35, name: 'Hot & Bothered', pack: '18+ Pack', format: 'gif', cat: 'nsfw', nsfw: true, emoji: '🥵', color: '#ed4245' },
+  { id: 36, name: 'Devil Mode', pack: '18+ Pack', format: 'apng', cat: 'nsfw', nsfw: true, emoji: '😈', color: '#ed4245' },
+  { id: 37, name: 'Cherry Bomb', pack: 'NSFW Emojis', format: 'gif', cat: 'nsfw', nsfw: true, emoji: '🍒', color: '#ed4245' },
+  { id: 38, name: 'Fire Tongue', pack: '18+ Pack', format: 'gif', cat: 'nsfw', nsfw: true, emoji: '👅', color: '#eb459e' },
+];
+
+// Twemoji set (subset of Unicode emojis using Twemoji CDN)
+const TWEMOJI_DATA = [
+  ['1f600','grinning_face','smileys',['happy','smile'],false],
+  ['1f602','face_with_tears_of_joy','smileys',['lol','funny'],false],
+  ['1f923','rofl','smileys',['rolling','laugh'],false],
+  ['1f60d','heart_eyes','smileys',['love','adore'],false],
+  ['1f929','star_struck','smileys',['wow','amazing'],false],
+  ['1f92e','face_vomiting','smileys',['gross','eww'],false],
+  ['1f621','enraged_face','smileys',['angry','red'],false],
+  ['1f47f','angry_face_with_horns','smileys',['devil','mad'],false],
+  ['1f4a9','pile_of_poo','smileys',['poop','funny'],false],
+  ['1f921','clown_face','smileys',['clown','silly'],false],
+  ['1f479','ogre','smileys',['monster','scary'],false],
+  ['1f47a','goblin','smileys',['goblin','evil'],false],
+  ['1f47b','ghost','smileys',['ghost','boo'],false],
+  ['1f47d','alien','smileys',['alien','ufo'],false],
+  ['1f916','robot','smileys',['robot','ai','bot'],false],
+  ['1f9d9','mage','people',['wizard','magic'],false],
+  ['1f9dd','elf','people',['elf','fantasy'],false],
+  ['1f9df','zombie','people',['zombie','undead'],false],
+  ['1f9de','genie','people',['genie','wish'],false],
+  ['1f9db','vampire','people',['vampire','dracula'],false],
+  ['1f9d8','person_in_lotus_position','people',['meditate','yoga'],false],
+  ['1f9d7','person_climbing','people',['climb','sport'],false],
+  ['1f9d6','person_in_steamy_room','people',['sauna','spa'],false],
+  ['1f3cb','weight_lifter','people',['gym','strong'],false],
+  ['1f9dc','merperson','people',['mermaid','ocean'],false],
+  ['1f9da','fairy','people',['fairy','wings'],false],
+  ['1f332','evergreen_tree','nature',['tree','forest'],false],
+  ['1f333','deciduous_tree','nature',['tree','autumn'],false],
+  ['1f334','palm_tree','nature',['palm','tropical'],false],
+  ['1f335','cactus','nature',['cactus','desert'],false],
+  ['1f33a','hibiscus','nature',['flower','pink'],false],
+  ['1f33b','sunflower','nature',['sunflower','yellow'],false],
+  ['1f33c','blossom','nature',['flower','white'],false],
+  ['1f337','tulip','nature',['tulip','spring'],false],
+  ['1f338','cherry_blossom','nature',['sakura','pink'],false],
+  ['1f339','rose','nature',['rose','love'],false],
+  ['1f33f','herb','nature',['herb','green'],false],
+  ['2618','shamrock','nature',['clover','luck'],false],
+  ['1f340','four_leaf_clover','nature',['luck','green'],false],
+  ['1f341','maple_leaf','nature',['autumn','canada'],false],
+  ['1f342','fallen_leaf','nature',['leaf','autumn'],false],
+  ['1f343','leaf_fluttering_in_wind','nature',['wind','leaf'],false],
+  ['26bd','soccer','activities',['football','sport'],false],
+  ['1f3c0','basketball','activities',['nba','sport'],false],
+  ['1f3c8','american_football','activities',['nfl','sport'],false],
+  ['26be','baseball','activities',['mlb','sport'],false],
+  ['1f3be','tennis','activities',['tennis','sport'],false],
+  ['1f3d3','table_tennis','activities',['ping pong','sport'],false],
+  ['1f3f8','badminton','activities',['badminton','sport'],false],
+  ['1f945','goal','activities',['goal','net'],false],
+  ['1f3cc','golfer','activities',['golf','sport'],false],
+  ['1f3ca','swimmer','activities',['swim','sport'],false],
+  ['1f6b4','cyclist','activities',['bike','sport'],false],
+  ['1f93e','handball','activities',['handball','sport'],false],
+  ['1f94a','boxing_glove','activities',['box','fight'],false],
+  ['1f94b','martial_arts','activities',['karate','fight'],false],
+  ['1f3c7','horse_racing','activities',['horse','race'],false],
+  ['1f346','eggplant_tw','activities',['vegetable','suggestive'],true],
+  ['1f351','peach_tw','activities',['fruit','suggestive'],true],
+  ['1f445','tongue_tw','activities',['lick','suggestive'],true],
+];
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+function init() {
+  buildCategories();
+  loadItems();
+  document.getElementById('searchInput').addEventListener('input', debounce(handleSearch, 250));
 }
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// ─── Tab Switching ─────────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  state.tab = tab;
+  state.category = 'all';
+  state.page = 1;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  buildCategories();
+  loadItems();
+}
+
+// ─── Categories ──────────────────────────────────────────────────────────────
+function buildCategories() {
+  const bar = document.getElementById('categoryBar');
+  const cats = state.tab === 'emojis' ? EMOJI_CATS : state.tab === 'stickers' ? STICKER_CATS : TWEMOJI_CATS;
+  bar.innerHTML = cats.map(c => {
+    // Hide NSFW category unless NSFW is enabled
+    if (c.id === 'nsfw' && !state.nsfw) return '';
+    return `<div class="cat-pill ${state.category === c.id ? 'active' : ''}" onclick="setCategory('${c.id}')">${c.label}</div>`;
+  }).join('');
+}
+
+function setCategory(cat) {
+  state.category = cat;
+  state.page = 1;
+  buildCategories();
+  loadItems();
+}
+
+// ─── NSFW Toggle ─────────────────────────────────────────────────────────────
+function toggleNSFW() {
+  state.nsfw = !state.nsfw;
+  const t = document.getElementById('nsfwToggle');
+  t.classList.toggle('active', state.nsfw);
+  if (!state.nsfw && state.category === 'nsfw') { state.category = 'all'; }
+  buildCategories();
+  loadItems();
+}
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+function handleSearch() {
+  state.search = document.getElementById('searchInput').value.toLowerCase().trim();
+  state.page = 1;
+  loadItems();
+}
+
+// ─── Load & Filter ───────────────────────────────────────────────────────────
+function loadItems() {
+  showLoading();
+  setTimeout(() => {
+    let src = state.tab === 'emojis' ? RAW_EMOJIS : state.tab === 'stickers' ? STICKERS : TWEMOJI_DATA;
+    let filtered;
+
+    if (state.tab === 'emojis' || state.tab === 'twemoji') {
+      const data = state.tab === 'emojis' ? RAW_EMOJIS : TWEMOJI_DATA;
+      filtered = data.filter(e => {
+        const nsfw = e[4];
+        if (nsfw && !state.nsfw) return false;
+        if (state.category !== 'all') {
+          if (state.category === 'nsfw' && !nsfw) return false;
+          if (state.category !== 'nsfw' && e[2] !== state.category) return false;
+        }
+        if (state.search) {
+          return e[1].includes(state.search) || e[3].some(t => t.includes(state.search));
+        }
+        return true;
+      });
+      // Deduplicate by codepoint
+      const seen = new Set();
+      filtered = filtered.filter(e => { if (seen.has(e[0])) return false; seen.add(e[0]); return true; });
+    } else {
+      filtered = STICKERS.filter(s => {
+        if (s.nsfw && !state.nsfw) return false;
+        if (state.category !== 'all') {
+          if (state.category === 'nsfw' && !s.nsfw) return false;
+          if (state.category !== 'nsfw' && s.cat !== state.category) return false;
+        }
+        if (state.search) return s.name.toLowerCase().includes(state.search) || s.pack.toLowerCase().includes(state.search);
+        return true;
+      });
+    }
+
+    state.filtered = filtered;
+    renderGrid();
+    renderStats(filtered.length);
+    renderPagination(filtered.length);
+  }, 180);
+}
+
+function showLoading() {
+  document.getElementById('gridContainer').innerHTML = `<div class="loading"><div class="spinner"></div><span>Loading...</span></div>`;
+  document.getElementById('pagination').innerHTML = '';
+  document.getElementById('statsBar').innerHTML = '<span>Loading...</span>';
+}
+
+// ─── Render Grid ─────────────────────────────────────────────────────────────
+function renderGrid() {
+  const start = (state.page - 1) * state.perPage;
+  const items = state.filtered.slice(start, start + state.perPage);
+  const container = document.getElementById('gridContainer');
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="big">🔍</div><p>No results found. Try a different search or category.</p></div>`;
+    return;
+  }
+
+  if (state.tab === 'stickers') {
+    container.className = 'sticker-grid';
+    container.innerHTML = items.map((s, i) => renderStickerCard(s, i)).join('');
+  } else {
+    container.className = 'emoji-grid';
+    container.innerHTML = items.map((e, i) => renderEmojiCard(e, i)).join('');
+  }
+}
+
+function getEmojiUrl(codepoint) {
+  return `${TWEMOJI_BASE}${codepoint}.png`;
+}
+
+function renderEmojiCard(e, idx) {
+  const [cp, name, cat, tags, nsfw] = e;
+  const url = getEmojiUrl(cp);
+  const delay = (idx % state.perPage) * 20;
+  return `
+    <div class="emoji-card ${nsfw ? 'nsfw-card' : ''}" style="animation-delay:${delay}ms" onclick="openModal('${cp}','${name}','${cat}','${encodeURIComponent(tags.join(','))}',${nsfw})">
+      ${nsfw ? '<div class="nsfw-badge">NSFW</div>' : ''}
+      <img class="emoji-img" src="${url}" alt="${name}" loading="lazy" onerror="this.style.fontSize='2.5rem';this.outerHTML='<span style=font-size:2.5rem>${getEmojiChar(cp)}</span>'">
+      <div class="emoji-name">:${name}:</div>
+      <div class="emoji-tags">${tags.slice(0,2).map(t=>`<span class="e-tag">${t}</span>`).join('')}</div>
+      <div class="card-actions">
+        <div class="action-btn" onclick="event.stopPropagation();copyName(':${name}:')">Copy</div>
+        <div class="action-btn dl" onclick="event.stopPropagation();downloadEmoji('${url}','${name}')">⬇</div>
+      </div>
+    </div>`;
+}
+
+function renderStickerCard(s, idx) {
+  const delay = (idx % state.perPage) * 25;
+  const fmtClass = `fmt-${s.format}`;
+  // Generate a placeholder sticker visual using emoji + gradient
+  const bg = `linear-gradient(135deg, ${s.color}22, ${s.color}44)`;
+  return `
+    <div class="sticker-card" style="animation-delay:${delay}ms" onclick="openStickerModal(${s.id})">
+      ${s.nsfw ? '<div class="nsfw-badge">NSFW</div>' : ''}
+      <div style="width:100px;height:100px;display:flex;align-items:center;justify-content:center;background:${bg};border-radius:12px;font-size:3.5rem;transition:transform 0.3s" class="sticker-img">${s.emoji}</div>
+      <div class="sticker-info">
+        <div class="sticker-name">${s.name}</div>
+        <div class="sticker-pack">${s.pack}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span class="sticker-format ${fmtClass}">.${s.format.toUpperCase()}</span>
+      </div>
+      <div class="card-actions">
+        <div class="action-btn" onclick="event.stopPropagation();copyName('${s.name}')">Copy Name</div>
+        <div class="action-btn dl" onclick="event.stopPropagation();downloadSticker(${s.id})">⬇ DL</div>
+      </div>
+    </div>`;
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+function renderStats(total) {
+  const type = state.tab === 'stickers' ? 'stickers' : 'emojis';
+  document.getElementById('statsBar').innerHTML = `
+    <span><b>${total.toLocaleString()}</b> ${type} found</span>
+    <span>Page <b>${state.page}</b> of <b>${Math.max(1, Math.ceil(total/state.perPage))}</b></span>
+    ${state.nsfw ? `<span style="color:var(--nsfw)">● NSFW Enabled</span>` : ''}
+  `;
+}
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+function renderPagination(total) {
+  const pages = Math.ceil(total / state.perPage);
+  if (pages <= 1) { document.getElementById('pagination').innerHTML = ''; return; }
+  let html = '';
+  if (state.page > 1) html += `<button class="page-btn" onclick="goPage(${state.page-1})">‹</button>`;
+  for (let i = 1; i <= pages; i++) {
+    if (i === 1 || i === pages || Math.abs(i - state.page) <= 2) {
+      html += `<button class="page-btn ${i === state.page ? 'active' : ''}" onclick="goPage(${i})">${i}</button>`;
+    } else if (Math.abs(i - state.page) === 3) {
+      html += `<span style="color:var(--muted);align-self:center;padding:0 4px">…</span>`;
+    }
+  }
+  if (state.page < pages) html += `<button class="page-btn" onclick="goPage(${state.page+1})">›</button>`;
+  document.getElementById('pagination').innerHTML = html;
+}
+
+function goPage(p) {
+  state.page = p;
+  renderGrid();
+  renderStats(state.filtered.length);
+  renderPagination(state.filtered.length);
+  window.scrollTo({top: 0, behavior:'smooth'});
+}
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+let currentModalData = null;
+
+function openModal(cp, name, cat, tagsEnc, nsfw) {
+  const url = getEmojiUrl(cp);
+  const code = `:${name}:`;
+  document.getElementById('modalImg').src = url;
+  document.getElementById('modalName').textContent = `:${name}:`;
+  document.getElementById('modalMeta').textContent = `Category: ${cat} • ${nsfw ? '🔞 NSFW' : 'SFW'} • Unicode: U+${cp.toUpperCase()}`;
+  document.getElementById('modalCode').textContent = code;
+  document.getElementById('modalDlBtn').onclick = () => downloadEmoji(url, name);
+  currentModalData = { url, name, type: 'emoji' };
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+
+function openStickerModal(id) {
+  const s = STICKERS.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('modalImg').style.fontSize = '5rem';
+  document.getElementById('modalImg').outerHTML = `<div id="modalImg" style="font-size:4rem;width:120px;height:120px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,${s.color}22,${s.color}44);border-radius:16px">${s.emoji}</div>`;
+  document.getElementById('modalName').textContent = s.name;
+  document.getElementById('modalMeta').textContent = `Pack: ${s.pack} • Format: .${s.format.toUpperCase()} • ${s.nsfw ? '🔞 NSFW' : 'SFW'}`;
+  document.getElementById('modalCode').textContent = s.name;
+  document.getElementById('modalDlBtn').onclick = () => { downloadSticker(id); };
+  currentModalData = { name: s.name, type: 'sticker' };
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modalBackdrop')) return;
+  document.getElementById('modalBackdrop').classList.remove('open');
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+function copyCode() {
+  const code = document.getElementById('modalCode').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('📋 Copied to clipboard!', 'success'));
+}
+
+function copyName(name) {
+  navigator.clipboard.writeText(name).then(() => showToast(`📋 Copied: ${name}`, 'success'));
+}
+
+function downloadEmoji(url, name) {
+  showToast(`⬇ Downloading ${name}.png...`, 'info');
+  fetch(url)
+    .then(r => r.blob())
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${name}.png`;
+      a.click();
+      showToast(`✅ Downloaded ${name}.png`, 'success');
+    })
+    .catch(() => {
+      // Fallback: open in new tab
+      window.open(url, '_blank');
+      showToast(`✅ Opened ${name} in new tab`, 'info');
+    });
+}
+
+function downloadSticker(id) {
+  const s = STICKERS.find(x => x.id === id);
+  if (!s) return;
+  showToast(`⬇ Downloading ${s.name}.${s.format}...`, 'info');
+  // For demo, create a canvas PNG with the emoji
+  const canvas = document.createElement('canvas');
+  canvas.width = 320; canvas.height = 320;
+  const ctx = canvas.getContext('2d');
+  // Background
+  ctx.fillStyle = s.color + '33';
+  ctx.roundRect(0, 0, 320, 320, 32);
+  ctx.fill();
+  // Emoji
+  ctx.font = '180px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(s.emoji, 160, 170);
+  // Name
+  ctx.font = 'bold 24px sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(s.name, 160, 295);
+
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${s.name.replace(/\s+/g,'_')}.png`;
+    a.click();
+    setTimeout(() => showToast(`✅ Downloaded ${s.name}`, 'success'), 500);
+  });
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getEmojiChar(cp) {
+  try {
+    const parts = cp.split('-');
+    return String.fromCodePoint(...parts.map(p => parseInt(p, 16)));
+  } catch { return '❓'; }
+}
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
