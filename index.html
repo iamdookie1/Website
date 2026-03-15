@@ -484,6 +484,7 @@
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('bypass')">⚡ BYPASS</button>
     <button class="tab-btn" onclick="switchTab('revert')">↩ REVERT</button>
+    <button class="tab-btn" onclick="switchTab('extra')">✂ EXTRA</button>
   </div>
 
   <!-- ═══════════════════════════════ BYPASS TAB ═══════════════════════════════ -->
@@ -627,6 +628,156 @@
         <textarea id="revert-output" readonly placeholder="Cleaned text will appear here..."></textarea>
         <button class="copy-btn" id="copy-revert-btn" onclick="copyRevert()">COPY</button>
       </div>
+    </div>
+
+  </div>
+
+  <!-- EXTRA TAB -->
+  <div class="tab-pane" id="tab-extra">
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)">
+      <button class="tab-btn active" id="sub-shorten-btn" onclick="switchSub('shorten')" style="font-size:13px;padding:9px 22px">✂ SHORTEN</button>
+      <button class="tab-btn" id="sub-correct-btn" onclick="switchSub('correct')" style="font-size:13px;padding:9px 22px">✔ CORRECT</button>
+    </div>
+
+    <!-- ── SHORTEN sub-pane ── -->
+    <div id="sub-shorten">
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-label">// <span>HOW IT WORKS</span></div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;font-family:var(--font-mono)">
+          Rule-based shortener — strips filler words, collapses verbose phrases, contracts common expressions and removes redundancy. <span style="color:var(--accent)">No AI. No network. Works on any text.</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="panel">
+          <div class="panel-label">// <span>INTENSITY</span></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label class="check-label"><input type="radio" name="sh-intensity" value="light" checked> <span><b>Light</b> — obvious filler words only</span></label>
+            <label class="check-label"><input type="radio" name="sh-intensity" value="medium"> <span><b>Medium</b> — phrases + contractions + fluff</span></label>
+            <label class="check-label"><input type="radio" name="sh-intensity" value="aggressive"> <span><b>Aggressive</b> — maximum compression</span></label>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-label">// <span>OPTIONS</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <label class="check-label"><input type="checkbox" id="sh-fillers" checked> Remove filler words</label>
+            <label class="check-label"><input type="checkbox" id="sh-phrases" checked> Collapse verbose phrases</label>
+            <label class="check-label"><input type="checkbox" id="sh-contractions" checked> Apply contractions</label>
+            <label class="check-label"><input type="checkbox" id="sh-redundant" checked> Strip redundant modifiers</label>
+            <label class="check-label"><input type="checkbox" id="sh-abbrev"> Use abbreviations</label>
+            <label class="check-label"><input type="checkbox" id="sh-show-changes" checked> Show changes log</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-label">// <span>INPUT TEXT</span></div>
+        <textarea id="sh-input" placeholder="Paste your text here to shorten it..." style="min-height:130px"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="runShorten()">✂ Shorten</button>
+        <button class="btn btn-secondary" onclick="clearShorten()">✕ Clear</button>
+      </div>
+
+      <div class="stats-bar" id="sh-stats" style="display:none;margin-bottom:16px">
+        <div class="stat"><span class="stat-key">BEFORE:</span><span class="stat-val" id="sh-s-before">0</span><span class="stat-key"> chars</span></div>
+        <div class="stat"><span class="stat-key">AFTER:</span><span class="stat-val ok" id="sh-s-after">0</span><span class="stat-key"> chars</span></div>
+        <div class="stat"><span class="stat-key">SAVED:</span><span class="stat-val ok" id="sh-s-saved">0</span><span class="stat-key"> chars</span></div>
+        <div class="stat"><span class="stat-key">REDUCTION:</span><span class="stat-val ok" id="sh-s-pct">0%</span></div>
+        <div class="stat"><span class="stat-key">RULES HIT:</span><span class="stat-val" id="sh-s-rules">0</span></div>
+      </div>
+
+      <div id="sh-changes-panel" style="display:none;margin-bottom:16px">
+        <div class="panel">
+          <div class="panel-label">// <span>CHANGES APPLIED</span></div>
+          <div id="sh-changes-list" style="font-family:var(--font-mono);font-size:11px;line-height:2;max-height:200px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">// <span>SHORTENED OUTPUT</span></div>
+        <div class="output-wrap">
+          <textarea id="sh-output" readonly placeholder="Shortened text will appear here..." style="min-height:130px"></textarea>
+          <button class="copy-btn" id="copy-sh-btn" onclick="copyShorten()">COPY</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CORRECT sub-pane ── -->
+    <div id="sub-correct" style="display:none">
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-label">// <span>HOW IT WORKS</span></div>
+        <div style="font-size:13px;color:var(--muted);line-height:1.7;font-family:var(--font-mono)">
+          Rule-based typo &amp; punctuation fixer. Capitalises sentences, fixes spacing, corrects 200+ common typos, repairs punctuation, fixes quote marks and more. <span style="color:var(--accent)">100% offline — no AI, no network, any content.</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:16px">
+        <div class="panel">
+          <div class="panel-label">// <span>CORRECTIONS TO APPLY</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <label class="check-label"><input type="checkbox" id="cr-caps" checked> Capitalise sentences</label>
+            <label class="check-label"><input type="checkbox" id="cr-spacing" checked> Fix spacing around punctuation</label>
+            <label class="check-label"><input type="checkbox" id="cr-dupspace" checked> Collapse duplicate spaces</label>
+            <label class="check-label"><input type="checkbox" id="cr-dupwords" checked> Remove duplicate words</label>
+            <label class="check-label"><input type="checkbox" id="cr-endpunct" checked> Add missing sentence-ending period</label>
+            <label class="check-label"><input type="checkbox" id="cr-quotes" checked> Straighten quote marks</label>
+            <label class="check-label"><input type="checkbox" id="cr-ellipsis" checked> Fix ellipsis (... spacing)</label>
+            <label class="check-label"><input type="checkbox" id="cr-comma" checked> Fix comma spacing</label>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-label">// <span>MORE OPTIONS</span></div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <label class="check-label"><input type="checkbox" id="cr-typos" checked> Fix common typos (200+)</label>
+            <label class="check-label"><input type="checkbox" id="cr-i" checked> Capitalise lone "i"</label>
+            <label class="check-label"><input type="checkbox" id="cr-numbers" checked> Fix number spacing (e.g. "5 %"→"5%")</label>
+            <label class="check-label"><input type="checkbox" id="cr-doublep" checked> Remove double punctuation (!!</label>
+            <label class="check-label"><input type="checkbox" id="cr-apostrophe" checked> Fix common apostrophe errors</label>
+            <label class="check-label"><input type="checkbox" id="cr-linebreak" checked> Trim trailing whitespace per line</label>
+            <label class="check-label"><input type="checkbox" id="cr-show-changes" checked> Show changes log</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-label">// <span>INPUT TEXT</span></div>
+        <textarea id="cr-input" placeholder="Paste text with typos and errors here..." style="min-height:130px"></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="runCorrect()">✔ Correct</button>
+        <button class="btn btn-accent2" onclick="runBoth()">⚡ Correct + Shorten</button>
+        <button class="btn btn-secondary" onclick="clearCorrect()">✕ Clear</button>
+      </div>
+
+      <div class="stats-bar" id="cr-stats" style="display:none;margin-bottom:16px">
+        <div class="stat"><span class="stat-key">FIXES:</span><span class="stat-val ok" id="cr-s-fixes">0</span></div>
+        <div class="stat"><span class="stat-key">TYPOS:</span><span class="stat-val ok" id="cr-s-typos">0</span></div>
+        <div class="stat"><span class="stat-key">PUNCT:</span><span class="stat-val" id="cr-s-punct">0</span></div>
+        <div class="stat"><span class="stat-key">CAPS:</span><span class="stat-val" id="cr-s-caps">0</span></div>
+        <div class="stat"><span class="stat-key">OTHER:</span><span class="stat-val" id="cr-s-other">0</span></div>
+      </div>
+
+      <div id="cr-changes-panel" style="display:none;margin-bottom:16px">
+        <div class="panel">
+          <div class="panel-label">// <span>CORRECTIONS APPLIED</span></div>
+          <div id="cr-changes-list" style="font-family:var(--font-mono);font-size:11px;line-height:2;max-height:200px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">// <span>CORRECTED OUTPUT</span></div>
+        <div class="output-wrap">
+          <textarea id="cr-output" readonly placeholder="Corrected text will appear here..." style="min-height:130px"></textarea>
+          <button class="copy-btn" id="copy-cr-btn" onclick="copyCorrect()">COPY</button>
+        </div>
+      </div>
+
     </div>
 
   </div>
@@ -1145,6 +1296,667 @@ function notify(msg) {
   el.classList.add('show');
   clearTimeout(notify._t);
   notify._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════ SHORTENER ════════════════════════════════════
+
+// Each rule: { pattern (RegExp), replacement (string), label, level }
+// level: 1=light, 2=medium, 3=aggressive
+
+const SHORTEN_FILLERS = [
+  { p: /\b(basically|essentially|fundamentally)\b/gi,             r: '',      label: 'filler: basically/essentially',     level: 1 },
+  { p: /\b(actually|in actuality)\b/gi,                           r: '',      label: 'filler: actually',                  level: 1 },
+  { p: /\b(literally)\b/gi,                                       r: '',      label: 'filler: literally',                 level: 1 },
+  { p: /\b(just)\b/gi,                                            r: '',      label: 'filler: just',                      level: 1 },
+  { p: /\b(very|extremely|incredibly|tremendously|immensely)\b/gi,r: 'really',label: 'filler: very/extremely → really',   level: 1 },
+  { p: /\b(really|truly|absolutely|completely|totally|utterly)\b/gi,r:'',     label: 'filler: really/truly/absolutely',   level: 1 },
+  { p: /\b(quite|rather|somewhat|fairly|pretty)\b/gi,             r: '',      label: 'filler: quite/rather/somewhat',     level: 1 },
+  { p: /\b(definitely|certainly|surely|undoubtedly)\b/gi,         r: '',      label: 'filler: definitely/certainly',      level: 1 },
+  { p: /\b(obviously|clearly|evidently|apparently)\b/gi,          r: '',      label: 'filler: obviously/clearly',         level: 1 },
+  { p: /\b(simply|merely|only just)\b/gi,                         r: '',      label: 'filler: simply/merely',             level: 1 },
+  { p: /\b(needless to say)\b/gi,                                 r: '',      label: 'filler: needless to say',           level: 1 },
+  { p: /\b(as a matter of fact)\b/gi,                             r: 'in fact',label:'phrase: as a matter of fact',       level: 1 },
+  { p: /\b(at the end of the day)\b/gi,                           r: 'ultimately',label:'phrase: at the end of the day', level: 1 },
+  { p: /\b(when all is said and done)\b/gi,                       r: 'ultimately',label:'phrase: when all is said and done',level:1},
+];
+
+const SHORTEN_PHRASES = [
+  { p: /\bin order to\b/gi,                                       r: 'to',          label: 'phrase: in order to → to',            level: 1 },
+  { p: /\bdue to the fact that\b/gi,                              r: 'because',     label: 'phrase: due to the fact that → because',level:1},
+  { p: /\bowing to the fact that\b/gi,                            r: 'because',     label: 'phrase: owing to the fact that → because',level:1},
+  { p: /\bin the event that\b/gi,                                 r: 'if',          label: 'phrase: in the event that → if',      level: 1 },
+  { p: /\bfor the purpose of\b/gi,                                r: 'to',          label: 'phrase: for the purpose of → to',     level: 1 },
+  { p: /\bwith regard to\b/gi,                                    r: 'about',       label: 'phrase: with regard to → about',      level: 1 },
+  { p: /\bwith respect to\b/gi,                                   r: 'about',       label: 'phrase: with respect to → about',     level: 1 },
+  { p: /\bin spite of the fact that\b/gi,                         r: 'although',    label: 'phrase: in spite of the fact that → although',level:1},
+  { p: /\bdespite the fact that\b/gi,                             r: 'although',    label: 'phrase: despite the fact that → although',level:1},
+  { p: /\bat this point in time\b/gi,                             r: 'now',         label: 'phrase: at this point in time → now', level: 1 },
+  { p: /\bat the present time\b/gi,                               r: 'now',         label: 'phrase: at the present time → now',   level: 1 },
+  { p: /\bin the near future\b/gi,                                r: 'soon',        label: 'phrase: in the near future → soon',   level: 1 },
+  { p: /\bprior to\b/gi,                                          r: 'before',      label: 'phrase: prior to → before',           level: 1 },
+  { p: /\bsubsequent to\b/gi,                                     r: 'after',       label: 'phrase: subsequent to → after',       level: 1 },
+  { p: /\bcommence(d|s|ing)?\b/gi,                                r: (m,s)=>'start'+(s||''),label:'word: commence → start',       level: 2 },
+  { p: /\butilize(d|s|ing)?\b/gi,                                 r: (m,s)=>'use'+(s||''), label:'word: utilize → use',           level: 1 },
+  { p: /\bpurchase(d|s|ing)?\b/gi,                                r: (m,s)=>'buy'+(s==='d'?'':'s'==='s'?'s':'ing'==='ing'?'ing':''),label:'word: purchase → buy',level:2},
+  { p: /\bpurchased\b/gi,                                         r: 'bought',      label: 'word: purchased → bought',            level: 2 },
+  { p: /\bpurchasing\b/gi,                                        r: 'buying',      label: 'word: purchasing → buying',           level: 2 },
+  { p: /\bpurchases\b/gi,                                         r: 'buys',        label: 'word: purchases → buys',              level: 2 },
+  { p: /\bpurchase\b/gi,                                          r: 'buy',         label: 'word: purchase → buy',                level: 2 },
+  { p: /\brequire(d|s|ment|ments)?\b/gi,                          r: 'need$1',      label: 'word: require → need',                level: 2 },
+  { p: /\brequirement(s)?\b/gi,                                   r: 'need$1',      label: 'word: requirements → needs',          level: 2 },
+  { p: /\bfacilitate\b/gi,                                        r: 'help',        label: 'word: facilitate → help',             level: 2 },
+  { p: /\bdemonstrate\b/gi,                                       r: 'show',        label: 'word: demonstrate → show',            level: 2 },
+  { p: /\bdemonstrated\b/gi,                                      r: 'showed',      label: 'word: demonstrated → showed',         level: 2 },
+  { p: /\binitiate\b/gi,                                          r: 'start',       label: 'word: initiate → start',              level: 2 },
+  { p: /\bterminate\b/gi,                                         r: 'end',         label: 'word: terminate → end',               level: 2 },
+  { p: /\bascertain\b/gi,                                         r: 'find out',    label: 'word: ascertain → find out',          level: 2 },
+  { p: /\badditionally\b/gi,                                      r: 'also',        label: 'word: additionally → also',           level: 1 },
+  { p: /\bfurthermore\b/gi,                                       r: 'also',        label: 'word: furthermore → also',            level: 2 },
+  { p: /\bmoreover\b/gi,                                          r: 'also',        label: 'word: moreover → also',               level: 2 },
+  { p: /\bnevertheless\b/gi,                                      r: 'still',       label: 'word: nevertheless → still',          level: 2 },
+  { p: /\bnotwithstanding\b/gi,                                   r: 'despite',     label: 'word: notwithstanding → despite',     level: 2 },
+  { p: /\bconsequently\b/gi,                                      r: 'so',          label: 'word: consequently → so',             level: 2 },
+  { p: /\btherefore\b/gi,                                         r: 'so',          label: 'word: therefore → so',                level: 2 },
+  { p: /\bthus\b/gi,                                              r: 'so',          label: 'word: thus → so',                     level: 3 },
+  { p: /\bsubstantial(ly)?\b/gi,                                  r: 'large$1',     label: 'word: substantial → large',           level: 2 },
+  { p: /\bnumerous\b/gi,                                          r: 'many',        label: 'word: numerous → many',               level: 1 },
+  { p: /\bsufficient\b/gi,                                        r: 'enough',      label: 'word: sufficient → enough',           level: 1 },
+  { p: /\bindividuals\b/gi,                                       r: 'people',      label: 'word: individuals → people',          level: 1 },
+  { p: /\bin addition to\b/gi,                                    r: 'besides',     label: 'phrase: in addition to → besides',    level: 2 },
+  { p: /\bin addition\b/gi,                                       r: 'also',        label: 'phrase: in addition → also',          level: 1 },
+  { p: /\bon the other hand\b/gi,                                 r: 'but',         label: 'phrase: on the other hand → but',     level: 2 },
+  { p: /\bfor example\b/gi,                                       r: 'e.g.',        label: 'phrase: for example → e.g.',          level: 3 },
+  { p: /\bfor instance\b/gi,                                      r: 'e.g.',        label: 'phrase: for instance → e.g.',         level: 3 },
+  { p: /\bthat is to say\b/gi,                                    r: 'i.e.',        label: 'phrase: that is to say → i.e.',       level: 3 },
+  { p: /\bprovided that\b/gi,                                     r: 'if',          label: 'phrase: provided that → if',          level: 2 },
+  { p: /\bregardless of the fact that\b/gi,                       r: 'even though', label: 'phrase: regardless of the fact that',level:1},
+  { p: /\bthe reason why\b/gi,                                    r: 'why',         label: 'phrase: the reason why → why',        level: 1 },
+  { p: /\bthe fact that\b/gi,                                     r: 'that',        label: 'phrase: the fact that → that',        level: 2 },
+  { p: /\bit is important to note that\b/gi,                      r: 'note:',       label: 'phrase: it is important to note that → note:',level:1},
+  { p: /\bit should be noted that\b/gi,                           r: 'note:',       label: 'phrase: it should be noted that → note:',level:1},
+  { p: /\bplease be advised that\b/gi,                            r: '',            label: 'phrase: please be advised that →(removed)',level:1},
+  { p: /\bkindly\b/gi,                                            r: 'please',      label: 'word: kindly → please',               level: 2 },
+];
+
+const SHORTEN_CONTRACTIONS = [
+  { p: /\b(i) am\b/gi,            r: "$1'm",     label: "contraction: I am → I'm",          level: 1 },
+  { p: /\b(you|we|they) are\b/gi, r: "$1're",    label: "contraction: are → 're",           level: 1 },
+  { p: /\b(he|she|it) is\b/gi,    r: "$1's",     label: "contraction: is → 's",             level: 1 },
+  { p: /\b(i|you|we|they) have\b/gi,r:"$1've",   label: "contraction: have → 've",          level: 1 },
+  { p: /\b(he|she|it) has\b/gi,   r: "$1's",     label: "contraction: has → 's",            level: 1 },
+  { p: /\b(i|you|he|she|we|they) will\b/gi,r:"$1'll",label:"contraction: will → 'll",      level: 1 },
+  { p: /\b(i|you|he|she|we|they) would\b/gi,r:"$1'd",label:"contraction: would → 'd",      level: 1 },
+  { p: /\b(i|you|he|she|we|they) had\b/gi,r:"$1'd", label:"contraction: had → 'd",         level: 1 },
+  { p: /\bdo not\b/gi,            r: "don't",    label: "contraction: do not → don't",      level: 1 },
+  { p: /\bdoes not\b/gi,          r: "doesn't",  label: "contraction: does not → doesn't",  level: 1 },
+  { p: /\bdid not\b/gi,           r: "didn't",   label: "contraction: did not → didn't",    level: 1 },
+  { p: /\bwill not\b/gi,          r: "won't",    label: "contraction: will not → won't",    level: 1 },
+  { p: /\bwould not\b/gi,         r: "wouldn't", label: "contraction: would not → wouldn't",level: 1 },
+  { p: /\bcould not\b/gi,         r: "couldn't", label: "contraction: could not → couldn't",level: 1 },
+  { p: /\bshould not\b/gi,        r: "shouldn't",label: "contraction: should not → shouldn't",level:1},
+  { p: /\bcannot\b/gi,            r: "can't",    label: "contraction: cannot → can't",      level: 1 },
+  { p: /\bcan not\b/gi,           r: "can't",    label: "contraction: can not → can't",     level: 1 },
+  { p: /\bhas not\b/gi,           r: "hasn't",   label: "contraction: has not → hasn't",    level: 1 },
+  { p: /\bhave not\b/gi,          r: "haven't",  label: "contraction: have not → haven't",  level: 1 },
+  { p: /\bwas not\b/gi,           r: "wasn't",   label: "contraction: was not → wasn't",    level: 1 },
+  { p: /\bwere not\b/gi,          r: "weren't",  label: "contraction: were not → weren't",  level: 1 },
+  { p: /\bare not\b/gi,           r: "aren't",   label: "contraction: are not → aren't",    level: 1 },
+  { p: /\bis not\b/gi,            r: "isn't",    label: "contraction: is not → isn't",      level: 1 },
+  { p: /\bit is\b/gi,             r: "it's",     label: "contraction: it is → it's",        level: 2 },
+  { p: /\bthat is\b/gi,           r: "that's",   label: "contraction: that is → that's",    level: 2 },
+  { p: /\bthere is\b/gi,          r: "there's",  label: "contraction: there is → there's",  level: 2 },
+  { p: /\bthere are\b/gi,         r: "there're", label: "contraction: there are → there're",level: 3 },
+  { p: /\bthey are\b/gi,          r: "they're",  label: "contraction: they are → they're",  level: 2 },
+  { p: /\bwe are\b/gi,            r: "we're",    label: "contraction: we are → we're",      level: 2 },
+  { p: /\byou are\b/gi,           r: "you're",   label: "contraction: you are → you're",    level: 2 },
+  { p: /\bi am\b/gi,              r: "I'm",      label: "contraction: i am → I'm",          level: 2 },
+];
+
+const SHORTEN_REDUNDANT = [
+  { p: /\b(end) result\b/gi,                  r: '$1',    label: 'redundant: end result → result',       level: 1 },
+  { p: /\b(past) history\b/gi,                r: '$1',    label: 'redundant: past history → history',    level: 1 },
+  { p: /\b(future) plans\b/gi,                r: 'plans', label: 'redundant: future plans → plans',      level: 1 },
+  { p: /\bfree gift\b/gi,                     r: 'gift',  label: 'redundant: free gift → gift',          level: 1 },
+  { p: /\bclose proximity\b/gi,               r: 'nearby',label: 'redundant: close proximity → nearby',  level: 1 },
+  { p: /\badvance planning\b/gi,              r: 'planning',label:'redundant: advance planning → planning',level:1},
+  { p: /\bfinal outcome\b/gi,                 r: 'outcome',label:'redundant: final outcome → outcome',   level: 1 },
+  { p: /\bsudden crisis\b/gi,                 r: 'crisis',label: 'redundant: sudden crisis → crisis',    level: 1 },
+  { p: /\bask a question\b/gi,                r: 'ask',   label: 'redundant: ask a question → ask',      level: 1 },
+  { p: /\bstill remains?\b/gi,                r: 'remains',label:'redundant: still remain → remain',     level: 1 },
+  { p: /\buntil such time as\b/gi,            r: 'until', label: 'redundant: until such time as → until',level:1},
+  { p: /\bexact same\b/gi,                    r: 'same',  label: 'redundant: exact same → same',         level: 1 },
+  { p: /\each and every\b/gi,                 r: 'every', label: 'redundant: each and every → every',    level: 1 },
+  { p: /\bfirst and foremost\b/gi,            r: 'first', label: 'redundant: first and foremost → first',level:1},
+  { p: /\bwholly and completely\b/gi,         r: 'fully', label: 'redundant: wholly and completely → fully',level:1},
+  { p: /\bjoin together\b/gi,                 r: 'join',  label: 'redundant: join together → join',      level: 1 },
+  { p: /\brepeat again\b/gi,                  r: 'repeat',label: 'redundant: repeat again → repeat',     level: 1 },
+  { p: /\bvery unique\b/gi,                   r: 'unique',label: 'redundant: very unique → unique',      level: 1 },
+  { p: /\babsolutely essential\b/gi,          r: 'essential',label:'redundant: absolutely essential → essential',level:1},
+  { p: /\bconsensus of opinion\b/gi,          r: 'consensus',label:'redundant: consensus of opinion → consensus',level:1},
+];
+
+const SHORTEN_ABBREV = [
+  { p: /\bapproximately\b/gi,   r: 'approx.',  label: 'abbrev: approximately → approx.',   level: 3 },
+  { p: /\bgovernment\b/gi,      r: 'govt.',    label: 'abbrev: government → govt.',         level: 3 },
+  { p: /\bdepartment\b/gi,      r: 'dept.',    label: 'abbrev: department → dept.',         level: 3 },
+  { p: /\borganization\b/gi,    r: 'org.',     label: 'abbrev: organization → org.',        level: 3 },
+  { p: /\bnumber\b/gi,          r: 'no.',      label: 'abbrev: number → no.',               level: 3 },
+  { p: /\bmaximum\b/gi,         r: 'max.',     label: 'abbrev: maximum → max.',             level: 3 },
+  { p: /\bminimum\b/gi,         r: 'min.',     label: 'abbrev: minimum → min.',             level: 3 },
+  { p: /\bversus\b/gi,          r: 'vs.',      label: 'abbrev: versus → vs.',               level: 3 },
+  { p: /\bwithout\b/gi,         r: 'w/o',      label: 'abbrev: without → w/o',              level: 3 },
+  { p: /\bwith\b/gi,            r: 'w/',       label: 'abbrev: with → w/',                  level: 3 },
+  { p: /\bthrough\b/gi,         r: 'thru',     label: 'abbrev: through → thru',             level: 3 },
+  { p: /\band so on\b/gi,       r: 'etc.',     label: 'abbrev: and so on → etc.',           level: 3 },
+  { p: /\band so forth\b/gi,    r: 'etc.',     label: 'abbrev: and so forth → etc.',        level: 3 },
+];
+
+function applyRules(text, rules, levelLimit, changes) {
+  let out = text;
+  rules.forEach(rule => {
+    if (rule.level > levelLimit) return;
+    const before = out;
+    if (typeof rule.r === 'function') {
+      out = out.replace(rule.p, rule.r);
+    } else {
+      out = out.replace(rule.p, rule.r);
+    }
+    if (out !== before) changes.push(rule.label);
+  });
+  return out;
+}
+
+function cleanupSpaces(text) {
+  return text
+    .replace(/ {2,}/g, ' ')          // multiple spaces → single
+    .replace(/\s+([.,!?;:])/g, '$1') // space before punctuation
+    .replace(/\n{3,}/g, '\n\n')       // triple+ newlines
+    .trim();
+}
+
+function runShorten() {
+  const input = document.getElementById('sh-input').value;
+  if (!input.trim()) { notify('Paste text to shorten!'); return; }
+
+  const intensity = document.querySelector('input[name="sh-intensity"]:checked').value;
+  const levelMap = { light: 1, medium: 2, aggressive: 3 };
+  const lvl = levelMap[intensity];
+
+  const useFillers      = document.getElementById('sh-fillers').checked;
+  const usePhrases      = document.getElementById('sh-phrases').checked;
+  const useContractions = document.getElementById('sh-contractions').checked;
+  const useRedundant    = document.getElementById('sh-redundant').checked;
+  const useAbbrev       = document.getElementById('sh-abbrev').checked;
+  const showChanges     = document.getElementById('sh-show-changes').checked;
+
+  let out = input;
+  const changes = [];
+
+  if (usePhrases)      out = applyRules(out, SHORTEN_PHRASES,      lvl, changes);
+  if (useFillers)      out = applyRules(out, SHORTEN_FILLERS,       lvl, changes);
+  if (useRedundant)    out = applyRules(out, SHORTEN_REDUNDANT,     lvl, changes);
+  if (useContractions) out = applyRules(out, SHORTEN_CONTRACTIONS,  lvl, changes);
+  if (useAbbrev)       out = applyRules(out, SHORTEN_ABBREV,        lvl, changes);
+
+  out = cleanupSpaces(out);
+
+  document.getElementById('sh-output').value = out;
+
+  // Stats
+  const before = input.length, after = out.length;
+  const saved = before - after;
+  const pct = before > 0 ? ((saved / before) * 100).toFixed(1) : '0';
+  document.getElementById('sh-s-before').textContent = before;
+  document.getElementById('sh-s-after').textContent  = after;
+  document.getElementById('sh-s-saved').textContent  = saved;
+  document.getElementById('sh-s-pct').textContent    = pct + '%';
+  document.getElementById('sh-s-rules').textContent  = changes.length;
+  document.getElementById('sh-stats').style.display  = 'flex';
+
+  // Changes log
+  const changesPanel = document.getElementById('sh-changes-panel');
+  const changesList  = document.getElementById('sh-changes-list');
+  if (showChanges && changes.length > 0) {
+    const unique = [...new Set(changes)];
+    changesList.innerHTML = unique.map(c =>
+      `<div><span style="color:var(--accent2)">→</span> <span style="color:var(--text)">${c}</span></div>`
+    ).join('');
+    changesPanel.style.display = 'block';
+  } else {
+    changesPanel.style.display = 'none';
+    if (changes.length === 0) notify('No shortenable patterns found in this text.');
+  }
+
+  if (changes.length > 0) notify(`${changes.length} changes applied — saved ${saved} chars`);
+}
+
+function clearShorten() {
+  document.getElementById('sh-input').value  = '';
+  document.getElementById('sh-output').value = '';
+  document.getElementById('sh-stats').style.display        = 'none';
+  document.getElementById('sh-changes-panel').style.display = 'none';
+}
+
+function copyShorten() {
+  const text = document.getElementById('sh-output').value;
+  if (!text) { notify('Nothing to copy!'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-sh-btn');
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1800);
+    notify('Copied to clipboard!');
+  });
+}
+
+// ═══════════════════════════════ SUB-TABS ════════════════════════════════════
+
+function switchSub(name) {
+  document.getElementById('sub-shorten').style.display = name === 'shorten' ? 'block' : 'none';
+  document.getElementById('sub-correct').style.display = name === 'correct' ? 'block' : 'none';
+  document.getElementById('sub-shorten-btn').classList.toggle('active', name === 'shorten');
+  document.getElementById('sub-correct-btn').classList.toggle('active', name === 'correct');
+}
+
+// ═══════════════════════════════ TYPO DICTIONARY ══════════════════════════════
+
+// [wrong, right] pairs — checked as whole words
+const TYPO_DICT = [
+  ['teh','the'],['hte','the'],['thge','the'],['thte','the'],
+  ['adn','and'],['nad','and'],['andd','and'],
+  ['taht','that'],['tath','that'],['htat','that'],
+  ['waht','what'],['hwat','what'],
+  ['wiht','with'],['wtih','with'],['whit','with'],
+  ['form','from'],['fomr','from'],['ofr','for'],
+  ['dont',"don't"],['doesnt',"doesn't"],['didnt',"didn't"],
+  ['cant',"can't"],['wont',"won't"],['wasnt',"wasn't"],
+  ['isnt',"isn't"],['havent',"haven't"],['hasnt',"hasn't"],
+  ['wouldnt',"wouldn't"],['couldnt',"couldn't"],['shouldnt',"shouldn't"],
+  ['youre',"you're"],['theyre',"they're"],['were',"we're"],['im',"I'm"],
+  ['ive',"I've"],['id',"I'd"],['ill',"I'll"],
+  ['thats',"that's"],['its',"it's"],['whos',"who's"],['whats',"what's"],
+  ['hes',"he's"],['shes',"she's"],['theres',"there's"],['heres',"here's"],
+  ['becuase','because'],['becasue','because'],['beacuse','because'],
+  ['recieve','receive'],['recieved','received'],['recieves','receives'],
+  ['beleive','believe'],['belive','believe'],['beleived','believed'],
+  ['freind','friend'],['frend','friend'],['firend','friend'],
+  ['wierd','weird'],['werid','weird'],
+  ['occured','occurred'],['ocurred','occurred'],
+  ['occurence','occurrence'],['occurance','occurrence'],
+  ['seperate','separate'],['seprate','separate'],
+  ['definately','definitely'],['definitley','definitely'],['definatly','definitely'],
+  ['arguement','argument'],['arguement','argument'],
+  ['accomodate','accommodate'],['acommodate','accommodate'],
+  ['neccessary','necessary'],['necesary','necessary'],['neccesary','necessary'],
+  ['reccomend','recommend'],['recomend','recommend'],['recommed','recommend'],
+  ['tommorrow','tomorrow'],['tommorow','tomorrow'],['tomorow','tomorrow'],
+  ['yesturday','yesterday'],['yestarday','yesterday'],
+  ['untill','until'],['untl','until'],
+  ['alot','a lot'],['alright','all right'],
+  ['noone','no one'],
+  ['alread','already'],['allready','already'],
+  ['differnt','different'],['diffrent','different'],
+  ['posible','possible'],['possibel','possible'],
+  ['probaly','probably'],['proably','probably'],['probly','probably'],
+  ['finaly','finally'],['finaly','finally'],['finnaly','finally'],
+  ['realy','really'],['relly','really'],
+  ['usally','usually'],['usualy','usually'],['usaully','usually'],
+  ['intresting','interesting'],['intersting','interesting'],
+  ['importnat','important'],['importent','important'],
+  ['everytime','every time'],
+  ['alittle','a little'],
+  ['infront','in front'],
+  ['inspite','in spite'],
+  ['infact','in fact'],
+  ['cannot','can not'],
+  ['wellcome','welcome'],['welcom','welcome'],
+  ['heigth','height'],['higth','height'],
+  ['strenght','strength'],['strengh','strength'],
+  ['grammer','grammar'],
+  ['calender','calendar'],
+  ['existance','existence'],['existense','existence'],
+  ['persistance','persistence'],
+  ['consistant','consistent'],['consistancy','consistency'],
+  ['accross','across'],['acros','across'],
+  ['suppport','support'],['suport','support'],
+  ['develope','develop'],['developement','development'],
+  ['knowlege','knowledge'],['knowlegde','knowledge'],
+  ['priviledge','privilege'],['privelege','privilege'],
+  ['embarass','embarrass'],['embaras','embarrass'],
+  ['harrass','harass'],
+  ['maintainance','maintenance'],['maintainence','maintenance'],
+  ['appearence','appearance'],['appearanc','appearance'],
+  ['independance','independence'],
+  ['responsiblity','responsibility'],
+  ['availible','available'],['availble','available'],
+  ['lisense','license'],['lisence','license'],
+  ['restaraunt','restaurant'],['restarant','restaurant'],
+  ['enviroment','environment'],['enviornment','environment'],
+  ['goverment','government'],['governemnt','government'],
+  ['managment','management'],
+  ['judgement','judgment'],
+  ['excercise','exercise'],['exersise','exercise'],
+  ['adress','address'],['addres','address'],
+  ['begining','beginning'],['begning','beginning'],
+  ['buisness','business'],['bussiness','business'],
+  ['catagory','category'],['catagorie','category'],
+  ['collegue','colleague'],['collegue','colleague'],
+  ['concious','conscious'],['consious','conscious'],
+  ['critisism','criticism'],['criticsm','criticism'],
+  ['curiousity','curiosity'],
+  ['disapear','disappear'],['dissapear','disappear'],
+  ['experiance','experience'],['expereince','experience'],
+  ['foriegn','foreign'],['forein','foreign'],
+  ['futher','further'],['furthur','further'],
+  ['guarentee','guarantee'],['guaruntee','guarantee'],
+  ['immediatly','immediately'],['imediately','immediately'],
+  ['litrally','literally'],
+  ['millenium','millennium'],['milenium','millennium'],
+  ['miniscule','minuscule'],
+  ['mischevious','mischievous'],
+  ['neice','niece'],
+  ['ocassion','occasion'],['ocassionally','occasionally'],
+  ['parliment','parliament'],
+  ['percieve','perceive'],
+  ['perseverence','perseverance'],
+  ['phenomemon','phenomenon'],['phenominon','phenomenon'],
+  ['plagarism','plagiarism'],
+  ['propoganda','propaganda'],
+  ['questionaire','questionnaire'],
+  ['relevent','relevant'],['relavent','relevant'],
+  ['rythm','rhythm'],['rhytm','rhythm'],
+  ['sucessful','successful'],['successfull','successful'],
+  ['suprise','surprise'],['suprize','surprise'],
+  ['tatoo','tattoo'],
+  ['tounge','tongue'],
+  ['truely','truly'],
+  ['twelth','twelfth'],
+  ['tyrany','tyranny'],
+  ['vaccuum','vacuum'],['vaccum','vacuum'],
+  ['visious','vicious'],
+  ['wether','whether'],['wheather','whether'],
+  ['wich','which'],['whihc','which'],
+  ['writting','writing'],['writen','written'],
+  ['yeild','yield'],
+  ['youself','yourself'],
+  ['payed','paid'],
+  ['alwasy','always'],['alwayas','always'],
+  ['comming','coming'],['caming','coming'],
+  ['geting','getting'],['gtting','getting'],
+  ['haveing','having'],['havig','having'],
+  ['loveing','loving'],
+  ['makeing','making'],
+  ['takeing','taking'],
+  ['giveing','giving'],
+  ['moveing','moving'],
+  ['writting','writing'],
+  ['stoped','stopped'],['stoppd','stopped'],
+  ['droped','dropped'],
+  ['skiped','skipped'],
+  ['planed','planned'],
+  ['prefered','preferred'],
+  ['ocurred','occurred'],
+  ['programing','programming'],['programer','programmer'],
+  ['runing','running'],['runn','running'],
+  ['siting','sitting'],
+  ['swiming','swimming'],
+];
+
+// ═══════════════════════════════ CORRECTION ENGINE ════════════════════════════
+
+function runCorrect() {
+  const input = document.getElementById('cr-input').value;
+  if (!input.trim()) { notify('Paste text to correct!'); return; }
+
+  const opts = {
+    caps:       document.getElementById('cr-caps').checked,
+    spacing:    document.getElementById('cr-spacing').checked,
+    dupspace:   document.getElementById('cr-dupspace').checked,
+    dupwords:   document.getElementById('cr-dupwords').checked,
+    endpunct:   document.getElementById('cr-endpunct').checked,
+    quotes:     document.getElementById('cr-quotes').checked,
+    ellipsis:   document.getElementById('cr-ellipsis').checked,
+    comma:      document.getElementById('cr-comma').checked,
+    typos:      document.getElementById('cr-typos').checked,
+    loneI:      document.getElementById('cr-i').checked,
+    numbers:    document.getElementById('cr-numbers').checked,
+    doublep:    document.getElementById('cr-doublep').checked,
+    apostrophe: document.getElementById('cr-apostrophe').checked,
+    linebreak:  document.getElementById('cr-linebreak').checked,
+    showChanges:document.getElementById('cr-show-changes').checked,
+  };
+
+  const { result, changes } = applyCorrections(input, opts);
+  document.getElementById('cr-output').value = result;
+
+  const typoFixes  = changes.filter(c => c.type === 'typo').length;
+  const punctFixes = changes.filter(c => c.type === 'punct').length;
+  const capsFixes  = changes.filter(c => c.type === 'caps').length;
+  const otherFixes = changes.filter(c => c.type === 'other').length;
+
+  document.getElementById('cr-s-fixes').textContent = changes.length;
+  document.getElementById('cr-s-typos').textContent = typoFixes;
+  document.getElementById('cr-s-punct').textContent = punctFixes;
+  document.getElementById('cr-s-caps').textContent  = capsFixes;
+  document.getElementById('cr-s-other').textContent = otherFixes;
+  document.getElementById('cr-stats').style.display = 'flex';
+
+  const changesPanel = document.getElementById('cr-changes-panel');
+  const changesList  = document.getElementById('cr-changes-list');
+  if (opts.showChanges && changes.length > 0) {
+    const unique = [...new Map(changes.map(c => [c.label, c])).values()];
+    const colors = { typo:'var(--accent)', punct:'var(--accent2)', caps:'var(--warn)', other:'var(--success)' };
+    changesList.innerHTML = unique.map(c =>
+      `<div><span style="color:${colors[c.type]||'var(--text)'}">[${c.type.toUpperCase()}]</span> <span style="color:var(--text)">${c.label}</span></div>`
+    ).join('');
+    changesPanel.style.display = 'block';
+  } else {
+    changesPanel.style.display = 'none';
+  }
+
+  if (changes.length === 0) notify('No corrections needed — text looks clean!');
+  else notify(`${changes.length} corrections applied`);
+}
+
+function applyCorrections(text, opts) {
+  let out = text;
+  const changes = [];
+  const track = (label, type) => changes.push({ label, type });
+
+  // Trailing whitespace per line
+  if (opts.linebreak) {
+    const n = out.replace(/[ \t]+$/gm, '');
+    if (n !== out) { track('Trimmed trailing whitespace per line', 'other'); out = n; }
+  }
+
+  // Collapse duplicate spaces
+  if (opts.dupspace) {
+    const n = out.replace(/[^\S\n]{2,}/g, ' ');
+    if (n !== out) { track('Collapsed duplicate spaces', 'other'); out = n; }
+  }
+
+  // Fix ellipsis spacing: "word..." → "word..." (ensure space after if followed by letter)
+  if (opts.ellipsis) {
+    let n = out.replace(/\.{4,}/g, '...');
+    n = n.replace(/(\w)\.\.\.(\w)/g, '$1... $2');
+    if (n !== out) { track('Fixed ellipsis formatting', 'punct'); out = n; }
+  }
+
+  // Fix comma spacing: word,word → word, word / remove space before comma
+  if (opts.comma) {
+    let n = out.replace(/\s+,/g, ',');
+    n = n.replace(/,(\S)/g, (m, a) => a === '.' || a === ',' || a === ')' ? m : ', ' + a);
+    if (n !== out) { track('Fixed comma spacing', 'punct'); out = n; }
+  }
+
+  // Fix spacing around punctuation: space before . ! ? ; :
+  if (opts.spacing) {
+    let n = out.replace(/ +([.!?;:])/g, '$1');
+    // Ensure space after . ! ? ; : when followed by a letter (but not decimals)
+    n = n.replace(/([.!?;:])([A-Za-z])/g, (m, p, l) => {
+      // Don't add space inside decimals (1.5) or URLs
+      if (p === '.' && /\d/.test(m[0])) return m;
+      return p + ' ' + l;
+    });
+    if (n !== out) { track('Fixed spacing around punctuation', 'punct'); out = n; }
+  }
+
+  // Remove double punctuation (!! → !, ?? → ?, .. but keep ...)
+  if (opts.doublep) {
+    let n = out.replace(/([!?]){2,}/g, '$1');
+    n = n.replace(/([,;:]){2,}/g, '$1');
+    if (n !== out) { track('Removed duplicate punctuation', 'punct'); out = n; }
+  }
+
+  // Apostrophe fixes: common missing apostrophe contractions written without
+  if (opts.apostrophe) {
+    const apo = [
+      [/\bdont\b/g,"don't"], [/\bdoesnt\b/g,"doesn't"], [/\bdidnt\b/g,"didn't"],
+      [/\bcant\b/g,"can't"],  [/\bwont\b/g,"won't"],    [/\bwouldnt\b/g,"wouldn't"],
+      [/\bcouldnt\b/g,"couldn't"], [/\bshouldnt\b/g,"shouldn't"],
+      [/\bisnt\b/g,"isn't"],  [/\barent\b/g,"aren't"],  [/\bwasnt\b/g,"wasn't"],
+      [/\bwerent\b/g,"weren't"], [/\bhasnt\b/g,"hasn't"], [/\bhavent\b/g,"haven't"],
+      [/\bim\b/gi,"I'm"],     [/\byoure\b/gi,"you're"], [/\btheyre\b/gi,"they're"],
+      [/\bwere\b(?= going| doing| trying)/gi,"we're"],
+      [/\bits going\b/gi,"it's going"], [/\bits a\b/gi,"it's a"],
+      [/\bthats\b/gi,"that's"], [/\bwhats\b/gi,"what's"],
+      [/\bwhos\b/gi,"who's"],  [/\bhes\b/gi,"he's"],    [/\bshes\b/gi,"she's"],
+      [/\bive\b/gi,"I've"],    [/\bid\b(?= like| love| say| think| go)/gi,"I'd"],
+      [/\bill\b(?= be| go| do| try)/gi,"I'll"],
+    ];
+    let n = out;
+    apo.forEach(([p,r]) => { n = n.replace(p, r); });
+    if (n !== out) { track('Fixed missing apostrophes in contractions', 'punct'); out = n; }
+  }
+
+  // Capitalise lone "i" → "I"
+  if (opts.loneI) {
+    const n = out.replace(/(?<![A-Za-z])\bi\b(?![A-Za-z])/g, 'I');
+    if (n !== out) { track('Capitalised lone "i" → "I"', 'caps'); out = n; }
+  }
+
+  // Fix common typos
+  if (opts.typos) {
+    let typoCount = 0;
+    TYPO_DICT.forEach(([wrong, right]) => {
+      const re = new RegExp('\\b' + wrong.replace(/'/g, "\\'") + '\\b', 'gi');
+      const n = out.replace(re, (m) => {
+        // Preserve capitalisation
+        if (m[0] === m[0].toUpperCase() && m[0] !== m[0].toLowerCase()) {
+          return right.charAt(0).toUpperCase() + right.slice(1);
+        }
+        return right;
+      });
+      if (n !== out) { typoCount++; out = n; }
+    });
+    if (typoCount > 0) track(`Fixed ${typoCount} typo(s) from dictionary`, 'typo');
+  }
+
+  // Remove duplicate consecutive words: "the the" → "the"
+  if (opts.dupwords) {
+    const n = out.replace(/\b(\w+)\s+\1\b/gi, '$1');
+    if (n !== out) { track('Removed duplicate consecutive words', 'other'); out = n; }
+  }
+
+  // Straighten curly/smart quotes to straight quotes
+  if (opts.quotes) {
+    let n = out.replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"');
+    if (n !== out) { track('Straightened curly quotes', 'other'); out = n; }
+  }
+
+  // Number spacing: "5 %" → "5%", "5 px" → "5px", but keep "5 km" etc. — only for symbols
+  if (opts.numbers) {
+    let n = out.replace(/(\d)\s+(%|px|em|rem|vh|vw|deg|°)/g, '$1$2');
+    if (n !== out) { track('Fixed number/symbol spacing', 'other'); out = n; }
+  }
+
+  // Capitalise start of sentences
+  if (opts.caps) {
+    let capCount = 0;
+    // After . ! ? followed by whitespace
+    let n = out.replace(/([.!?]\s+)([a-z])/g, (m, punc, letter) => {
+      capCount++;
+      return punc + letter.toUpperCase();
+    });
+    // Capitalise very first char
+    n = n.replace(/^([a-z])/, (m) => { capCount++; return m.toUpperCase(); });
+    // After newline
+    n = n.replace(/([\n\r]+)([a-z])/g, (m, nl, letter) => {
+      capCount++;
+      return nl + letter.toUpperCase();
+    });
+    if (capCount > 0) { track(`Capitalised ${capCount} sentence start(s)`, 'caps'); out = n; }
+  }
+
+  // Add missing period at end of text (if it doesn't end with punctuation)
+  if (opts.endpunct) {
+    const trimmed = out.trimEnd();
+    if (trimmed.length > 0 && !/[.!?…]$/.test(trimmed)) {
+      out = trimmed + '.';
+      track('Added missing period at end of text', 'punct');
+    }
+  }
+
+  return { result: out, changes };
+}
+
+function runBoth() {
+  const input = document.getElementById('cr-input').value;
+  if (!input.trim()) { notify('Paste text first!'); return; }
+
+  const opts = {
+    caps:       document.getElementById('cr-caps').checked,
+    spacing:    document.getElementById('cr-spacing').checked,
+    dupspace:   document.getElementById('cr-dupspace').checked,
+    dupwords:   document.getElementById('cr-dupwords').checked,
+    endpunct:   document.getElementById('cr-endpunct').checked,
+    quotes:     document.getElementById('cr-quotes').checked,
+    ellipsis:   document.getElementById('cr-ellipsis').checked,
+    comma:      document.getElementById('cr-comma').checked,
+    typos:      document.getElementById('cr-typos').checked,
+    loneI:      document.getElementById('cr-i').checked,
+    numbers:    document.getElementById('cr-numbers').checked,
+    doublep:    document.getElementById('cr-doublep').checked,
+    apostrophe: document.getElementById('cr-apostrophe').checked,
+    linebreak:  document.getElementById('cr-linebreak').checked,
+    showChanges:document.getElementById('cr-show-changes').checked,
+  };
+
+  const { result: corrected } = applyCorrections(input, opts);
+
+  // Now shorten the corrected result
+  const lvlMap = { light:1, medium:2, aggressive:3 };
+  const lvl = lvlMap[document.querySelector('input[name="sh-intensity"]:checked')?.value || 'medium'];
+  const shChanges = [];
+  let out = corrected;
+  out = applyRules(out, SHORTEN_PHRASES, lvl, shChanges);
+  out = applyRules(out, SHORTEN_FILLERS, lvl, shChanges);
+  out = applyRules(out, SHORTEN_REDUNDANT, lvl, shChanges);
+  out = applyRules(out, SHORTEN_CONTRACTIONS, lvl, shChanges);
+  out = cleanupSpaces(out);
+
+  document.getElementById('cr-output').value = out;
+  document.getElementById('cr-stats').style.display = 'flex';
+  notify(`Corrected + shortened — ${shChanges.length} shortening rules applied`);
+}
+
+function clearCorrect() {
+  document.getElementById('cr-input').value  = '';
+  document.getElementById('cr-output').value = '';
+  document.getElementById('cr-stats').style.display = 'none';
+  document.getElementById('cr-changes-panel').style.display = 'none';
+}
+
+function copyCorrect() {
+  const text = document.getElementById('cr-output').value;
+  if (!text) { notify('Nothing to copy!'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-cr-btn');
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1800);
+    notify('Copied to clipboard!');
+  });
 }
 
 // ═══════════════════════════════ INIT ═════════════════════════════════════════
