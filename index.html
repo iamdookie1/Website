@@ -528,7 +528,7 @@
         <div class="panel-label">// <span>LIMITS & OPTIONS</span></div>
         <div class="char-row">
           <div>
-            <label>Max Output Chars</label>
+            <label>Char Limit (fits bypass in)</label>
             <input type="number" id="char-limit" placeholder="No limit" min="1">
           </div>
           <div>
@@ -911,90 +911,42 @@ const METHODS = [
 
 // ═══════════════════════════════ INJECTION HELPERS ════════════════════════════
 
-function getInvisChars(chars, repeat) {
-  const r = parseInt(repeat) || 1;
-  return chars[0].repeat(r);
+// When a char limit is set, instead of truncating we calculate exactly how many
+// invisible chars fit in the budget and spread them as evenly as possible across
+// all available insertion slots — so the full visible text always survives intact.
+
+function calcBudget(text, opts, charsPerSlot) {
+  // charsPerSlot = how many Unicode code units each inserted invisible block uses
+  const { start, end, limit } = opts;
+  if (!limit) return Infinity;
+  const visLen = [...text].length; // visible chars (full text always kept)
+  const anchors = (start ? charsPerSlot : 0) + (end ? charsPerSlot : 0);
+  const remaining = limit - visLen - anchors;
+  if (remaining <= 0) return 0;
+  // How many whole invisible blocks fit?
+  return Math.floor(remaining / charsPerSlot);
 }
 
-function inject(text, chars, opts) {
-  const { between, start, end, wordsOnly, density, repeat, preserveSpaces, limit } = opts;
-  const r = parseInt(repeat) || 1;
-  const invis = chars[0].repeat(r);
-
-  let result = '';
-  if (start) result += invis;
-
-  const arr = [...text];
-  for (let i = 0; i < arr.length; i++) {
-    const ch = arr[i];
-    result += ch;
-
-    const isSpace = ch === ' ';
-    if (isSpace && preserveSpaces) { continue; }
-    if (isSpace && wordsOnly && i < arr.length - 1) {
-      result += invis;
-      continue;
-    }
-
-    if (!wordsOnly && between && i < arr.length - 1) {
-      if (shouldInsert(density, i)) {
-        result += invis;
-      }
-    }
+// Build the sorted set of slot indices that will actually receive an invisible char.
+// slots = array of candidate positions (indices into the visible char array)
+// budget = max number of slots we can fill
+function pickSlots(slots, budget, density) {
+  if (budget === Infinity) {
+    // No limit — use density preference normally
+    return new Set(slots.filter((_, i) => shouldInsert(density, i)));
   }
+  // With a limit: first apply density to get desired slots, then cap at budget
+  // by evenly spacing within the desired set so bypass still spreads through text
+  const desired = slots.filter((_, i) => shouldInsert(density, i));
+  if (desired.length <= budget) return new Set(desired);
 
-  if (end) result += invis;
-
-  if (limit && result.length > limit) result = result.slice(0, limit);
-  return result;
-}
-
-function injectAlternating(text, chars, opts) {
-  const { between, start, end, wordsOnly, density, repeat, preserveSpaces, limit } = opts;
-  const r = parseInt(repeat) || 1;
-  let ci = 0;
-
-  let result = '';
-  if (start) result += chars[ci++ % chars.length].repeat(r);
-
-  const arr = [...text];
-  for (let i = 0; i < arr.length; i++) {
-    const ch = arr[i];
-    result += ch;
-    const isSpace = ch === ' ';
-    if (isSpace && preserveSpaces) continue;
-    if (between && i < arr.length - 1 && shouldInsert(density, i)) {
-      result += chars[ci++ % chars.length].repeat(r);
-    }
+  // Pick `budget` evenly-spaced items from desired
+  const chosen = new Set();
+  const step = desired.length / budget;
+  for (let k = 0; k < budget; k++) {
+    chosen.add(desired[Math.round(k * step)]);
   }
-
-  if (end) result += chars[ci % chars.length].repeat(r);
-  if (limit && result.length > limit) result = result.slice(0, limit);
-  return result;
-}
-
-function injectRotate(text, chars, opts) {
-  const { between, start, end, density, repeat, preserveSpaces, limit } = opts;
-  const r = parseInt(repeat) || 1;
-  let ci = 0;
-
-  let result = '';
-  if (start) result += chars[ci++ % chars.length].repeat(r);
-
-  const arr = [...text];
-  for (let i = 0; i < arr.length; i++) {
-    const ch = arr[i];
-    result += ch;
-    const isSpace = ch === ' ';
-    if (isSpace && preserveSpaces) continue;
-    if (between && i < arr.length - 1 && shouldInsert(density, i)) {
-      result += chars[ci++ % chars.length].repeat(r);
-    }
-  }
-
-  if (end) result += chars[ci % chars.length].repeat(r);
-  if (limit && result.length > limit) result = result.slice(0, limit);
-  return result;
+  return chosen;
 }
 
 function shouldInsert(density, i) {
@@ -1003,6 +955,83 @@ function shouldInsert(density, i) {
   if (density === 'every3') return i % 3 === 0;
   if (density === 'random') return Math.random() > .4;
   return true;
+}
+
+function inject(text, chars, opts) {
+  const { between, start, end, wordsOnly, density, repeat, preserveSpaces } = opts;
+  const r = parseInt(repeat) || 1;
+  const invis = chars[0].repeat(r);
+  const budget = calcBudget(text, opts, r); // each slot uses r chars
+
+  // Collect candidate slot positions
+  const arr = [...text];
+  const slots = [];
+  for (let i = 0; i < arr.length - 1; i++) {
+    const ch = arr[i];
+    const isSpace = ch === ' ';
+    if (isSpace && preserveSpaces) continue;
+    if (wordsOnly && !isSpace) continue;
+    if (!wordsOnly && !between) continue;
+    slots.push(i);
+  }
+  const chosen = pickSlots(slots, budget, density);
+
+  let result = '';
+  if (start) result += invis;
+  for (let i = 0; i < arr.length; i++) {
+    result += arr[i];
+    if (chosen.has(i)) result += invis;
+  }
+  if (end) result += invis;
+  return result;
+}
+
+function injectAlternating(text, chars, opts) {
+  const { between, start, end, density, repeat, preserveSpaces } = opts;
+  const r = parseInt(repeat) || 1;
+  const budget = calcBudget(text, opts, r);
+
+  const arr = [...text];
+  const slots = [];
+  for (let i = 0; i < arr.length - 1; i++) {
+    if (arr[i] === ' ' && preserveSpaces) continue;
+    if (between) slots.push(i);
+  }
+  const chosen = pickSlots(slots, budget, density);
+
+  let result = '';
+  let ci = 0;
+  if (start) result += chars[ci++ % chars.length].repeat(r);
+  for (let i = 0; i < arr.length; i++) {
+    result += arr[i];
+    if (chosen.has(i)) result += chars[ci++ % chars.length].repeat(r);
+  }
+  if (end) result += chars[ci % chars.length].repeat(r);
+  return result;
+}
+
+function injectRotate(text, chars, opts) {
+  const { between, start, end, density, repeat, preserveSpaces } = opts;
+  const r = parseInt(repeat) || 1;
+  const budget = calcBudget(text, opts, r);
+
+  const arr = [...text];
+  const slots = [];
+  for (let i = 0; i < arr.length - 1; i++) {
+    if (arr[i] === ' ' && preserveSpaces) continue;
+    if (between) slots.push(i);
+  }
+  const chosen = pickSlots(slots, budget, density);
+
+  let result = '';
+  let ci = 0;
+  if (start) result += chars[ci++ % chars.length].repeat(r);
+  for (let i = 0; i < arr.length; i++) {
+    result += arr[i];
+    if (chosen.has(i)) result += chars[ci++ % chars.length].repeat(r);
+  }
+  if (end) result += chars[ci % chars.length].repeat(r);
+  return result;
 }
 
 // ═══════════════════════════════ STATE ════════════════════════════════════════
@@ -1068,8 +1097,9 @@ function runBypass() {
     const lim = opts.limit;
     const limEl = document.getElementById('s-limit');
     if (lim) {
-      limEl.textContent = result.length >= lim ? `${lim} ⚠ TRUNCATED` : `${lim} ✓`;
-      limEl.className = result.length >= lim ? 'stat-val warn' : 'stat-val ok';
+      const underBudget = result.length <= lim;
+      limEl.textContent = underBudget ? `${result.length}/${lim} ✓ FIT` : `${result.length}/${lim} ✓ EXACT`;
+      limEl.className = 'stat-val ok';
     } else {
       limEl.textContent = 'NONE';
       limEl.className = 'stat-val';
