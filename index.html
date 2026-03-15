@@ -3,920 +3,1153 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EmojiVault — Discord Emojis & Stickers</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<title>Unicode Bypass Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0c0d11;
-    --bg2: #111318;
-    --bg3: #181b24;
-    --card: #1c1f2e;
-    --card-h: #232740;
-    --border: #2a2e47;
-    --accent: #5865f2;
-    --accent2: #eb459e;
-    --accent3: #57f287;
-    --accent4: #fee75c;
-    --nsfw: #ed4245;
-    --text: #e8eaf6;
-    --muted: #6b7194;
+    --bg: #0a0c10;
+    --surface: #0e1117;
+    --card: #13171f;
+    --border: #1e2535;
+    --accent: #00e5ff;
+    --accent2: #7b2fff;
+    --accent3: #ff2f7b;
+    --text: #c8d6e8;
+    --muted: #556070;
+    --success: #00ff88;
+    --warn: #ffb700;
+    --radius: 6px;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-ui: 'Rajdhani', sans-serif;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body { font-family:'Syne',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
-  body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.025; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
-  .orb1 { position:fixed; top:-180px; left:-180px; width:520px; height:520px; background:radial-gradient(circle,rgba(88,101,242,.13) 0%,transparent 70%); pointer-events:none; z-index:0; animation:ob1 14s ease-in-out infinite alternate; }
-  .orb2 { position:fixed; bottom:-180px; right:-100px; width:440px; height:440px; background:radial-gradient(circle,rgba(235,69,158,.10) 0%,transparent 70%); pointer-events:none; z-index:0; animation:ob2 18s ease-in-out infinite alternate; }
-  @keyframes ob1 { to { transform:translate(80px,60px); } }
-  @keyframes ob2 { to { transform:translate(-70px,-50px); } }
 
-  header { position:sticky; top:0; z-index:200; background:rgba(12,13,17,.88); backdrop-filter:blur(18px); border-bottom:1px solid var(--border); }
-  .hdr { max-width:1440px; margin:0 auto; height:62px; padding:0 1.5rem; display:flex; align-items:center; gap:1.5rem; }
-  .logo { display:flex; align-items:center; gap:10px; font-size:1.25rem; font-weight:800; letter-spacing:-.02em; white-space:nowrap; flex-shrink:0; }
-  .logo-mark { width:30px; height:30px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.95rem; }
-  .logo em { color:var(--accent); font-style:normal; }
-  .search-box { flex:1; max-width:500px; position:relative; }
-  .search-box input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:9px; padding:8px 14px 8px 38px; color:var(--text); font-family:'JetBrains Mono',monospace; font-size:.82rem; outline:none; transition:border-color .2s,box-shadow .2s; }
-  .search-box input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(88,101,242,.14); }
-  .search-box input::placeholder { color:var(--muted); }
-  .search-ico { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:.85rem; pointer-events:none; }
-  .hdr-right { display:flex; align-items:center; gap:8px; margin-left:auto; }
-  .nsfw-btn { display:flex; align-items:center; gap:7px; padding:6px 13px; border-radius:8px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); font-size:.78rem; font-weight:700; cursor:pointer; transition:all .2s; user-select:none; }
-  .nsfw-btn .pip { width:7px; height:7px; border-radius:50%; background:var(--muted); transition:background .2s; }
-  .nsfw-btn.on { border-color:var(--nsfw); color:var(--nsfw); background:rgba(237,66,69,.1); }
-  .nsfw-btn.on .pip { background:var(--nsfw); }
-  .src-badge { padding:5px 12px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); font-size:.72rem; font-family:'JetBrains Mono',monospace; color:var(--muted); white-space:nowrap; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .wrap { max-width:1440px; margin:0 auto; padding:1.5rem; position:relative; z-index:1; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
 
-  .src-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1.2rem; }
-  .src-tab { padding:8px 16px; border-radius:9px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); font-size:.8rem; font-weight:700; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:7px; }
-  .src-tab:hover { color:var(--text); }
-  .src-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 2px 14px rgba(88,101,242,.4); }
-  .src-tab.nsfw-tab.active { background:var(--nsfw); border-color:var(--nsfw); color:#fff; box-shadow:0 2px 14px rgba(237,66,69,.4); }
-  .src-tab .dot { width:6px; height:6px; border-radius:50%; background:currentColor; animation:pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+  /* Grid lines background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-  .cats { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1.2rem; min-height:34px; }
-  .cat { padding:5px 13px; border-radius:18px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); font-size:.75rem; font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap; }
-  .cat:hover { color:var(--text); border-color:var(--accent); }
-  .cat.on { background:rgba(88,101,242,.2); border-color:var(--accent); color:var(--accent); }
-  .cat.nc { border-color:rgba(237,66,69,.4); color:var(--nsfw); }
-  .cat.nc.on { background:rgba(237,66,69,.15); }
+  .shell {
+    position: relative;
+    z-index: 1;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
 
-  .meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; gap:10px; flex-wrap:wrap; }
-  .meta-left { font-family:'JetBrains Mono',monospace; font-size:.75rem; color:var(--muted); display:flex; gap:20px; flex-wrap:wrap; }
-  .meta-left b { color:var(--text); }
-  .meta-right { display:flex; gap:6px; }
-  .vbtn { width:30px; height:30px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); cursor:pointer; font-size:.85rem; display:flex; align-items:center; justify-content:center; transition:all .2s; }
-  .vbtn.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  /* Header */
+  header {
+    margin-bottom: 32px;
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+  }
+  .logo-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .logo-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    opacity: .7;
+  }
+  h1 {
+    font-family: var(--font-ui);
+    font-size: 34px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+  .header-sep {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    border-radius: 2px;
+    letter-spacing: 2px;
+  }
 
-  .grid { display:grid; gap:10px; }
-  .g-sm { grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); }
-  .g-md { grid-template-columns:repeat(auto-fill,minmax(155px,1fr)); }
-  .g-lg { grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); }
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--border);
+    position: relative;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 12px 28px;
+    cursor: pointer;
+    position: relative;
+    transition: color .2s;
+  }
+  .tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform .2s;
+  }
+  .tab-btn.active {
+    color: var(--accent);
+  }
+  .tab-btn.active::after {
+    transform: scaleX(1);
+  }
+  .tab-btn:hover { color: var(--text); }
 
-  .ecard { background:var(--card); border:1px solid var(--border); border-radius:11px; padding:14px 10px 10px; display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; animation:fadeUp .35s both; }
-  .ecard::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(88,101,242,.06),transparent); opacity:0; transition:opacity .2s; }
-  .ecard:hover { transform:translateY(-3px); border-color:var(--accent); background:var(--card-h); box-shadow:0 6px 24px rgba(0,0,0,.35); }
-  .ecard:hover::before { opacity:1; }
-  .ecard.nsfw { border-color:rgba(237,66,69,.25); }
-  .ecard.nsfw:hover { border-color:var(--nsfw); box-shadow:0 6px 24px rgba(237,66,69,.18); }
-  .nsfwbadge { position:absolute; top:5px; right:5px; background:var(--nsfw); color:#fff; font-size:.58rem; font-weight:800; padding:2px 5px; border-radius:4px; }
-  .gifbadge { position:absolute; top:5px; left:5px; background:rgba(87,242,135,.15); color:var(--accent3); border:1px solid rgba(87,242,135,.3); font-size:.58rem; font-weight:700; padding:2px 5px; border-radius:4px; }
-  .eimg { width:60px; height:60px; object-fit:contain; image-rendering:pixelated; transition:transform .2s; display:block; }
-  .ecard:hover .eimg { transform:scale(1.18); }
-  .efb { width:60px; height:60px; display:flex; align-items:center; justify-content:center; font-size:2.6rem; line-height:1; transition:transform .2s; }
-  .ecard:hover .efb { transform:scale(1.18); }
-  .ename { font-size:.68rem; font-family:'JetBrains Mono',monospace; color:var(--muted); text-align:center; width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .eacts { display:flex; gap:5px; width:100%; opacity:0; transform:translateY(4px); transition:all .2s; }
-  .ecard:hover .eacts { opacity:1; transform:translateY(0); }
-  .ea { flex:1; padding:4px; border-radius:5px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); font-size:.63rem; font-weight:700; cursor:pointer; font-family:'Syne',sans-serif; transition:all .15s; text-align:center; }
-  .ea:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
-  .ea.dl:hover { background:var(--accent3); border-color:var(--accent3); color:#000; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; animation: fadeIn .25s ease; }
 
-  .scard { background:var(--card); border:1px solid var(--border); border-radius:13px; padding:14px; display:flex; flex-direction:column; align-items:center; gap:10px; cursor:pointer; transition:all .25s; position:relative; overflow:hidden; animation:fadeUp .35s both; }
-  .scard:hover { transform:translateY(-4px); background:var(--card-h); box-shadow:0 10px 32px rgba(235,69,158,.12); border-color:var(--accent2); }
-  .scard.nsfw { border-color:rgba(237,66,69,.25); }
-  .scard.nsfw:hover { border-color:var(--nsfw); }
-  .simg { width:110px; height:110px; object-fit:contain; border-radius:8px; transition:transform .3s; }
-  .scard:hover .simg { transform:scale(1.08) rotate(-2deg); }
-  .sinfo { width:100%; }
-  .sname { font-size:.82rem; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:3px; }
-  .ssrc { font-size:.67rem; color:var(--muted); font-family:'JetBrains Mono',monospace; }
-  .stags { display:flex; gap:5px; flex-wrap:wrap; }
-  .stag { font-size:.62rem; padding:2px 7px; border-radius:4px; font-weight:700; }
-  .tg { background:rgba(87,242,135,.15); color:var(--accent3); }
-  .tr { background:rgba(237,66,69,.15); color:var(--nsfw); }
-  .ty { background:rgba(254,231,92,.15); color:var(--accent4); }
-  .tb { background:rgba(88,101,242,.15); color:var(--accent); }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
-  .loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; gap:14px; color:var(--muted); font-size:.85rem; grid-column:1/-1; }
-  .spin { width:38px; height:38px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .65s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
+  /* Layout grid */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  @media(max-width:640px) { .grid-2 { grid-template-columns: 1fr; } }
 
-  .empty { text-align:center; padding:60px 20px; color:var(--muted); grid-column:1/-1; }
-  .empty .big { font-size:3rem; margin-bottom:10px; }
+  /* Card / Panel */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .panel-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-label span { color: var(--accent); }
 
-  .errmsg { background:rgba(237,66,69,.08); border:1px solid rgba(237,66,69,.3); border-radius:10px; padding:12px 16px; margin-bottom:1rem; font-size:.8rem; color:var(--nsfw); }
+  /* Method selector grid */
+  .methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .method-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .method-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent2);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .2s;
+  }
+  .method-card:hover { border-color: var(--accent2); }
+  .method-card:hover::before { transform: scaleX(1); }
+  .method-card.selected {
+    border-color: var(--accent);
+    background: rgba(0,229,255,.06);
+  }
+  .method-card.selected::before {
+    background: var(--accent);
+    transform: scaleX(1);
+  }
+  .method-name {
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: .5px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .method-desc {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    line-height: 1.4;
+  }
+  .method-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    padding: 2px 6px;
+    background: rgba(123,47,255,.18);
+    color: var(--accent2);
+    border-radius: 2px;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
 
-  .pager { display:flex; justify-content:center; gap:6px; margin-top:1.5rem; flex-wrap:wrap; }
-  .pbtn { min-width:34px; height:34px; padding:0 8px; border-radius:7px; border:1px solid var(--border); background:var(--bg3); color:var(--muted); cursor:pointer; font-family:'Syne',sans-serif; font-weight:700; font-size:.8rem; transition:all .2s; }
-  .pbtn:hover,.pbtn.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  /* Form fields */
+  label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 7px;
+  }
+  textarea, input[type=number], input[type=text] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    outline: none;
+    resize: vertical;
+    transition: border-color .2s;
+    line-height: 1.6;
+  }
+  textarea:focus, input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,229,255,.1);
+  }
+  textarea { min-height: 110px; }
 
-  .mbk { position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(10px); z-index:500; opacity:0; pointer-events:none; transition:opacity .2s; display:flex; align-items:center; justify-content:center; padding:20px; }
-  .mbk.open { opacity:1; pointer-events:all; }
-  .modal { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:26px; max-width:380px; width:100%; transform:scale(.9); transition:transform .25s cubic-bezier(.34,1.56,.64,1); position:relative; }
-  .mbk.open .modal { transform:scale(1); }
-  .mclose { position:absolute; top:14px; right:14px; background:var(--bg3); border:1px solid var(--border); color:var(--muted); width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:.85rem; display:flex; align-items:center; justify-content:center; transition:all .2s; }
-  .mclose:hover { color:var(--text); }
-  .mimg-wrap { display:flex; justify-content:center; margin-bottom:14px; }
-  .mname { font-size:1.1rem; font-weight:800; text-align:center; margin-bottom:5px; }
-  .mmeta { text-align:center; font-size:.75rem; color:var(--muted); font-family:'JetBrains Mono',monospace; margin-bottom:14px; line-height:1.6; }
-  .mcode { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:9px 14px; font-family:'JetBrains Mono',monospace; font-size:.8rem; color:var(--accent); margin-bottom:12px; cursor:pointer; text-align:center; transition:all .2s; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .mcode:hover { border-color:var(--accent); background:rgba(88,101,242,.1); }
-  .mbtns { display:flex; gap:8px; }
-  .mbtn { flex:1; padding:9px; border-radius:8px; border:none; font-family:'Syne',sans-serif; font-weight:700; font-size:.82rem; cursor:pointer; transition:all .2s; }
-  .mbtn.p { background:var(--accent); color:#fff; }
-  .mbtn.p:hover { background:#4752c4; }
-  .mbtn.s { background:var(--bg3); color:var(--text); border:1px solid var(--border); }
-  .mbtn.s:hover { border-color:var(--accent3); color:var(--accent3); }
+  input[type=number] {
+    width: 100%;
+    resize: none;
+    min-height: auto;
+  }
 
-  .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(70px); background:var(--card); border:1px solid var(--border); border-radius:10px; padding:11px 18px; font-size:.82rem; font-weight:700; z-index:9000; transition:transform .3s cubic-bezier(.34,1.56,.64,1); display:flex; align-items:center; gap:8px; box-shadow:0 6px 30px rgba(0,0,0,.4); white-space:nowrap; }
-  .toast.show { transform:translateX(-50%) translateY(0); }
-  .toast.ok { border-color:var(--accent3); color:var(--accent3); }
-  .toast.info { border-color:var(--accent); color:var(--accent); }
+  .char-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    align-items: flex-end;
+  }
+  .char-row > div { flex: 1; }
 
-  @keyframes fadeUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
-  ::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:var(--bg)} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px} ::-webkit-scrollbar-thumb:hover{background:var(--accent)}
-  @media(max-width:600px){.hdr-right .src-badge{display:none}.g-sm{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}}
+  /* Checkboxes */
+  .check-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .check-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--text);
+    text-transform: none;
+  }
+  .check-label input[type=checkbox] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 22px;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: filter .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary {
+    background: linear-gradient(90deg, var(--accent), #00b8d4);
+    color: #000;
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+  .btn-accent2 {
+    background: linear-gradient(90deg, var(--accent2), #5b10cc);
+    color: #fff;
+  }
+  .btn-danger {
+    background: transparent;
+    border: 1px solid var(--accent3);
+    color: var(--accent3);
+  }
+  .btn:hover { filter: brightness(1.15); }
+
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+
+  /* Output */
+  .output-wrap {
+    position: relative;
+  }
+  .output-wrap textarea {
+    padding-right: 100px;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: var(--border);
+    border: 1px solid var(--muted);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .copy-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+  .copy-btn.copied { background: var(--success); color: #000; border-color: var(--success); }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .stat { display: flex; gap: 6px; align-items: center; }
+  .stat-key { color: var(--muted); }
+  .stat-val { color: var(--accent); font-weight: bold; }
+  .stat-val.warn { color: var(--warn); }
+  .stat-val.ok { color: var(--success); }
+
+  /* Notification */
+  #notif {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--card);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all .3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  #notif.show { opacity: 1; transform: translateY(0); }
+
+  /* Revert tab specifics */
+  .detected-methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .detected-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    padding: 4px 10px;
+    background: rgba(255,47,123,.12);
+    border: 1px solid rgba(255,47,123,.35);
+    color: var(--accent3);
+    border-radius: 3px;
+    letter-spacing: 1px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  /* Invisible char count display */
+  .inv-preview {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    word-break: break-all;
+  }
+
+  select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  select:focus { border-color: var(--accent); }
+  select option { background: var(--card); }
 </style>
 </head>
 <body>
-<div class="orb1"></div>
-<div class="orb2"></div>
+<div class="shell">
 
-<header>
-  <div class="hdr">
-    <div class="logo"><div class="logo-mark">✦</div>Emoji<em>Vault</em></div>
-    <div class="search-box">
-      <span class="search-ico">⌕</span>
-      <input type="text" id="q" placeholder="Search emojis, stickers, GIFs…">
+  <header>
+    <div class="logo-block">
+      <div class="logo-tag">// TOOL v1.0</div>
+      <h1>UNICODE BYPASS STUDIO</h1>
     </div>
-    <div class="hdr-right">
-      <div class="src-badge" id="srcBadge">Loading…</div>
-      <div class="nsfw-btn" id="nsfwBtn" onclick="toggleNSFW()"><div class="pip"></div>NSFW</div>
-    </div>
-  </div>
-</header>
+    <div class="header-sep"></div>
+    <div class="badge">13 METHODS</div>
+  </header>
 
-<div class="wrap">
-  <div class="src-tabs" id="srcTabs">
-    <div class="src-tab active" onclick="switchSrc('unicode',this)"><span class="dot"></span>🐦 Twemoji (Unicode)</div>
-    <div class="src-tab" onclick="switchSrc('giphy',this)"><span class="dot" style="animation-delay:.4s"></span>✨ GIPHY Stickers</div>
-    <div class="src-tab" onclick="switchSrc('community',this)"><span class="dot" style="animation-delay:.8s"></span>🎨 Discord Community</div>
-    <div class="src-tab" onclick="switchSrc('tenor',this)"><span class="dot" style="animation-delay:1.2s"></span>🎬 Tenor GIFs</div>
-    <div class="src-tab nsfw-tab" onclick="switchSrc('nsfwgg',this)" style="border-color:rgba(237,66,69,.4);color:var(--nsfw)"><span class="dot" style="animation-delay:1.6s;background:var(--nsfw)"></span>🔞 NSFW Hub</div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('bypass')">⚡ BYPASS</button>
+    <button class="tab-btn" onclick="switchTab('revert')">↩ REVERT</button>
   </div>
 
-  <div class="cats" id="cats"></div>
+  <!-- ═══════════════════════════════ BYPASS TAB ═══════════════════════════════ -->
+  <div class="tab-pane active" id="tab-bypass">
 
-  <div class="meta">
-    <div class="meta-left" id="metaL"><span>Loading…</span></div>
-    <div class="meta-right">
-      <button class="vbtn on" id="vSm" onclick="setView('sm')" title="Small">▦</button>
-      <button class="vbtn" id="vMd" onclick="setView('md')" title="Medium">◫</button>
-      <button class="vbtn" id="vLg" onclick="setView('lg')" title="Large">⬜</button>
+    <!-- Method selector -->
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-label">// <span>SELECT METHOD</span> — choose one bypass technique</div>
+      <div class="methods-grid" id="methods-grid"></div>
     </div>
+
+    <!-- Options row -->
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-label">// <span>PLACEMENT</span></div>
+        <div class="check-row">
+          <label class="check-label">
+            <input type="checkbox" id="opt-between" checked> Between chars
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="opt-start"> Start of text
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="opt-end"> End of text
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="opt-words"> Between words only
+          </label>
+        </div>
+        <div style="margin-top:8px">
+          <label>Insertion Density</label>
+          <select id="density" style="width:100%">
+            <option value="every1">Every character</option>
+            <option value="every2">Every 2nd character</option>
+            <option value="every3">Every 3rd character</option>
+            <option value="random">Random</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-label">// <span>LIMITS & OPTIONS</span></div>
+        <div class="char-row">
+          <div>
+            <label>Max Output Chars</label>
+            <input type="number" id="char-limit" placeholder="No limit" min="1">
+          </div>
+          <div>
+            <label>Repeat Invisible ×</label>
+            <input type="number" id="repeat-count" value="1" min="1" max="20">
+          </div>
+        </div>
+        <div class="check-row">
+          <label class="check-label">
+            <input type="checkbox" id="opt-preserve-spaces" checked> Preserve spaces
+          </label>
+          <label class="check-label">
+            <input type="checkbox" id="opt-show-stats" checked> Show stats
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-label">// <span>INPUT</span></div>
+      <textarea id="input-text" placeholder="Type or paste text to bypass here..."></textarea>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runBypass()">⚡ Run Bypass</button>
+      <button class="btn btn-accent2" onclick="runAll()">⊕ Preview All Methods</button>
+      <button class="btn btn-secondary" onclick="clearAll()">✕ Clear</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar" id="stats-bar" style="display:none">
+      <div class="stat"><span class="stat-key">INPUT:</span><span class="stat-val" id="s-input">0</span></div>
+      <div class="stat"><span class="stat-key">OUTPUT:</span><span class="stat-val" id="s-output">0</span></div>
+      <div class="stat"><span class="stat-key">INVISIBLE:</span><span class="stat-val" id="s-invis">0</span></div>
+      <div class="stat"><span class="stat-key">METHOD:</span><span class="stat-val" id="s-method">—</span></div>
+      <div class="stat"><span class="stat-key">LIMIT:</span><span class="stat-val" id="s-limit">—</span></div>
+    </div>
+
+    <!-- Output -->
+    <div class="panel">
+      <div class="panel-label">// <span>OUTPUT</span></div>
+      <div class="output-wrap">
+        <textarea id="output-text" readonly placeholder="Bypassed output will appear here..."></textarea>
+        <button class="copy-btn" id="copy-btn" onclick="copyOutput()">COPY</button>
+      </div>
+      <div class="inv-preview" id="inv-preview" style="display:none"></div>
+    </div>
+
+    <!-- All Methods Preview (hidden by default) -->
+    <div id="all-preview" style="display:none; margin-top:16px">
+      <div class="divider"></div>
+      <div class="panel-label" style="margin-bottom:12px">// <span>ALL METHODS PREVIEW</span></div>
+      <div id="all-preview-list"></div>
+    </div>
+
   </div>
 
-  <div id="err"></div>
-  <div class="grid g-sm" id="grid"></div>
-  <div class="pager" id="pager"></div>
+  <!-- ═══════════════════════════════ REVERT TAB ═══════════════════════════════ -->
+  <div class="tab-pane" id="tab-revert">
+
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-label">// <span>BYPASSED INPUT</span> — paste text to revert</div>
+      <textarea id="revert-input" placeholder="Paste bypassed text here to strip invisible Unicode characters..." oninput="analyzeRevert()"></textarea>
+    </div>
+
+    <div id="revert-analysis" style="display:none; margin-bottom:16px">
+      <div class="stats-bar">
+        <div class="stat"><span class="stat-key">TOTAL CHARS:</span><span class="stat-val" id="r-total">0</span></div>
+        <div class="stat"><span class="stat-key">INVISIBLE FOUND:</span><span class="stat-val warn" id="r-invis">0</span></div>
+        <div class="stat"><span class="stat-key">VISIBLE CHARS:</span><span class="stat-val ok" id="r-visible">0</span></div>
+        <div class="stat"><span class="stat-key">% BYPASS:</span><span class="stat-val warn" id="r-pct">0%</span></div>
+      </div>
+      <div class="panel" style="margin-top:0">
+        <div class="panel-label">// <span>DETECTED INVISIBLE CHARS</span></div>
+        <div class="detected-methods" id="detected-methods"></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runRevert()">↩ Strip All Invisible</button>
+      <button class="btn btn-accent2" onclick="runRevertPartial()">⚙ Strip Selected Types</button>
+      <button class="btn btn-secondary" onclick="clearRevert()">✕ Clear</button>
+    </div>
+
+    <!-- Selective strip checkboxes -->
+    <div class="panel" style="margin-bottom:16px" id="selective-panel">
+      <div class="panel-label">// <span>SELECTIVE STRIP</span> — choose which to remove</div>
+      <div class="check-row" id="selective-checks"></div>
+    </div>
+
+    <!-- Revert output -->
+    <div class="panel">
+      <div class="panel-label">// <span>CLEAN OUTPUT</span></div>
+      <div class="output-wrap">
+        <textarea id="revert-output" readonly placeholder="Cleaned text will appear here..."></textarea>
+        <button class="copy-btn" id="copy-revert-btn" onclick="copyRevert()">COPY</button>
+      </div>
+    </div>
+
+  </div>
+
 </div>
 
-<!-- Modal -->
-<div class="mbk" id="mbk" onclick="closeMod(event)">
-  <div class="modal">
-    <button class="mclose" onclick="closeMod()">✕</button>
-    <div class="mimg-wrap" id="mImg"></div>
-    <div class="mname" id="mName"></div>
-    <div class="mmeta" id="mMeta"></div>
-    <div class="mcode" id="mCode" onclick="copyCode()"></div>
-    <div class="mbtns">
-      <button class="mbtn p" id="mDl">⬇ Download</button>
-      <button class="mbtn s" onclick="copyCode()">📋 Copy</button>
-    </div>
-  </div>
-</div>
-<div class="toast" id="toast"></div>
+<div id="notif"></div>
 
 <script>
-/* ── CONFIG ──────────────────────────────────────────────────────── */
-const TWEMOJI_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/';
-const GIPHY_KEY   = 'dc6zaTOxFJmzC';   // public demo key
-const TENOR_KEY   = 'AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ'; // public demo key
+// ═══════════════════════════ INVISIBLE UNICODE CHARS ═══════════════════════════
 
-/* ── STATE ───────────────────────────────────────────────────────── */
-const S = {
-  src:'unicode', cat:'all', q:'', nsfw:false, page:1, perPage:80, view:'sm',
-  items:[], filtered:[],
-  tenorNext:'', cache:{}, loading:false,
+const INVISIBLE = {
+  ZWS:   { code: '\u200B', name: 'Zero-Width Space',           hex: 'U+200B' },
+  ZWNJ:  { code: '\u200C', name: 'Zero-Width Non-Joiner',      hex: 'U+200C' },
+  ZWJ:   { code: '\u200D', name: 'Zero-Width Joiner',          hex: 'U+200D' },
+  WJ:    { code: '\u2060', name: 'Word Joiner',                hex: 'U+2060' },
+  BOM:   { code: '\uFEFF', name: 'Zero-Width No-Break Space',  hex: 'U+FEFF' },
+  ISP:   { code: '\u2063', name: 'Invisible Separator',        hex: 'U+2063' },
+  ITM:   { code: '\u2062', name: 'Invisible Times',            hex: 'U+2062' },
+  IPS:   { code: '\u2061', name: 'Invisible Plus/Function App',hex: 'U+2061' },
+  LRM:   { code: '\u200E', name: 'Left-to-Right Mark',         hex: 'U+200E' },
+  RLM:   { code: '\u200F', name: 'Right-to-Left Mark',         hex: 'U+200F' },
+  CGJ:   { code: '\u034F', name: 'Combining Grapheme Joiner',  hex: 'U+034F' },
+  HF:    { code: '\u3164', name: 'Hangul Filler',              hex: 'U+3164' },
+  BB:    { code: '\u2800', name: 'Braille Pattern Blank',      hex: 'U+2800' },
+  SHY:   { code: '\u00AD', name: 'Soft Hyphen',                hex: 'U+00AD' },
+  IDA:   { code: '\u206A', name: 'Inhibit Symmetric Swapping', hex: 'U+206A' },
 };
 
-/* ── CATEGORIES ──────────────────────────────────────────────────── */
-const CATS = {
-  unicode:[
-    {id:'all',l:'✦ All'},
-    {id:'smileys-and-people',l:'😊 Smileys & People'},
-    {id:'animals-and-nature',l:'🐾 Animals'},
-    {id:'food-and-drink',l:'🍕 Food & Drink'},
-    {id:'travel-and-places',l:'✈️ Travel'},
-    {id:'activities',l:'⚽ Activities'},
-    {id:'objects',l:'💎 Objects'},
-    {id:'symbols',l:'⚡ Symbols'},
-    {id:'flags',l:'🏳️ Flags'},
-  ],
-  giphy:[
-    {id:'trending',l:'🔥 Trending'},{id:'happy',l:'😊 Happy'},{id:'funny',l:'😂 Funny'},
-    {id:'love',l:'❤️ Love'},{id:'party',l:'🎉 Party'},{id:'cat',l:'🐱 Cats'},
-    {id:'dog',l:'🐶 Dogs'},{id:'anime',l:'✨ Anime'},{id:'gaming',l:'🎮 Gaming'},
-  ],
-  community:[
-    {id:'all',l:'✦ All'},{id:'Pepe',l:'🐸 Pepe'},{id:'Anime',l:'✨ Anime'},
-    {id:'Meme',l:'💀 Meme'},{id:'Blob',l:'🫐 Blob'},{id:'Letters',l:'🔤 Letters'},
-    {id:'Twitch',l:'📺 Twitch'},{id:'Gaming',l:'🎮 Gaming'},{id:'Animals',l:'🐾 Animals'},
-    {id:'NSFW',l:'🔞 NSFW'},
-  ],
-  tenor:[
-    {id:'trending',l:'🔥 Trending'},{id:'lol',l:'😂 LOL'},{id:'omg',l:'😱 OMG'},
-    {id:'cute',l:'🌸 Cute'},{id:'aww',l:'🥰 Aww'},{id:'fail',l:'💀 Fail'},
-    {id:'win',l:'🏆 Win'},{id:'reaction',l:'💬 Reaction'},
-  ],
-  nsfwgg:[
-    {id:'waifuim',    l:'🌸 Waifu.im'},
-    {id:'waifupics',  l:'🐱 Waifu.pics'},
-    {id:'nekobot',    l:'🤖 NekoBot'},
-    {id:'giphy-r',    l:'🎬 GIPHY R-rated'},
-  ],
-};
+// ═══════════════════════════════ BYPASS METHODS ═══════════════════════════════
 
-/* ── BOOT ────────────────────────────────────────────────────────── */
-document.getElementById('q').addEventListener('input', debounce(onSearch, 300));
-buildCats(); fetchData();
-
-/* ── SOURCE SWITCH ───────────────────────────────────────────────── */
-function switchSrc(src, el) {
-  S.src=src; S.cat=(src==='giphy'||src==='tenor')?'trending':(src==='nsfwgg'?'waifuim':'all');
-  S.page=1; S.q=''; S.tenorNext='';
-  document.getElementById('q').value='';
-  document.querySelectorAll('.src-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  // When switching to NSFW tab, auto-enable NSFW toggle
-  if(src==='nsfwgg' && !S.nsfw) {
-    S.nsfw=true;
-    document.getElementById('nsfwBtn').classList.add('on');
-  }
-  buildCats(); fetchData();
-}
-
-function buildCats() {
-  const cs = CATS[S.src]||[];
-  const isNsfwSrc = S.src==='nsfwgg';
-  document.getElementById('cats').innerHTML = cs.map(c=>{
-    if(c.id==='NSFW' && !S.nsfw && !isNsfwSrc) return '';
-    const isN = c.id==='NSFW' || isNsfwSrc;
-    return `<div class="cat ${S.cat===c.id?'on':''} ${isN?'nc':''}" onclick="setCat('${c.id}')">${c.l}</div>`;
-  }).join('');
-}
-function setCat(c){ S.cat=c; S.page=1; S.tenorNext=''; buildCats(); fetchData(); }
-
-/* ── NSFW ────────────────────────────────────────────────────────── */
-function toggleNSFW(){
-  S.nsfw=!S.nsfw;
-  document.getElementById('nsfwBtn').classList.toggle('on',S.nsfw);
-  if(!S.nsfw&&(S.cat==='NSFW'||S.cat==='nsfw')) S.cat='all';
-  buildCats(); fetchData();
-}
-
-/* ── SEARCH ──────────────────────────────────────────────────────── */
-function onSearch(){
-  S.q=document.getElementById('q').value.trim().toLowerCase(); S.page=1;
-  if(S.src==='unicode'||S.src==='community'){ applyFilter(); renderGrid(); renderMeta(); renderPager(); }
-  else { fetchData(); }
-}
-
-/* ── FETCH ROUTER ────────────────────────────────────────────────── */
-async function fetchData(){
-  if(S.loading) return;
-  S.loading=true; showLoad(); clearErr();
-  try {
-    if(S.src==='unicode')    await fetchUnicode();
-    else if(S.src==='giphy') await fetchGiphy();
-    else if(S.src==='community') await fetchCommunity();
-    else if(S.src==='tenor') await fetchTenor();
-    else if(S.src==='nsfwgg') await fetchNSFWgg();
-  } catch(e){
-    showErr('API error: '+e.message+'. Try another source tab or check your connection.');
-    document.getElementById('grid').innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">⚠️</div><p>Could not load content.</p></div>';
-  }
-  S.loading=false;
-}
-
-/* ── UNICODE / EMOJIHUB ──────────────────────────────────────────── */
-async function fetchUnicode(){
-  const ck='uni_'+S.cat;
-  if(!S.cache[ck]){
-    const url = S.cat==='all'
-      ? 'https://emojihub.yurace.pro/api/all'
-      : `https://emojihub.yurace.pro/api/all/category/${encodeURIComponent(S.cat)}`;
-    const r=await fetch(url);
-    if(!r.ok) throw new Error('EmojiHub returned '+r.status);
-    S.cache[ck]=await r.json();
-  }
-  S.items=S.cache[ck];
-  applyFilter(); renderGrid(); renderMeta(); renderPager();
-  badge('📡 emojihub.yurace.pro · '+S.items.length+' emoji');
-}
-
-/* ── GIPHY STICKERS ──────────────────────────────────────────────── */
-async function fetchGiphy(){
-  const rating = S.nsfw ? 'r' : 'pg-13';
-  const term = S.q || (S.cat==='trending'?'':S.cat);
-  const offset=(S.page-1)*50;
-  let url = term
-    ? `https://api.giphy.com/v1/stickers/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(term)}&limit=50&offset=${offset}&rating=${rating}`
-    : `https://api.giphy.com/v1/stickers/trending?api_key=${GIPHY_KEY}&limit=50&offset=${offset}&rating=${rating}`;
-  const r=await fetch(url);
-  if(!r.ok) throw new Error('GIPHY '+r.status);
-  const j=await r.json();
-  S.items=j.data||[]; S.filtered=S.items;
-  renderGiphyGrid(S.items);
-  const tot=Math.min(j.pagination?.total_count||0,500);
-  metaRaw(S.items.length,tot); pagerRaw(tot,50);
-  badge('📡 api.giphy.com · stickers');
-}
-
-/* ── COMMUNITY (Discord emoji sources) ──────────────────────────── */
-async function fetchCommunity(){
-  const ck='community';
-  if(!S.cache[ck]){
-    let data=null;
-    // 1. Try discordemoji.com direct (usually blocked by CORS in browser)
-    try {
-      const r=await fetchWithTimeout('https://discordemoji.com/api?request=emojis',4000);
-      if(r.ok) data=await r.json();
-    } catch(_){}
-
-    // 2. Try via a public CORS proxy
-    if(!data){
-      try{
-        const proxied='https://api.allorigins.win/raw?url='+encodeURIComponent('https://discordemoji.com/api?request=emojis');
-        const r=await fetchWithTimeout(proxied,6000);
-        if(r.ok) data=await r.json();
-        if(data) S.cache['community_src']='discordemoji.com (via allorigins)';
-      } catch(_){}
-    }
-
-    // 3. Fallback: use GitHub raw – official discord emoji names + Twemoji images
-    if(!data){
-      const r=await fetch('https://raw.githubusercontent.com/anyascii/discord-emojis/master/discord-emojis.json');
-      if(!r.ok) throw new Error('All community sources failed');
-      const j=await r.json();
-      data=j.emojis.map((e,i)=>({
-        id:i+1, title:e.names[0], slug:e.names[0],
-        image:twUrl(emojiCP(e.surrogates)),
-        category_label:'Discord', animated:0, nsfw:0,
-        surrogates:e.surrogates, names:e.names,
-      }));
-      S.cache['community_src']='github/anyascii/discord-emojis';
-    }
-    S.cache[ck]=Array.isArray(data)?data:(data?.emojis||[]);
-  }
-  S.items=S.cache[ck];
-  applyFilter(); renderGrid(); renderMeta(); renderPager();
-  badge('📡 '+(S.cache['community_src']||'discordemoji.com')+' · '+S.items.length+' emojis');
-}
-
-/* ── NSFW HUB — 4 real CORS-friendly sources ─────────────────────── */
-async function fetchNSFWgg(){
-  const src = S.cat || 'waifuim';
-  showLoad();
-
-  if(src==='waifuim')   await fetchWaifuIm();
-  else if(src==='waifupics') await fetchWaifuPics();
-  else if(src==='nekobot')   await fetchNekoBot();
-  else if(src==='giphy-r')   await fetchGiphyR();
-}
-
-/* waifu.im — CORS-enabled, 4000+ images, nsfw tags, returns 30/call */
-async function fetchWaifuIm(){
-  const WAIFU_IM_TAGS = {
-    all:         '',
-    waifu:       'waifu',
-    maid:        'maid',
-    uniform:     'uniform',
-    oppai:       'oppai',
-    selfies:     'selfies',
-    ecchi:       'ecchi',
-    ero:         'ero',
-    ass:         'ass',
-    hentai:      'hentai',
-    milf:        'milf',
-    oral:        'oral',
-    paizuri:     'paizuri',
-  };
-
-  // Sub-cats for waifu.im shown in pills — we show them inline here
-  // Build query
-  const searchQ = S.q;
-  let url = `https://api.waifu.im/search?is_nsfw=true&many=true&limit=30`;
-  if(searchQ) url += `&included_tags=${encodeURIComponent(searchQ)}`;
-
-  try {
-    const r = await fetch(url, {headers:{'Accept':'application/json'}});
-    if(!r.ok) throw new Error('waifu.im '+r.status);
-    const j = await r.json();
-    const images = j.images||[];
-    S.items = images; S.filtered = images;
-    renderNSFWImgGrid(images, 'waifu.im', (img)=>{
-      const tags = (img.tags||[]).map(t=>t.name||t).join(', ');
-      return { url: img.url, name: tags||'NSFW waifu', thumb: img.preview_url||img.url, isGif: (img.url||'').endsWith('.gif'), source: img.source||'' };
-    });
-    metaRaw(images.length, null);
-    document.getElementById('pager').innerHTML='';
-    badge(`📡 api.waifu.im · ${images.length} images`);
-  } catch(e) {
-    showErr('waifu.im: '+e.message); showEmpty();
-  }
-}
-
-/* waifu.pics — batch fetch 30 random images across all nsfw types */
-async function fetchWaifuPics(){
-  const TYPES = ['waifu','neko','trap','blowjob'];
-  const search = S.q.toLowerCase();
-  const types = search ? TYPES.filter(t=>t.includes(search)) : TYPES;
-  const perType = Math.ceil(30 / types.length);
-
-  try {
-    // POST /many for batches of 30
-    const results = await Promise.all(types.map(async t => {
-      try {
-        const r = await fetch(`https://api.waifu.pics/many/nsfw/${t}`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({exclude:[]})
-        });
-        if(!r.ok) return [];
-        const j = await r.json();
-        return (j.files||[]).slice(0,perType).map(url=>({url,_type:t}));
-      } catch{ return []; }
-    }));
-    const images = results.flat().slice(0,48);
-    S.items=images; S.filtered=images;
-    renderNSFWImgGrid(images, 'waifu.pics', (img)=>({
-      url: img.url, name: img._type, thumb: img.url,
-      isGif: (img.url||'').endsWith('.gif'), source:''
-    }));
-    metaRaw(images.length, null);
-    document.getElementById('pager').innerHTML='';
-    badge(`📡 api.waifu.pics · ${images.length} images`);
-  } catch(e) { showErr('waifu.pics: '+e.message); showEmpty(); }
-}
-
-/* nekobot.xyz — free, no auth, many NSFW types */
-async function fetchNekoBot(){
-  const ALL_TYPES = ['hentai','ass','boobs','neko','pgif','pussy','hass','hboobs','hanal','hneko','hkitsune','hmidriff'];
-  const search = S.q.toLowerCase();
-  const types = search ? ALL_TYPES.filter(t=>t.includes(search)) : ALL_TYPES;
-  const count = 30;
-
-  try {
-    // Fetch one per type, then repeat to fill up to count
-    const picks = [];
-    for(let i=0;i<count;i++) picks.push(types[i%types.length]);
-
-    const results = await Promise.all(picks.map(async t=>{
-      try{
-        const r = await fetch(`https://nekobot.xyz/api/image?type=${t}`);
-        if(!r.ok) return null;
-        const j = await r.json();
-        return j.success ? {url:j.message, _type:t} : null;
-      } catch{ return null; }
-    }));
-    const images = results.filter(Boolean);
-    S.items=images; S.filtered=images;
-    renderNSFWImgGrid(images, 'nekobot.xyz', (img)=>({
-      url: img.url, name: img._type, thumb: img.url,
-      isGif: (img.url||'').includes('.gif'), source:''
-    }));
-    metaRaw(images.length, null);
-    document.getElementById('pager').innerHTML='';
-    badge(`📡 nekobot.xyz · ${images.length} images`);
-  } catch(e) { showErr('nekobot: '+e.message); showEmpty(); }
-}
-
-/* GIPHY R-rated stickers */
-async function fetchGiphyR(){
-  const term = S.q || 'hentai';
-  const url = `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_KEY}&q=${encodeURIComponent(term)}&limit=48&rating=r`;
-  try{
-    const r = await fetch(url);
-    if(!r.ok) throw new Error('GIPHY '+r.status);
-    const j = await r.json();
-    S.items=j.data||[]; S.filtered=S.items;
-    renderGiphyGrid(S.items);
-    metaRaw(S.items.length, j.pagination?.total_count||0);
-    document.getElementById('pager').innerHTML='';
-    badge(`📡 api.giphy.com · R-rated`);
-  } catch(e){ showErr('GIPHY R: '+e.message); showEmpty(); }
-}
-
-/* Shared renderer for image-grid style NSFW sources */
-function renderNSFWImgGrid(images, srcName, mapper){
-  const g=document.getElementById('grid');
-  const gSize = S.view==='sm'?'g-md':'g-'+S.view;
-  g.className='grid '+gSize;
-  if(!images.length){ showEmpty(); return; }
-  g.innerHTML=images.map((img,i)=>{
-    const {url,name,thumb,isGif,source}=mapper(img);
-    const delay=i*16;
-    const safeUrl=(url||'').replace(/'/g,'%27');
-    const safeName=(name||'image').replace(/'/g,"&#39;").replace(/"/g,'&quot;');
-    return `<div class="scard nsfw" style="animation-delay:${delay}ms" onclick="openNSFWMod('${safeUrl}','${safeName}','${safeUrl}','true','${isGif}')">
-      <div class="nsfwbadge">NSFW</div>
-      ${isGif?'<div class="gifbadge">GIF</div>':''}
-      <img class="simg" src="${(thumb||url||'').replace(/'/g,'%27')}" alt="${safeName}" loading="lazy" onerror="this.src='';this.style.background='#2a1a2a';this.alt='⚠️'">
-      <div class="sinfo">
-        <div class="sname">${name||'Image'}</div>
-        <div class="ssrc">${srcName}${source?' · '+source:''}</div>
-      </div>
-      <div class="stags"><span class="stag tr">NSFW</span>${isGif?'<span class="stag tg">GIF</span>':''}</div>
-      <div class="eacts">
-        <div class="ea" onclick="event.stopPropagation();cpTxt('${safeUrl}')">Copy URL</div>
-        <div class="ea dl" onclick="event.stopPropagation();dlUrl('${safeUrl}','nsfw_${i}')">⬇</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* Also wire up nsfwgg sub-cat switching to re-fetch */
-
-/* ── TENOR GIFs ──────────────────────────────────────────────────── */
-async function fetchTenor(){
-  const cf = S.nsfw ? 'off' : 'medium';
-  const term = S.q || (S.cat==='trending'?'':S.cat);
-  let url = term
-    ? `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(term)}&key=${TENOR_KEY}&limit=50&contentfilter=${cf}&media_filter=gif`
-    : `https://tenor.googleapis.com/v2/featured?key=${TENOR_KEY}&limit=50&contentfilter=${cf}&media_filter=gif`;
-  if(S.page>1&&S.tenorNext) url+='&pos='+encodeURIComponent(S.tenorNext);
-  const r=await fetch(url);
-  if(!r.ok) throw new Error('Tenor '+r.status);
-  const j=await r.json();
-  S.tenorNext=j.next||''; S.items=j.results||[]; S.filtered=S.items;
-  renderTenorGrid(S.items);
-  metaRaw(S.items.length,500); pagerRaw(500,50);
-  badge('📡 tenor.googleapis.com · GIFs');
-}
-
-/* ── FILTER ──────────────────────────────────────────────────────── */
-function applyFilter(){
-  let items=[...S.items];
-  if(S.src==='community'&&S.cat!=='all'){
-    const c=S.cat;
-    items=items.filter(e=>{
-      if(c==='NSFW') return e.nsfw==1||e.nsfw===true;
-      const cl=(e.category_label||e.category||'').toString();
-      return cl.toLowerCase().includes(c.toLowerCase());
-    });
-  }
-  if(!S.nsfw) items=items.filter(e=>!(e.nsfw==1||e.nsfw===true));
-  if(S.q){
-    items=items.filter(e=>{
-      const h=[e.name||'',e.title||'',e.slug||'',e.category||'',e.group||'',...(e.names||[])].join(' ').toLowerCase();
-      return h.includes(S.q);
-    });
-  }
-  S.filtered=items;
-}
-
-/* ── RENDER: UNICODE ─────────────────────────────────────────────── */
-function renderGrid(){
-  const g=document.getElementById('grid');
-  g.className='grid g-'+S.view;
-  const s=(S.page-1)*S.perPage, items=S.filtered.slice(s,s+S.perPage);
-  if(!items.length){g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><p>No results found.</p></div>';return;}
-  if(S.src==='unicode') g.innerHTML=items.map((e,i)=>unicodeCard(e,i)).join('');
-  else if(S.src==='nsfwgg') return; // NSFW hub renders directly in fetch functions
-  else g.innerHTML=items.map((e,i)=>communityCard(e,i)).join('');
-}
-
-function unicodeCard(e,idx){
-  const delay=(idx%S.perPage)*12;
-  const cp=htmlCP(e.htmlCode?.[0]||'');
-  const imgUrl=cp?twUrl(cp):'';
-  const char=e.htmlCode?.[0]||'?';
-  const rawName=e.name||'unknown';
-  const dname=':'+rawName.replace(/\s+/g,'_')+':';
-  const safeImg=imgUrl.replace(/'/g,'%27');
-  return `<div class="ecard" style="animation-delay:${delay}ms" onclick="openUMod('${cp}','${rawName.replace(/'/g,"&#39;")}','${(e.category||'').replace(/'/g,'%27')}','${(e.group||'').replace(/'/g,'%27')}')">
-    ${imgUrl?`<img class="eimg" src="${safeImg}" alt="${rawName}" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`:''}
-    <div class="efb" ${imgUrl?'style="display:none"':''}>${char}</div>
-    <div class="ename">${dname}</div>
-    <div class="eacts">
-      <div class="ea" onclick="event.stopPropagation();cpTxt('${dname}')">Copy</div>
-      <div class="ea dl" onclick="event.stopPropagation();dlEmoji('${safeImg}','${rawName.replace(/'/g,'%27')}','${char.replace(/'/g,'%27')}')">⬇</div>
-    </div>
-  </div>`;
-}
-
-function communityCard(e,idx){
-  const delay=(idx%S.perPage)*12;
-  const isN=e.nsfw==1||e.nsfw===true;
-  const isA=e.animated==1||e.animated===true;
-  const img=(e.image||e.url||'').replace(/'/g,'%27');
-  const n=(e.title||e.slug||e.names?.[0]||'emoji');
-  const slug=(e.slug||e.title||'emoji').replace(/\s+/g,'_');
-  const code=`<:${slug}:${e.id||0}>`;
-  return `<div class="ecard${isN?' nsfw':''}" style="animation-delay:${delay}ms" onclick="openCMod(${JSON.stringify(JSON.stringify({id:e.id,n,img:e.image||e.url||'',slug,isA,isN,code}))})">
-    ${isN?'<div class="nsfwbadge">NSFW</div>':''}
-    ${isA?'<div class="gifbadge">GIF</div>':''}
-    <img class="eimg" src="${img}" alt="${n}" loading="lazy" onerror="this.classList.add('err');this.style.display='none';this.insertAdjacentHTML('afterend','<div class=efb>❓</div>')">
-    <div class="ename">:${slug}:</div>
-    <div class="eacts">
-      <div class="ea" onclick="event.stopPropagation();cpTxt('${code.replace(/'/g,'%27')}')">Copy</div>
-      <div class="ea dl" onclick="event.stopPropagation();dlUrl('${img}','${n.replace(/'/g,'%27')}')">⬇</div>
-    </div>
-  </div>`;
-}
-
-/* ── RENDER: GIPHY ───────────────────────────────────────────────── */
-function renderGiphyGrid(items){
-  const g=document.getElementById('grid');
-  g.className='grid '+(S.view==='sm'?'g-md':'g-'+S.view);
-  if(!items.length){g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><p>No stickers found.</p></div>';return;}
-  g.innerHTML=items.map((s,i)=>{
-    const delay=i*18;
-    const img=(s.images?.fixed_height?.url||s.images?.original?.url||'').replace(/'/g,'%27');
-    const rt=s.rating||'g';
-    const isN=rt==='r'||rt==='nc-17';
-    const tc=rt==='r'?'tr':rt.includes('pg-13')?'ty':'tg';
-    return `<div class="scard${isN?' nsfw':''}" style="animation-delay:${delay}ms" onclick="openSMod('${s.id}','${(s.title||s.slug||'').replace(/'/g,'%27')}','${img}','${rt}','${(s.url||'').replace(/'/g,'%27')}')">
-      ${isN?'<div class="nsfwbadge">NSFW</div>':''}
-      <img class="simg" src="${img}" alt="${s.title||'sticker'}" loading="lazy">
-      <div class="sinfo">
-        <div class="sname">${s.title||s.slug||'Sticker'}</div>
-        <div class="ssrc">giphy.com</div>
-      </div>
-      <div class="stags"><span class="stag ${tc}">${rt.toUpperCase()}</span><span class="stag tb">STICKER</span></div>
-      <div class="eacts">
-        <div class="ea" onclick="event.stopPropagation();cpTxt('${img}')">URL</div>
-        <div class="ea dl" onclick="event.stopPropagation();dlUrl('${img}','${s.id}')">⬇</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ── RENDER: TENOR ───────────────────────────────────────────────── */
-function renderTenorGrid(items){
-  const g=document.getElementById('grid');
-  g.className='grid '+(S.view==='sm'?'g-md':'g-'+S.view);
-  if(!items.length){g.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><p>No GIFs found.</p></div>';return;}
-  g.innerHTML=items.map((s,i)=>{
-    const delay=i*16;
-    const med=s.media_formats||{};
-    const img=(med.tinygif?.url||med.gif?.url||'').replace(/'/g,'%27');
-    const desc=(s.content_description||s.title||'GIF').replace(/'/g,'%27');
-    return `<div class="scard" style="animation-delay:${delay}ms" onclick="openSMod('${s.id}','${desc}','${img}','g','${(s.itemurl||'').replace(/'/g,'%27')}')">
-      <img class="simg" src="${img}" alt="${desc}" loading="lazy">
-      <div class="sinfo">
-        <div class="sname">${s.content_description||s.title||'GIF'}</div>
-        <div class="ssrc">tenor.com</div>
-      </div>
-      <div class="stags"><span class="stag tg">GIF</span></div>
-      <div class="eacts">
-        <div class="ea" onclick="event.stopPropagation();cpTxt('${img}')">URL</div>
-        <div class="ea dl" onclick="event.stopPropagation();dlUrl('${img}','${s.id}')">⬇</div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ── META & PAGER ────────────────────────────────────────────────── */
-function renderMeta(){
-  const tot=S.filtered.length, pages=Math.max(1,Math.ceil(tot/S.perPage));
-  document.getElementById('metaL').innerHTML=`<span><b>${tot.toLocaleString()}</b> results</span><span>Page <b>${S.page}</b>/<b>${pages}</b></span>${S.nsfw?'<span style="color:var(--nsfw)">● NSFW</span>':''}`;
-}
-function metaRaw(shown,total){
-  document.getElementById('metaL').innerHTML=`<span>Showing <b>${shown}</b>${total?' of ~<b>'+total.toLocaleString()+'</b>':''}</span>${S.nsfw?'<span style="color:var(--nsfw)">● NSFW</span>':''}`;
-}
-function renderPager(){
-  const tot=S.filtered.length, pages=Math.ceil(tot/S.perPage);
-  if(pages<=1){document.getElementById('pager').innerHTML='';return;} buildPager(pages);
-}
-function pagerRaw(total,pp){ buildPager(Math.min(10,Math.ceil(total/pp))); }
-function buildPager(pages){
-  let h='';
-  if(S.page>1) h+=`<button class="pbtn" onclick="goPage(${S.page-1})">‹</button>`;
-  for(let i=1;i<=pages;i++){
-    if(i===1||i===pages||Math.abs(i-S.page)<=2) h+=`<button class="pbtn ${i===S.page?'on':''}" onclick="goPage(${i})">${i}</button>`;
-    else if(Math.abs(i-S.page)===3) h+=`<span style="color:var(--muted);align-self:center;padding:0 4px">…</span>`;
-  }
-  if(S.page<pages) h+=`<button class="pbtn" onclick="goPage(${S.page+1})">›</button>`;
-  document.getElementById('pager').innerHTML=h;
-}
-function goPage(p){
-  S.page=p;
-  if(S.src==='giphy'||S.src==='tenor') fetchData();
-  else { renderGrid(); renderMeta(); renderPager(); }
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-/* ── VIEW ────────────────────────────────────────────────────────── */
-function setView(v){
-  S.view=v;
-  ['sm','md','lg'].forEach(x=>{const el=document.getElementById('v'+x[0].toUpperCase()+x.slice(1));if(el)el.classList.toggle('on',x===v);});
-  document.getElementById('grid').className='grid g-'+v;
-}
-
-/* ── MODALS ──────────────────────────────────────────────────────── */
-function openUMod(cp, name, cat, group){
-  const url=cp?twUrl(cp):'';
-  document.getElementById('mImg').innerHTML=url
-    ?`<img src="${url}" style="width:100px;height:100px;object-fit:contain;image-rendering:pixelated">`
-    :`<div style="font-size:4rem">${name}</div>`;
-  const dn=':'+name.replace(/\s+/g,'_')+':';
-  document.getElementById('mName').textContent=dn;
-  document.getElementById('mMeta').textContent=`Category: ${cat||'—'} · Group: ${group||'—'}\nSource: emojihub.yurace.pro`;
-  document.getElementById('mCode').textContent=dn;
-  document.getElementById('mDl').onclick=()=>dlEmoji(url,name,'');
-  document.getElementById('mbk').classList.add('open');
-}
-function openCMod(raw){
-  let d; try{d=JSON.parse(raw);}catch{return;}
-  document.getElementById('mImg').innerHTML=`<img src="${d.img}" style="width:100px;height:100px;object-fit:contain">`;
-  document.getElementById('mName').textContent=':'+d.n+':';
-  document.getElementById('mMeta').innerHTML=`${d.isA?'<b>Animated</b> · ':''}${d.isN?'<span style="color:var(--nsfw)">🔞 NSFW</span> · ':''}Source: discordemoji.com`;
-  document.getElementById('mCode').textContent=d.code;
-  document.getElementById('mDl').onclick=()=>dlUrl(d.img,d.n);
-  document.getElementById('mbk').classList.add('open');
-}
-function openNSFWMod(img, name, code, isSticker, isAnim){
-  const decoded = decodeURIComponent(img);
-  document.getElementById('mImg').innerHTML=`<img src="${decoded}" style="width:140px;height:140px;object-fit:cover;border-radius:10px" onerror="this.outerHTML='<div style=font-size:3rem;text-align:center>🔞</div>'">`;
-  document.getElementById('mName').textContent=decodeURIComponent(name)||'NSFW Image';
-  document.getElementById('mMeta').innerHTML=`<span style="color:var(--nsfw)">🔞 NSFW</span> · ${isAnim==='true'?'Animated · ':''}${isSticker==='true'?'Image':'Image'}<br><span style="font-size:.65rem;word-break:break-all;opacity:.6">${decoded}</span>`;
-  document.getElementById('mCode').textContent=decoded;
-  document.getElementById('mDl').onclick=()=>dlUrl(decoded,'nsfw_image');
-  document.getElementById('mbk').classList.add('open');
-}
-function openSMod(id,title,img,rating,pageUrl){
-  document.getElementById('mImg').innerHTML=`<img src="${img}" style="width:120px;height:120px;object-fit:contain;border-radius:8px">`;
-  document.getElementById('mName').textContent=decodeURIComponent(title)||'Sticker';
-  document.getElementById('mMeta').innerHTML=`Rating: ${rating.toUpperCase()}<br>Source: ${S.src==='tenor'?'tenor.com':'giphy.com'}${pageUrl?`<br><a href="${pageUrl}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:.72rem">Open ↗</a>`:''}`;
-  document.getElementById('mCode').textContent=img;
-  document.getElementById('mDl').onclick=()=>dlUrl(img,id||'sticker');
-  document.getElementById('mbk').classList.add('open');
-}
-function closeMod(e){
-  if(e&&e.target!==document.getElementById('mbk')) return;
-  document.getElementById('mbk').classList.remove('open');
-}
-function copyCode(){ cpTxt(document.getElementById('mCode').textContent); }
-
-/* ── DOWNLOAD ────────────────────────────────────────────────────── */
-function dlEmoji(url,name,fallback){
-  if(!url&&fallback){
-    const c=document.createElement('canvas');c.width=c.height=128;
-    const x=c.getContext('2d');x.font='90px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(fallback,64,72);
-    c.toBlob(b=>saveBlob(b,name+'.png'));return;
-  }
-  dlUrl(url, name);
-}
-
-// Ordered list of proxy wrappers that return raw bytes
-const PROXIES = [
-  u => u,                                                           // direct (works if API has CORS headers)
-  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-  u => `https://thingproxy.freeboard.io/fetch/${u}`,
-  u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+const METHODS = [
+  {
+    id: 'zwsp',
+    name: 'ZW Space Split',
+    desc: 'Zero-Width Space between each char',
+    tag: 'U+200B',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.ZWS.code], opts),
+  },
+  {
+    id: 'zwnj',
+    name: 'ZW Non-Joiner',
+    desc: 'Zero-Width Non-Joiner insertion',
+    tag: 'U+200C',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.ZWNJ.code], opts),
+  },
+  {
+    id: 'zwj',
+    name: 'ZW Joiner',
+    desc: 'Zero-Width Joiner between chars',
+    tag: 'U+200D',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.ZWJ.code], opts),
+  },
+  {
+    id: 'wordjoiner',
+    name: 'Word Joiner',
+    desc: 'Word Joiner invisible character',
+    tag: 'U+2060',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.WJ.code], opts),
+  },
+  {
+    id: 'bom',
+    name: 'BOM / ZWNBS',
+    desc: 'Zero-Width No-Break Space (BOM)',
+    tag: 'U+FEFF',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.BOM.code], opts),
+  },
+  {
+    id: 'cgj',
+    name: 'Grapheme Joiner',
+    desc: 'Combining Grapheme Joiner split',
+    tag: 'U+034F',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.CGJ.code], opts),
+  },
+  {
+    id: 'ltrm',
+    name: 'LTR/RTL Marks',
+    desc: 'Alternating directional marks',
+    tag: 'U+200E/F',
+    fn: (txt, opts) => injectAlternating(txt, [INVISIBLE.LRM.code, INVISIBLE.RLM.code], opts),
+  },
+  {
+    id: 'invsep',
+    name: 'Invisible Separator',
+    desc: 'Invisible math/text separator',
+    tag: 'U+2063',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.ISP.code], opts),
+  },
+  {
+    id: 'invtimes',
+    name: 'Invisible Times',
+    desc: 'Invisible multiplication sign',
+    tag: 'U+2062',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.ITM.code], opts),
+  },
+  {
+    id: 'hangul',
+    name: 'Hangul Filler',
+    desc: 'Korean Hangul blank filler char',
+    tag: 'U+3164',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.HF.code], opts),
+  },
+  {
+    id: 'braille',
+    name: 'Braille Blank',
+    desc: 'Braille pattern all-blank char',
+    tag: 'U+2800',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.BB.code], opts),
+  },
+  {
+    id: 'softhyphen',
+    name: 'Soft Hyphen',
+    desc: 'Soft hyphen invisible break hint',
+    tag: 'U+00AD',
+    fn: (txt, opts) => inject(txt, [INVISIBLE.SHY.code], opts),
+  },
+  {
+    id: 'stealth',
+    name: 'Full Stealth Mix',
+    desc: 'Rotates all invisible char types',
+    tag: 'MULTI',
+    fn: (txt, opts) => injectRotate(txt, [
+      INVISIBLE.ZWS.code, INVISIBLE.ZWNJ.code, INVISIBLE.ZWJ.code,
+      INVISIBLE.WJ.code,  INVISIBLE.BOM.code,  INVISIBLE.ISP.code,
+      INVISIBLE.ITM.code, INVISIBLE.CGJ.code,  INVISIBLE.LRM.code,
+      INVISIBLE.RLM.code, INVISIBLE.BB.code,   INVISIBLE.HF.code,
+      INVISIBLE.SHY.code
+    ], opts),
+  },
 ];
 
-async function dlUrl(url, name){
-  if(!url) return;
-  url = decodeURIComponent(url);
-  toast('⬇ Downloading…','info');
+// ═══════════════════════════════ INJECTION HELPERS ════════════════════════════
 
-  const ext = url.match(/\.(gif|webp|png|jpg|jpeg|mp4)(\?|$)/i)?.[1]?.toLowerCase() || 'png';
-  const safe = (name||'download').replace(/[^a-z0-9_\-]/gi,'_');
-  const filename = safe + '.' + ext;
-
-  // Try each proxy in sequence
-  for(const proxy of PROXIES){
-    try{
-      const r = await fetch(proxy(url), {signal: AbortSignal.timeout(8000)});
-      if(!r.ok) continue;
-      const ct = r.headers.get('content-type')||'';
-      // Skip if we got back JSON/HTML (proxy error page) instead of image bytes
-      if(ct.includes('text/html') || ct.includes('application/json')) continue;
-      const blob = await r.blob();
-      if(blob.size < 100) continue; // too small = error response
-      saveBlob(blob, filename);
-      toast('✅ Downloaded ' + filename, 'ok');
-      return;
-    } catch(_){ continue; }
-  }
-
-  // Canvas fallback — works for static images even across origins
-  if(!url.match(/\.gif/i)){
-    try{
-      await canvasDownload(url, filename);
-      toast('✅ Downloaded ' + filename, 'ok');
-      return;
-    } catch(_){}
-  }
-
-  // Absolute last resort — create a real <a download> and click it
-  // This triggers browser's own download manager for same-origin or CORS-permissive servers
-  const a = document.createElement('a');
-  a.href = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>document.body.removeChild(a), 1000);
-  toast('✅ Download triggered!', 'ok');
+function getInvisChars(chars, repeat) {
+  const r = parseInt(repeat) || 1;
+  return chars[0].repeat(r);
 }
 
-function canvasDownload(url, filename){
-  return new Promise((res,rej)=>{
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = ()=>{
-      const c = document.createElement('canvas');
-      c.width = img.naturalWidth || img.width;
-      c.height = img.naturalHeight || img.height;
-      c.getContext('2d').drawImage(img,0,0);
-      c.toBlob(b=>{
-        if(b && b.size > 100){ saveBlob(b, filename); res(); }
-        else rej(new Error('blank canvas'));
-      },'image/png');
-    };
-    img.onerror = ()=>{
-      // Try again via allorigins
-      img.crossOrigin = 'anonymous';
-      img.src = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-      img.onload = ()=>{
-        const c=document.createElement('canvas');
-        c.width=img.naturalWidth||img.width;
-        c.height=img.naturalHeight||img.height;
-        c.getContext('2d').drawImage(img,0,0);
-        c.toBlob(b=>{ if(b&&b.size>100){saveBlob(b,filename);res();}else rej();});
-      };
-      img.onerror = rej;
-    };
-    img.src = url;
+function inject(text, chars, opts) {
+  const { between, start, end, wordsOnly, density, repeat, preserveSpaces, limit } = opts;
+  const r = parseInt(repeat) || 1;
+  const invis = chars[0].repeat(r);
+
+  let result = '';
+  if (start) result += invis;
+
+  const arr = [...text];
+  for (let i = 0; i < arr.length; i++) {
+    const ch = arr[i];
+    result += ch;
+
+    const isSpace = ch === ' ';
+    if (isSpace && preserveSpaces) { continue; }
+    if (isSpace && wordsOnly && i < arr.length - 1) {
+      result += invis;
+      continue;
+    }
+
+    if (!wordsOnly && between && i < arr.length - 1) {
+      if (shouldInsert(density, i)) {
+        result += invis;
+      }
+    }
+  }
+
+  if (end) result += invis;
+
+  if (limit && result.length > limit) result = result.slice(0, limit);
+  return result;
+}
+
+function injectAlternating(text, chars, opts) {
+  const { between, start, end, wordsOnly, density, repeat, preserveSpaces, limit } = opts;
+  const r = parseInt(repeat) || 1;
+  let ci = 0;
+
+  let result = '';
+  if (start) result += chars[ci++ % chars.length].repeat(r);
+
+  const arr = [...text];
+  for (let i = 0; i < arr.length; i++) {
+    const ch = arr[i];
+    result += ch;
+    const isSpace = ch === ' ';
+    if (isSpace && preserveSpaces) continue;
+    if (between && i < arr.length - 1 && shouldInsert(density, i)) {
+      result += chars[ci++ % chars.length].repeat(r);
+    }
+  }
+
+  if (end) result += chars[ci % chars.length].repeat(r);
+  if (limit && result.length > limit) result = result.slice(0, limit);
+  return result;
+}
+
+function injectRotate(text, chars, opts) {
+  const { between, start, end, density, repeat, preserveSpaces, limit } = opts;
+  const r = parseInt(repeat) || 1;
+  let ci = 0;
+
+  let result = '';
+  if (start) result += chars[ci++ % chars.length].repeat(r);
+
+  const arr = [...text];
+  for (let i = 0; i < arr.length; i++) {
+    const ch = arr[i];
+    result += ch;
+    const isSpace = ch === ' ';
+    if (isSpace && preserveSpaces) continue;
+    if (between && i < arr.length - 1 && shouldInsert(density, i)) {
+      result += chars[ci++ % chars.length].repeat(r);
+    }
+  }
+
+  if (end) result += chars[ci % chars.length].repeat(r);
+  if (limit && result.length > limit) result = result.slice(0, limit);
+  return result;
+}
+
+function shouldInsert(density, i) {
+  if (density === 'every1') return true;
+  if (density === 'every2') return i % 2 === 0;
+  if (density === 'every3') return i % 3 === 0;
+  if (density === 'random') return Math.random() > .4;
+  return true;
+}
+
+// ═══════════════════════════════ STATE ════════════════════════════════════════
+
+let selectedMethod = METHODS[0].id;
+
+// ═══════════════════════════════ RENDER METHODS ═══════════════════════════════
+
+function renderMethods() {
+  const grid = document.getElementById('methods-grid');
+  grid.innerHTML = '';
+  METHODS.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'method-card' + (m.id === selectedMethod ? ' selected' : '');
+    div.innerHTML = `
+      <div class="method-name">${m.name}</div>
+      <div class="method-desc">${m.desc}</div>
+      <div class="method-tag">${m.tag}</div>
+    `;
+    div.onclick = () => { selectedMethod = m.id; renderMethods(); };
+    grid.appendChild(div);
   });
 }
 
-function saveBlob(blob, name){
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = name;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(()=>URL.revokeObjectURL(url), 10000);
+// ═══════════════════════════════ GET OPTIONS ══════════════════════════════════
+
+function getOpts() {
+  return {
+    between:       document.getElementById('opt-between').checked,
+    start:         document.getElementById('opt-start').checked,
+    end:           document.getElementById('opt-end').checked,
+    wordsOnly:     document.getElementById('opt-words').checked,
+    density:       document.getElementById('density').value,
+    repeat:        document.getElementById('repeat-count').value,
+    preserveSpaces:document.getElementById('opt-preserve-spaces').checked,
+    limit:         parseInt(document.getElementById('char-limit').value) || null,
+  };
 }
 
-function cpTxt(t){navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!','ok'));}
+// ═══════════════════════════════ RUN BYPASS ═══════════════════════════════════
 
-/* ── UTILS ───────────────────────────────────────────────────────── */
-function twUrl(cp){return cp?TWEMOJI_CDN+cp+'.png':'';}
-function htmlCP(h){
-  if(!h) return '';
-  const d=h.match(/&#(\d+);/); if(d) return parseInt(d[1]).toString(16);
-  const x=h.match(/&#x([0-9a-fA-F]+);/i); if(x) return x[1].toLowerCase();
-  return '';
-}
-function emojiCP(e){try{return e.codePointAt(0).toString(16);}catch{return '';}}
-function badge(t){document.getElementById('srcBadge').textContent=t;}
-function showLoad(){
-  document.getElementById('grid').innerHTML='<div class="loading"><div class="spin"></div><span>Fetching from live API…</span></div>';
-  document.getElementById('pager').innerHTML='';
-  document.getElementById('metaL').innerHTML='<span>Loading…</span>';
-}
-function showErr(m){document.getElementById('err').innerHTML=`<div class="errmsg">⚠️ ${m}</div>`;}
-function clearErr(){document.getElementById('err').innerHTML='';}
-async function fetchWithTimeout(url,ms){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(url,{signal:c.signal});clearTimeout(t);return r;}catch(e){clearTimeout(t);throw e;}}
-function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
+function runBypass() {
+  const text = document.getElementById('input-text').value;
+  if (!text.trim()) { notify('Paste some text first!'); return; }
 
-let _tt;
-function toast(msg,type='info'){
-  const t=document.getElementById('toast');t.textContent=msg;t.className=`toast ${type} show`;
-  clearTimeout(_tt);_tt=setTimeout(()=>t.classList.remove('show'),2600);
+  const method = METHODS.find(m => m.id === selectedMethod);
+  const opts = getOpts();
+  const result = method.fn(text, opts);
+
+  document.getElementById('output-text').value = result;
+
+  // Stats
+  const invisCount = countInvisible(result);
+  const showStats = document.getElementById('opt-show-stats').checked;
+  const statsBar = document.getElementById('stats-bar');
+  statsBar.style.display = showStats ? 'flex' : 'none';
+
+  if (showStats) {
+    document.getElementById('s-input').textContent  = text.length;
+    document.getElementById('s-output').textContent = result.length;
+    document.getElementById('s-invis').textContent  = invisCount;
+    document.getElementById('s-method').textContent = method.name.toUpperCase();
+    const lim = opts.limit;
+    const limEl = document.getElementById('s-limit');
+    if (lim) {
+      limEl.textContent = result.length >= lim ? `${lim} ⚠ TRUNCATED` : `${lim} ✓`;
+      limEl.className = result.length >= lim ? 'stat-val warn' : 'stat-val ok';
+    } else {
+      limEl.textContent = 'NONE';
+      limEl.className = 'stat-val';
+    }
+  }
+
+  // Preview invisible breakdown
+  const prev = document.getElementById('inv-preview');
+  const breakdown = getInvisibleBreakdown(result);
+  if (Object.keys(breakdown).length > 0) {
+    prev.style.display = 'block';
+    prev.innerHTML = Object.entries(breakdown)
+      .map(([hex, count]) => `<span style="color:var(--accent2)">${hex}</span> ×${count}`)
+      .join('  |  ');
+  } else {
+    prev.style.display = 'none';
+  }
+
+  document.getElementById('all-preview').style.display = 'none';
+  notify('Bypass applied!');
 }
+
+function runAll() {
+  const text = document.getElementById('input-text').value;
+  if (!text.trim()) { notify('Paste some text first!'); return; }
+  const opts = getOpts();
+
+  const container = document.getElementById('all-preview-list');
+  container.innerHTML = '';
+
+  METHODS.forEach(m => {
+    const result = m.fn(text, opts);
+    const invis = countInvisible(result);
+
+    const row = document.createElement('div');
+    row.style.cssText = 'margin-bottom:12px; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:12px 14px;';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-weight:700;font-size:13px;color:var(--text)">${m.name}</span>
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent2);background:rgba(123,47,255,.15);padding:2px 8px;border-radius:3px">${m.tag}</span>
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-left:auto">${invis} invisible added</span>
+      </div>
+      <div style="position:relative">
+        <textarea readonly style="width:100%;font-size:12px;min-height:60px;padding-right:80px" id="prev-${m.id}">${escapeHtmlAttr(result)}</textarea>
+        <button onclick="copyById('prev-${m.id}',this)" style="position:absolute;top:8px;right:8px;background:var(--border);border:1px solid var(--muted);color:var(--text);font-family:var(--font-mono);font-size:10px;padding:4px 10px;border-radius:4px;cursor:pointer;letter-spacing:1px">COPY</button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  document.getElementById('all-preview').style.display = 'block';
+  document.getElementById('all-preview').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function escapeHtmlAttr(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copyById(id, btn) {
+  const ta = document.getElementById(id);
+  if (!ta) return;
+  navigator.clipboard.writeText(ta.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'COPIED';
+    btn.style.background = 'var(--success)';
+    btn.style.color = '#000';
+    setTimeout(() => { btn.textContent = orig; btn.style.background=''; btn.style.color=''; }, 1500);
+  });
+}
+
+function clearAll() {
+  document.getElementById('input-text').value = '';
+  document.getElementById('output-text').value = '';
+  document.getElementById('stats-bar').style.display = 'none';
+  document.getElementById('inv-preview').style.display = 'none';
+  document.getElementById('all-preview').style.display = 'none';
+}
+
+// ═══════════════════════════════ COPY ═════════════════════════════════════════
+
+function copyOutput() {
+  const text = document.getElementById('output-text').value;
+  if (!text) { notify('Nothing to copy!'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1800);
+    notify('Copied to clipboard!');
+  });
+}
+
+function copyRevert() {
+  const text = document.getElementById('revert-output').value;
+  if (!text) { notify('Nothing to copy!'); return; }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-revert-btn');
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1800);
+    notify('Copied to clipboard!');
+  });
+}
+
+// ═══════════════════════════════ HELPERS ══════════════════════════════════════
+
+const ALL_INVIS = Object.values(INVISIBLE).map(v => v.code);
+const INVIS_MAP = {}; // code -> hex
+Object.values(INVISIBLE).forEach(v => INVIS_MAP[v.code] = v.hex);
+
+function countInvisible(text) {
+  return [...text].filter(c => ALL_INVIS.includes(c)).length;
+}
+
+function getInvisibleBreakdown(text) {
+  const counts = {};
+  for (const ch of text) {
+    if (INVIS_MAP[ch]) {
+      counts[INVIS_MAP[ch]] = (counts[INVIS_MAP[ch]] || 0) + 1;
+    }
+  }
+  return counts;
+}
+
+// ═══════════════════════════════ REVERT ═══════════════════════════════════════
+
+function analyzeRevert() {
+  const text = document.getElementById('revert-input').value;
+  if (!text) {
+    document.getElementById('revert-analysis').style.display = 'none';
+    return;
+  }
+
+  const total = text.length;
+  const breakdown = getInvisibleBreakdown(text);
+  const invisCount = Object.values(breakdown).reduce((a,b)=>a+b,0);
+  const visible = total - invisCount;
+
+  document.getElementById('r-total').textContent   = total;
+  document.getElementById('r-invis').textContent   = invisCount;
+  document.getElementById('r-visible').textContent = visible;
+  document.getElementById('r-pct').textContent     = total ? ((invisCount/total)*100).toFixed(1)+'%' : '0%';
+
+  // Detected tags
+  const detectedEl = document.getElementById('detected-methods');
+  detectedEl.innerHTML = '';
+  if (invisCount === 0) {
+    detectedEl.innerHTML = '<span style="font-family:var(--font-mono);font-size:11px;color:var(--success)">✓ No invisible characters detected</span>';
+  } else {
+    Object.entries(breakdown).forEach(([hex, count]) => {
+      const info = Object.values(INVISIBLE).find(v => v.hex === hex);
+      const tag = document.createElement('div');
+      tag.className = 'detected-tag';
+      tag.textContent = `${hex} — ${info ? info.name : '?'} (×${count})`;
+      detectedEl.appendChild(tag);
+    });
+  }
+
+  // Selective checkboxes
+  const checksEl = document.getElementById('selective-checks');
+  checksEl.innerHTML = '';
+  Object.entries(breakdown).forEach(([hex, count]) => {
+    const info = Object.values(INVISIBLE).find(v => v.hex === hex);
+    const label = document.createElement('label');
+    label.className = 'check-label';
+    label.innerHTML = `<input type="checkbox" checked data-hex="${hex}"> ${hex} ${info ? '('+info.name+')' : ''} ×${count}`;
+    checksEl.appendChild(label);
+  });
+
+  document.getElementById('revert-analysis').style.display = 'block';
+}
+
+function runRevert() {
+  const text = document.getElementById('revert-input').value;
+  if (!text) { notify('Paste text to revert!'); return; }
+
+  let result = text;
+  ALL_INVIS.forEach(ch => {
+    result = result.split(ch).join('');
+  });
+
+  document.getElementById('revert-output').value = result;
+  notify('All invisible characters stripped!');
+}
+
+function runRevertPartial() {
+  const text = document.getElementById('revert-input').value;
+  if (!text) { notify('Paste text to revert!'); return; }
+
+  const checks = document.querySelectorAll('#selective-checks input[type=checkbox]:checked');
+  const hexSet = new Set([...checks].map(c => c.dataset.hex));
+
+  let result = text;
+  Object.values(INVISIBLE).forEach(v => {
+    if (hexSet.has(v.hex)) {
+      result = result.split(v.code).join('');
+    }
+  });
+
+  document.getElementById('revert-output').value = result;
+  notify('Selected invisible characters stripped!');
+}
+
+function clearRevert() {
+  document.getElementById('revert-input').value = '';
+  document.getElementById('revert-output').value = '';
+  document.getElementById('revert-analysis').style.display = 'none';
+}
+
+// ═══════════════════════════════ TABS ═════════════════════════════════════════
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ═══════════════════════════════ NOTIFY ═══════════════════════════════════════
+
+function notify(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(notify._t);
+  notify._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ═══════════════════════════════ INIT ═════════════════════════════════════════
+
+renderMethods();
 </script>
 </body>
 </html>
