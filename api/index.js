@@ -1,6 +1,4 @@
 // ============================================================
-//  PUT YOUR GENIUS API TOKEN HERE
-// ============================================================
 const GENIUS_TOKEN = "zORAeDJHDFdrq8y5NH_jlzTmJ94K144i6VTYhO054lbdqir4QHzi3rsFq";
 // ============================================================
 
@@ -18,30 +16,23 @@ function geniusFetch(query) {
         "User-Agent": "BDSCRIPT-Proxy/1.0",
       },
     };
-
     const req = https.request(options, (res) => {
       let data = "";
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch {
-          reject(new Error("Failed to parse Genius response"));
-        }
+        try { resolve(JSON.parse(data)); }
+        catch { reject(new Error("Failed to parse Genius response")); }
       });
     });
-
     req.on("error", reject);
     req.end();
   });
 }
 
-// Vercel serverless handler — export default function
 module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
 
-  // Health check
   if (!req.query.q) {
     res.status(200).json({ status: "ok", message: "Genius proxy is running!" });
     return;
@@ -55,14 +46,11 @@ module.exports = async (req, res) => {
   try {
     const data = await geniusFetch(req.query.q);
     const hits = data?.response?.hits;
-
     if (!hits || hits.length === 0) {
       res.status(404).json({ error: "No results found" });
       return;
     }
-
     const result = hits[0].result;
-
     res.status(200).json({
       title: result.title || "",
       artist: result.primary_artist?.name || "",
