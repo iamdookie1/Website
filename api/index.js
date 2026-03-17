@@ -1,5 +1,5 @@
 // ============================================================
-const GENIUS_TOKEN = "zORAeDJHDFdrq8y5NH_jlzTmJ94K144i6VTYhO054lbdqir4QHzi3rsFq";
+const GENIUS_TOKEN = "katvCx1KErRSVpJY6gOtm7tU8P1yzsD2clfJztznu4PK5HWdU_maguT9imejCGzM";
 // ============================================================
 
 const https = require("https");
