@@ -5,99 +5,99 @@ const GENIUS_TOKEN = "katvCx1KErRSVpJY6gOtm7tU8P1yzsD2clfJztznu4PK5HWdU_maguT9im
 // ============================================================
 
 const https = require("https");
-const { URL } = require("url");
 
-function httpsGet(hostname, path) {
+function request(options) {
   return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname,
-      path,
-      method: "GET",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml",
-        "Accept-Language": "en-US,en;q=0.9",
-      },
-    }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        const u = new URL(res.headers.location.startsWith("http") ? res.headers.location : "https://genius.com" + res.headers.location);
-        return resolve(httpsGet(u.hostname, u.pathname + u.search));
-      }
+    const req = https.request(options, (res) => {
       let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => resolve(data));
+      res.on("data", (c) => (data += c));
+      res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body: data }));
     });
+    req.setTimeout(8000, () => { req.destroy(); reject(new Error("Request timed out")); });
     req.on("error", reject);
     req.end();
   });
 }
 
-function geniusSearch(query) {
-  return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname: "api.genius.com",
-      path: `/search?q=${encodeURIComponent(query)}`,
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${GENIUS_TOKEN}`,
-        "User-Agent": "BDSCRIPT-Proxy/1.0",
-      },
-    }, (res) => {
-      let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => {
-        try { resolve(JSON.parse(data)); }
-        catch { reject(new Error("Failed to parse Genius response")); }
-      });
-    });
-    req.on("error", reject);
-    req.end();
+async function searchGenius(query) {
+  const r = await request({
+    hostname: "api.genius.com",
+    path: "/search?q=" + encodeURIComponent(query),
+    method: "GET",
+    headers: {
+      Authorization: "Bearer " + GENIUS_TOKEN,
+      "User-Agent": "Mozilla/5.0",
+    },
   });
+  return JSON.parse(r.body);
 }
 
-function scrapeLyrics(html) {
-  // Method 1: Try __NEXT_DATA__ JSON blob (modern Genius)
-  const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-  if (nextDataMatch) {
-    try {
-      const json = JSON.parse(nextDataMatch[1]);
-      // Walk the tree to find lyrics children
-      const song = json?.props?.pageProps?.songPage?.lyricsData?.body?.children;
-      if (song) {
-        const extractText = (node) => {
-          if (typeof node === "string") return node;
-          if (Array.isArray(node)) return node.map(extractText).join("");
-          if (node?.children) return extractText(node.children);
+async function fetchPage(url) {
+  // Parse url manually to avoid URL constructor issues
+  const noProto = url.replace("https://", "");
+  const slashIdx = noProto.indexOf("/");
+  const hostname = noProto.substring(0, slashIdx);
+  const path = noProto.substring(slashIdx);
+
+  const r = await request({
+    hostname: hostname,
+    path: path,
+    method: "GET",
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept": "text/html",
+      "Accept-Language": "en-US,en;q=0.9",
+    },
+  });
+
+  // Follow one redirect if needed
+  if (r.status >= 300 && r.status < 400 && r.headers.location) {
+    let loc = r.headers.location;
+    if (!loc.startsWith("http")) loc = "https://genius.com" + loc;
+    return fetchPage(loc);
+  }
+
+  return r.body;
+}
+
+function extractLyrics(html) {
+  try {
+    // Try __NEXT_DATA__ first
+    const m = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]+?)<\/script>/);
+    if (m) {
+      const json = JSON.parse(m[1]);
+      const children =
+        json?.props?.pageProps?.songPage?.lyricsData?.body?.children ||
+        json?.props?.pageProps?.song?.lyrics?.body?.children;
+      if (children) {
+        const walk = (n) => {
+          if (typeof n === "string") return n;
+          if (Array.isArray(n)) return n.map(walk).join("");
+          if (n && typeof n === "object" && n.children) return walk(n.children);
           return "";
         };
-        const lyrics = extractText(song).replace(/\n{3,}/g, "\n\n").trim();
-        if (lyrics.length > 10) return lyrics;
+        const text = walk(children).replace(/\n{3,}/g, "\n\n").trim();
+        if (text.length > 20) return text;
       }
-    } catch {}
-  }
+    }
+  } catch (e) {}
 
-  // Method 2: data-lyrics-container divs (older Genius pages)
-  let lyrics = "";
-  const containerRegex = /data-lyrics-container="true"[^>]*>([\s\S]*?)<\/div>/gi;
-  let match;
-  while ((match = containerRegex.exec(html)) !== null) {
-    lyrics += match[1] + "\n";
-  }
-
-  if (lyrics.length > 10) {
-    lyrics = lyrics
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(p|div|h[1-6])>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"')
-      .replace(/&#039;/g, "'")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-    return lyrics;
-  }
+  try {
+    // Fallback: data-lyrics-container
+    let out = "";
+    const re = /data-lyrics-container="true"[^>]*>([\s\S]*?)<\/div>/gi;
+    let m;
+    while ((m = re.exec(html)) !== null) out += m[1] + "\n";
+    if (out.length > 20) {
+      return out
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<\/?(p|div|h\d)[^>]*>/gi, "\n")
+        .replace(/<[^>]+>/g, "")
+        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"').replace(/&#039;/g, "'")
+        .replace(/\n{3,}/g, "\n\n").trim();
+    }
+  } catch (e) {}
 
   return null;
 }
@@ -106,109 +106,46 @@ module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
 
-  if (!req.query.q) {
-    res.status(200).json({ status: "ok", message: "Genius proxy is running!" });
-    return;
+  const q = req.query && req.query.q;
+
+  if (!q) {
+    return res.status(200).json({ status: "ok" });
   }
 
   if (!GENIUS_TOKEN || GENIUS_TOKEN === "PASTE_YOUR_GENIUS_TOKEN_HERE") {
-    res.status(500).json({ error: "No Genius token set in index.js" });
-    return;
+    return res.status(500).json({ error: "No token configured" });
   }
 
   try {
-    const data = await geniusSearch(req.query.q);
-    const hits = data?.response?.hits;
+    const search = await searchGenius(q);
+    const hits = search && search.response && search.response.hits;
+
     if (!hits || hits.length === 0) {
-      res.status(404).json({ error: "No results found" });
-      return;
+      return res.status(404).json({ error: "No results found" });
     }
 
     const result = hits[0].result;
-    const u = new URL(result.url);
-    const html = await httpsGet(u.hostname, u.pathname + u.search);
-    const lyrics = scrapeLyrics(html);
+
+    let lyrics = null;
+    try {
+      const html = await fetchPage(result.url);
+      lyrics = extractLyrics(html);
+    } catch (e) {
+      lyrics = null;
+    }
 
     const trimmed = lyrics
-      ? lyrics.substring(0, 1500) + (lyrics.length > 1500 ? "\n..." : "")
-      : null;
+      ? (lyrics.length > 1500 ? lyrics.substring(0, 1500) + "\n..." : lyrics)
+      : "Lyrics unavailable — view on Genius.";
 
-    res.status(200).json({
+    return res.status(200).json({
       title: result.title || "",
-      artist: result.primary_artist?.name || "",
+      artist: (result.primary_artist && result.primary_artist.name) || "",
       url: result.url || "",
-      lyrics: trimmed || "Lyrics not found.",
+      lyrics: trimmed,
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-  }
-
-  if (containers.length === 0) return null;
-
-  let lyrics = containers.join("\n");
-  lyrics = lyrics.replace(/<br\s*\/?>/gi, "\n");
-  lyrics = lyrics.replace(/<\/(p|div|h[1-6])>/gi, "\n");
-  lyrics = lyrics.replace(/<[^>]+>/g, "");
-  lyrics = lyrics
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&apos;/g, "'");
-  lyrics = lyrics.replace(/\n{3,}/g, "\n\n").trim();
-  return lyrics;
-}
-
-module.exports = async (req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Content-Type", "application/json");
-
-  if (!req.query.q) {
-    res.status(200).json({ status: "ok", message: "Genius proxy is running!" });
-    return;
-  }
-
-  if (!GENIUS_TOKEN || GENIUS_TOKEN === "PASTE_YOUR_GENIUS_TOKEN_HERE") {
-    res.status(500).json({ error: "No Genius token set in index.js" });
-    return;
-  }
-
-  try {
-    const data = await geniusSearch(req.query.q);
-    const hits = data?.response?.hits;
-    if (!hits || hits.length === 0) {
-      res.status(404).json({ error: "No results found" });
-      return;
-    }
-
-    const result = hits[0].result;
-    const lyricsPageUrl = result.url;
-    const u = new URL(lyricsPageUrl);
-
-    const html = await httpsGet({
-      hostname: u.hostname,
-      path: u.pathname + u.search,
-      method: "GET",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html",
-      },
-    });
-
-    const lyrics = scrapeLyrics(html);
-
-    res.status(200).json({
-      title: result.title || "",
-      artist: result.primary_artist?.name || "",
-      url: lyricsPageUrl,
-      lyrics: lyrics
-        ? lyrics.substring(0, 1800) + (lyrics.length > 1800 ? "\n..." : "")
-        : "Lyrics not found.",
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message || "Unknown error" });
   }
 };
