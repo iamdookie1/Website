@@ -2,7 +2,6 @@
 //  PUT YOUR GENIUS API TOKEN HERE
 // ============================================================
 const GENIUS_TOKEN = "katvCx1KErRSVpJY6gOtm7tU8P1yzsD2clfJztznu4PK5HWdU_maguT9imejCGzM";
-
 // ============================================================
 
 const https = require("https");
@@ -23,12 +22,10 @@ function get(hostname, path, headers) {
   });
 }
 
-// Split lyrics into chunks at newlines, never mid-line
 function splitLyrics(lyrics, chunkSize) {
   const chunks = [];
   const lines = lyrics.split("\n");
   let current = "";
-
   for (const line of lines) {
     const next = current ? current + "\n" + line : line;
     if (next.length > chunkSize) {
@@ -40,6 +37,15 @@ function splitLyrics(lyrics, chunkSize) {
   }
   if (current.trim()) chunks.push(current.trim());
   return chunks;
+}
+
+function sanitize(text) {
+  return text
+    // Remove [Section] headers like [Chorus], [Fetty Wap], [Verse 1] etc.
+    .replace(/\[.*?\]/g, "")
+    // Clean up extra blank lines left behind
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 module.exports = async (req, res) => {
@@ -78,9 +84,9 @@ module.exports = async (req, res) => {
       if (lyricRes.status === 200) {
         const lyricData = JSON.parse(lyricRes.body);
         if (lyricData && lyricData.lyrics) {
-          const raw = lyricData.lyrics.replace(/\n{3,}/g, "\n\n").trim();
-          // 900 chars per chunk — safe for Discord embed description
-          chunks = splitLyrics(raw, 1900);
+          const raw = sanitize(lyricData.lyrics);
+          // 1800 chars per chunk — safe buffer under Discord's 2000 limit
+          chunks = splitLyrics(raw, 1800);
         }
       }
     } catch (e) {}
