@@ -80,7 +80,7 @@ module.exports = async (req, res) => {
         if (lyricData && lyricData.lyrics) {
           const raw = lyricData.lyrics.replace(/\n{3,}/g, "\n\n").trim();
           // 900 chars per chunk — safe for Discord embed description
-          chunks = splitLyrics(raw, 900);
+          chunks = splitLyrics(raw, 1900);
         }
       }
     } catch (e) {}
@@ -95,22 +95,6 @@ module.exports = async (req, res) => {
       lyrics3: chunks[2] || "",
       lyrics4: chunks[3] || "",
       lyrics5: chunks[4] || "",
-    });
-
-  } catch (err) {
-    return res.status(500).json({ error: err.message || "Unknown error" });
-  }
-};          const raw = lyricData.lyrics.replace(/\n{3,}/g, "\n\n").trim();
-          lyrics = raw.length > 1500 ? raw.substring(0, 1500) + "\n..." : raw;
-        }
-      }
-    } catch (e) {}
-
-    return res.status(200).json({
-      title,
-      artist,
-      url,
-      lyrics: lyrics || "Lyrics not available.",
     });
 
   } catch (err) {
