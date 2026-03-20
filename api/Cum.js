@@ -9,11 +9,14 @@ function getIndex() {
 }
 
 export default function handler(req, res) {
-  const { type } = req.query;
+  const { type, u, a } = req.query;
   const index = getIndex();
   if (type === "gif") {
     res.status(200).send(data[index].gif);
   } else {
-    res.status(200).send(data[index].msg);
+    const msg = data[index].msg
+      .replace("{u}", u ? `<@${u}>` : "{u}")
+      .replace("{a}", a ? `<@${a}>` : "{a}");
+    res.status(200).send(msg);
   }
 }
