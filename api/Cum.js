@@ -6,5 +6,5 @@ const data = [
 
 export default function handler(req, res) {
   const index = Math.floor(Math.random() * data.length);
-  res.status(200).send(`${data[index].msg}|${data[index].gif}`);
+  res.status(200).send(`${data[index].msg}\n${data[index].gif}`);
 }
