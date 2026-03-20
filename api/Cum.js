@@ -12,11 +12,11 @@ export default function handler(req, res) {
   const { type, u, a } = req.query;
   const index = getIndex();
   if (type === "gif") {
-    res.status(200).send(data[index].gif);
+    res.status(200).send(data[index].gif.trim());
   } else {
     const msg = data[index].msg
       .replace("{u}", u ? `<@${u}>` : "{u}")
       .replace("{a}", a ? `<@${a}>` : "{a}");
-    res.status(200).send(msg);
+    res.status(200).send(msg.trim());
   }
 }
