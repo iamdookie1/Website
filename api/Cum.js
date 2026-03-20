@@ -5,7 +5,6 @@ const data = [
 ];
 
 export default function handler(req, res) {
-  const n = parseInt(req.query.n);
-  const index = (n >= 1 && n <= 3) ? n - 1 : 0;
+  const index = Math.floor(Math.random() * data.length);
   res.status(200).send(`${data[index].msg}|${data[index].gif}`);
 }
