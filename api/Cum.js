@@ -4,7 +4,16 @@ const data = [
   { msg: "{u} is getting lots of cum from {a}! <3", gif: "https://cdn.nsfwgify.com/66599/blonde-cumslut-scaled.webp" }
 ];
 
+function getIndex() {
+  return Math.floor(Date.now() / 10000) % data.length;
+}
+
 export default function handler(req, res) {
-  const index = Math.floor(Math.random() * data.length);
-  res.status(200).send(`${data[index].msg}\n${data[index].gif}`);
+  const { type } = req.query;
+  const index = getIndex();
+  if (type === "gif") {
+    res.status(200).send(data[index].gif);
+  } else {
+    res.status(200).send(data[index].msg);
+  }
 }
