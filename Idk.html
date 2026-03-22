@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Save Info</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #08090d;
+      --surface: #0f1018;
+      --surface2: #161820;
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.1);
+      --accent: #c8ff3e;
+      --accent-dim: rgba(200,255,62,0.1);
+      --text: #e4e4f0;
+      --muted: #52526a;
+      --muted2: #8888a8;
+      --danger: #ff4d6d;
+      --danger-dim: rgba(255,77,109,0.1);
+      --success: #3effc8;
+      --success-dim: rgba(62,255,200,0.1);
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(200,255,62,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,255,62,0.025) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .page {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px 20px;
+      gap: 48px;
+    }
+
+    /* ── Save button ── */
+    .save-btn {
+      position: relative;
+      display: inline-flex; align-items: center; gap: 12px;
+      padding: 20px 52px;
+      background: transparent;
+      border: 1.5px solid var(--accent);
+      border-radius: 3px;
+      color: var(--accent);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.95rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.15s;
+      outline: none;
+      animation: fadeUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .save-btn::after {
+      content: ''; position: absolute; inset: 0;
+      background: var(--accent-dim); opacity: 0;
+      transition: opacity 0.2s; border-radius: 3px;
+    }
+    .save-btn:hover::after { opacity: 1; }
+    .save-btn:hover { box-shadow: 0 0 50px rgba(200,255,62,0.18); transform: translateY(-2px); }
+    .save-btn:active { transform: translateY(0); }
+    .save-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn-spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(200,255,62,0.3);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    .save-btn.loading .btn-spinner { display: block; }
+    .save-btn.loading .btn-icon { display: none; }
+
+    /* ── Records ── */
+    .records-wrap { width: 100%; max-width: 560px; animation: fadeUp 0.5s ease both; }
+    .records-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .records-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted2);
+    }
+    .records-right { display: flex; align-items: center; gap: 10px; }
+    .records-count {
+      font-size: 0.72rem; color: var(--muted);
+      background: var(--surface2); border: 1px solid var(--border);
+      padding: 3px 10px; border-radius: 100px;
+    }
+    .clear-btn {
+      font-size: 0.72rem; color: var(--danger);
+      background: none; border: none; cursor: pointer; opacity: 0.7;
+      transition: opacity 0.15s; font-family: 'DM Sans', sans-serif;
+    }
+    .clear-btn:hover { opacity: 1; }
+
+    .records-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .record-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; padding: 18px 20px;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 4px 16px; align-items: start;
+      transition: border-color 0.2s;
+      animation: fadeUp 0.35s ease both;
+    }
+    .record-card:hover { border-color: var(--border2); }
+
+    .record-address { font-size: 0.9rem; font-weight: 500; color: var(--text); line-height: 1.4; }
+    .record-sub { font-size: 0.78rem; color: var(--muted2); line-height: 1.5; margin-top: 3px; }
+    .record-meta { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .record-time { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+    .record-coords {
+      font-size: 0.65rem; color: var(--muted); font-family: monospace;
+      background: var(--surface2); padding: 3px 8px; border-radius: 3px; white-space: nowrap;
+    }
+
+    /* ── Overlay & Modal ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    }
+    .overlay.open { opacity: 1; pointer-events: all; }
+
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 10px; padding: 40px 36px 36px;
+      max-width: 420px; width: calc(100% - 32px);
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+      box-shadow: 0 50px 120px rgba(0,0,0,0.7);
+    }
+    .overlay.open .modal { transform: translateY(0) scale(1); }
+
+    .modal-icon {
+      width: 48px; height: 48px; background: var(--accent-dim);
+      border: 1px solid rgba(200,255,62,0.2); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 20px;
+    }
+    .modal-title { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; margin-bottom: 10px; }
+    .modal-body { font-size: 0.88rem; line-height: 1.7; color: var(--muted2); margin-bottom: 22px; }
+
+    /* Address card inside modal */
+    .addr-loading {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.83rem; color: var(--muted2); margin-bottom: 24px;
+    }
+    .addr-loading .mini-spin {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(200,255,62,0.2); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0;
+    }
+
+    .addr-preview {
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 6px; padding: 16px 18px; margin-bottom: 24px; display: none;
+    }
+    .addr-preview.visible { display: block; }
+    .addr-label {
+      font-size: 0.62rem; font-weight: 700;
+      letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+    }
+    .addr-main { font-size: 0.95rem; font-weight: 500; color: var(--text); line-height: 1.4; margin-bottom: 5px; }
+    .addr-detail { font-size: 0.78rem; color: var(--muted2); line-height: 1.6; }
+    .addr-coords { font-size: 0.67rem; color: var(--muted); font-family: monospace; margin-top: 8px; }
+
+    .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+    .badge {
+      display: flex; align-items: center; gap: 5px;
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 100px; padding: 5px 10px; font-size: 0.72rem; color: var(--muted);
+    }
+    .badge svg { color: var(--accent); }
+
+    .divider { height: 1px; background: var(--border); margin-bottom: 24px; }
+    .actions { display: flex; gap: 10px; }
+
+    .btn-confirm {
+      flex: 1; padding: 13px 18px; background: var(--accent); border: none; border-radius: 4px;
+      color: #08090d; font-family: 'Syne', sans-serif; font-size: 0.8rem;
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer; transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn-confirm:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-confirm:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    .btn-decline {
+      flex: 1; padding: 13px 18px; background: var(--danger-dim);
+      border: 1px solid rgba(255,77,109,0.2); border-radius: 4px; color: var(--danger);
+      font-family: 'Syne', sans-serif; font-size: 0.8rem;
+      font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      cursor: pointer; transition: background 0.15s, transform 0.15s;
+    }
+    .btn-decline:hover { background: rgba(255,77,109,0.18); transform: translateY(-1px); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--success-dim); border: 1px solid rgba(62,255,200,0.25);
+      color: var(--success); padding: 11px 22px; border-radius: 100px;
+      font-size: 0.82rem; font-weight: 500;
+      display: flex; align-items: center; gap: 8px;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s;
+      white-space: nowrap; z-index: 200; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <button class="save-btn" id="saveBtn" onclick="handleSave()">
+    <span class="btn-spinner"></span>
+    <svg class="btn-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+      <polyline points="17 21 17 13 7 13 7 21"/>
+      <polyline points="7 3 7 8 15 8"/>
+    </svg>
+    Save Info
+  </button>
+
+  <div class="records-wrap" id="recordsWrap" style="display:none;">
+    <div class="records-header">
+      <span class="records-label">Saved Records</span>
+      <div class="records-right">
+        <span class="records-count" id="recordsCount">0 entries</span>
+        <button class="clear-btn" onclick="clearAll()">Clear all</button>
+      </div>
+    </div>
+    <div class="records-list" id="recordsList"></div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c8ff3e"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="11" width="18" height="11" rx="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <h2 class="modal-title" id="modalTitle">Your data stays private</h2>
+    <p class="modal-body">
+      The details below will be stored in a secure, encrypted database.
+      This information is never sold, shared, or disclosed to any third party.
+    </p>
+
+    <div class="addr-loading" id="addrLoading">
+      <span class="mini-spin"></span>
+      Looking up your address…
+    </div>
+
+    <div class="addr-preview" id="addrPreview">
+      <div class="addr-label">Location to be saved</div>
+      <div class="addr-main" id="addrMain"></div>
+      <div class="addr-detail" id="addrDetail"></div>
+      <div class="addr-coords" id="addrCoords"></div>
+    </div>
+
+    <div class="badges">
+      <span class="badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Encrypted
+      </span>
+      <span class="badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Never shared
+      </span>
+      <span class="badge">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Secure storage
+      </span>
+    </div>
+
+    <div class="divider"></div>
+    <div class="actions">
+      <button class="btn-confirm" id="confirmBtn" onclick="handleConfirm()" disabled>Confirm</button>
+      <button class="btn-decline" onclick="handleDecline()">Decline</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+  Location saved successfully
+</div>
+
+<script>
+  let pendingData = null;
+
+  /* ── Storage ── */
+  async function loadRecords() {
+    try {
+      const r = await window.storage.get('loc-records');
+      return r ? JSON.parse(r.value) : [];
+    } catch { return []; }
+  }
+
+  async function saveRecords(records) {
+    try { await window.storage.set('loc-records', JSON.stringify(records)); }
+    catch (e) { console.error(e); }
+  }
+
+  /* ── Flow ── */
+  async function handleSave() {
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.classList.add('loading');
+
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      btn.disabled = false; btn.classList.remove('loading');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        openModal();
+
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const geo = await res.json();
+          const a = geo.address || {};
+
+          const streetNum  = a.house_number || '';
+          const street     = a.road || a.pedestrian || a.footway || a.path || '';
+          const streetLine = [streetNum, street].filter(Boolean).join(' ');
+
+          const neighbourhood = a.neighbourhood || a.suburb || '';
+          const city    = a.city || a.town || a.village || a.municipality || '';
+          const county  = a.county || '';
+          const state   = a.state || a.region || '';
+          const postcode= a.postcode || '';
+          const country = a.country || '';
+
+          const detailLine = [neighbourhood, city || county, state, postcode].filter(Boolean).join(', ');
+
+          pendingData = {
+            id: Date.now(),
+            addressMain: streetLine || geo.display_name?.split(',')[0] || 'Unknown street',
+            addressDetail: detailLine,
+            country,
+            displayName: geo.display_name || '',
+            lat: lat.toFixed(6),
+            lng: lng.toFixed(6),
+            accuracy: Math.round(accuracy),
+            timestamp: new Date().toISOString()
+          };
+
+          showAddrInModal(pendingData);
+        } catch {
+          pendingData = {
+            id: Date.now(),
+            addressMain: 'Location captured',
+            addressDetail: 'Address lookup unavailable',
+            country: '',
+            displayName: '',
+            lat: lat.toFixed(6),
+            lng: lng.toFixed(6),
+            accuracy: Math.round(accuracy),
+            timestamp: new Date().toISOString()
+          };
+          showAddrInModal(pendingData);
+        }
+      },
+      (err) => {
+        btn.disabled = false; btn.classList.remove('loading');
+        if (err.code === 1)
+          alert('Location access was denied. Please enable it in your browser settings and try again.');
+        else
+          alert('Could not retrieve your location. Please try again.');
+      },
+      { enableHighAccuracy: true, timeout: 12000 }
+    );
+  }
+
+  function showAddrInModal(d) {
+    document.getElementById('addrMain').textContent   = d.addressMain;
+    document.getElementById('addrDetail').textContent = d.addressDetail + (d.country ? ', ' + d.country : '');
+    document.getElementById('addrCoords').textContent =
+      `${d.lat}, ${d.lng}  ·  ±${d.accuracy}m accuracy`;
+    document.getElementById('addrLoading').style.display = 'none';
+    document.getElementById('addrPreview').classList.add('visible');
+    document.getElementById('confirmBtn').disabled = false;
+  }
+
+  function openModal() {
+    document.getElementById('addrLoading').style.display = 'flex';
+    document.getElementById('addrPreview').classList.remove('visible');
+    document.getElementById('confirmBtn').disabled = true;
+    document.getElementById('overlay').classList.add('open');
+  }
+
+  async function handleConfirm() {
+    if (!pendingData) return;
+    closeModal();
+    const records = await loadRecords();
+    records.unshift(pendingData);
+    await saveRecords(records);
+    pendingData = null;
+    renderRecords(records);
+    showToast();
+  }
+
+  function handleDecline() {
+    pendingData = null;
+    closeModal();
+  }
+
+  function closeModal() {
+    document.getElementById('overlay').classList.remove('open');
+  }
+
+  /* ── Render ── */
+  function renderRecords(records) {
+    const wrap  = document.getElementById('recordsWrap');
+    const list  = document.getElementById('recordsList');
+    const count = document.getElementById('recordsCount');
+
+    if (!records || records.length === 0) { wrap.style.display = 'none'; return; }
+
+    wrap.style.display = 'block';
+    count.textContent = `${records.length} ${records.length === 1 ? 'entry' : 'entries'}`;
+
+    list.innerHTML = records.map((r, i) => {
+      const d = new Date(r.timestamp);
+      const timeStr = d.toLocaleString(undefined, {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      });
+      const detail = [r.addressDetail, r.country].filter(Boolean).join(', ')
+        || r.displayName?.split(',').slice(1, 3).join(',').trim() || '';
+      return `
+        <div class="record-card" style="animation-delay:${i * 0.04}s">
+          <div class="record-address">${esc(r.addressMain)}</div>
+          <div class="record-sub">${esc(detail)}</div>
+          <div class="record-meta">
+            <span class="record-time">${timeStr}</span>
+            <span class="record-coords">${r.lat}, ${r.lng}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function clearAll() {
+    if (!confirm('Delete all saved records?')) return;
+    await saveRecords([]);
+    renderRecords([]);
+  }
+
+  function showToast() {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3200);
+  }
+
+  document.getElementById('overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('overlay')) handleDecline();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') handleDecline(); });
+
+  /* Load saved records on startup */
+  (async () => { renderRecords(await loadRecords()); })();
+</script>
+</body>
+</html>
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+      outline: none;
+      animation: fadeUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .save-btn::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 4px;
+      background: var(--accent-dim);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .save-btn:hover::before { opacity: 1; }
+    .save-btn:hover {
+      box-shadow: 0 0 40px rgba(200,255,62,0.2);
+      transform: translateY(-2px);
+    }
+    .save-btn:active { transform: translateY(0); }
+
+    .save-btn svg {
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+    .save-btn:hover svg { transform: translateY(-1px); }
+
+    /* ── Overlay ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ── Modal card ── */
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 48px 44px 40px;
+      max-width: 440px;
+      width: calc(100% - 40px);
+      position: relative;
+      transform: translateY(24px) scale(0.97);
+      transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+    }
+    .overlay.open .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    /* Lock icon top */
+    .modal-icon {
+      width: 52px;
+      height: 52px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(200,255,62,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    .modal-body {
+      font-size: 0.92rem;
+      line-height: 1.7;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .modal-body strong {
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* Security badges */
+    .badges {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+    }
+    .badge svg { color: var(--accent); flex-shrink: 0; }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 28px;
+    }
+
+    /* Action buttons */
+    .actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-confirm {
+      flex: 1;
+      padding: 14px 20px;
+      background: var(--accent);
+      border: none;
+      border-radius: 4px;
+      color: #0a0a0f;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn-confirm:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-confirm:active { transform: translateY(0); }
+
+    .btn-decline {
+      flex: 1;
+      padding: 14px 20px;
+      background: var(--danger-dim);
+      border: 1px solid rgba(255,77,109,0.25);
+      border-radius: 4px;
+      color: var(--danger);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .btn-decline:hover { background: rgba(255,77,109,0.2); transform: translateY(-1px); }
+    .btn-decline:active { transform: translateY(0); }
+
+    /* ── Location status text ── */
+    .location-status {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .location-status .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 1.5s infinite;
+      flex-shrink: 0;
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.4; transform: scale(0.8); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scene">
+    <button class="save-btn" id="saveBtn" onclick="handleSave()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+        <polyline points="17 21 17 13 7 13 7 21"/>
+        <polyline points="7 3 7 8 15 8"/>
+      </svg>
+      Save Info
+    </button>
+  </div>
+
+  <!-- Overlay + Modal -->
+  <div class="overlay" id="overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+      <div class="modal-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c8ff3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+
+      <h2 class="modal-title" id="modalTitle">Your data is protected</h2>
+
+      <p class="modal-body">
+        The information collected — including your <strong>current location</strong> — will be stored in a
+        <strong>secure, encrypted database</strong>. It will never be sold, shared, or disclosed
+        to any third party for any reason.
+      </p>
+
+      <div class="badges">
+        <span class="badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          End-to-end encrypted
+        </span>
+        <span class="badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Never shared
+        </span>
+        <span class="badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Secure storage
+        </span>
+      </div>
+
+      <div id="locationStatus" class="location-status" style="display:none;">
+        <span class="dot"></span>
+        Location acquired
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="actions">
+        <button class="btn-confirm" onclick="handleConfirm()">Confirm</button>
+        <button class="btn-decline" onclick="handleDecline()">Decline</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let acquiredCoords = null;
+
+    function handleSave() {
+      // Request location first, then show modal
+      if (!navigator.geolocation) {
+        openModal(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          acquiredCoords = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: pos.coords.accuracy
+          };
+          openModal(acquiredCoords);
+        },
+        () => {
+          // If denied or unavailable, still show modal
+          acquiredCoords = null;
+          openModal(null);
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    }
+
+    function openModal(coords) {
+      const overlay = document.getElementById('overlay');
+      const locStatus = document.getElementById('locationStatus');
+
+      if (coords) {
+        locStatus.style.display = 'flex';
+      } else {
+        locStatus.style.display = 'none';
+      }
+
+      overlay.classList.add('open');
+    }
+
+    function handleConfirm() {
+      // Save silently — close modal and return to normal state
+      closeModal();
+      acquiredCoords = null;
+    }
+
+    function handleDecline() {
+      // Stop the process entirely
+      closeModal();
+      acquiredCoords = null;
+    }
+
+    function closeModal() {
+      document.getElementById('overlay').classList.remove('open');
+    }
+
+    // Close on backdrop click
+    document.getElementById('overlay').addEventListener('click', function(e) {
+      if (e.target === this) handleDecline();
+    });
+
+    // Keyboard: Escape = decline
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') handleDecline();
+    });
+  </script>
+
+</body>
+</html>
