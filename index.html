@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
@@ -116,6 +116,16 @@
     .word-tags{display:flex;flex-wrap:wrap;gap:6px}
     .word-tag{padding:4px 10px;background:var(--bg3);border-radius:100px;font-size:.75rem;color:var(--text2);font-family:'DM Mono',monospace;cursor:pointer;transition:background .2s,color .2s;border:1px solid var(--border)}
     .word-tag:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+    /* settings sub-panel */
+    .settings-sub{padding:0 22px 16px;border-bottom:1px solid var(--border);background:var(--bg3);transition:background var(--transition),border-color var(--transition)}
+    .settings-sub:last-child{border-bottom:none}
+    .settings-slider-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:.82rem;color:var(--text2)}
+    .settings-slider-row label{min-width:90px;font-size:.78rem;color:var(--text3);font-family:'DM Mono',monospace}
+    .settings-slider-row input[type=range]{flex:1;accent-color:var(--accent);cursor:pointer;height:4px}
+    .settings-slider-val{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--accent);min-width:32px;text-align:right;font-weight:600}
+    .settings-section-head{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:8px;padding-top:4px;transition:color var(--transition)}
+    .filter-badge{display:inline-block;padding:2px 7px;border-radius:100px;font-size:.62rem;font-family:'DM Mono',monospace;font-weight:600;margin-left:8px;vertical-align:middle;background:rgba(124,106,245,.18);color:var(--accent);transition:background .3s,color .3s}
+    .filter-badge.off{background:var(--bg3);color:var(--text3)}
     ::-webkit-scrollbar{width:6px}
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -234,6 +244,8 @@
 
   <!-- SETTINGS -->
   <div class="panel" id="panel-settings">
+
+    <!-- General -->
     <div class="settings-card">
       <div class="settings-row">
         <div><div class="settings-label">Dark Mode</div><div class="settings-desc">Switch between dark and light themes</div></div>
@@ -248,6 +260,85 @@
         <label class="toggle"><input type="checkbox" id="autoHistoryToggle" checked><div class="toggle-track"></div></label>
       </div>
     </div>
+
+    <!-- Anti-Dupe -->
+    <div class="settings-card">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Anti-Dupe <span class="filter-badge" id="dupeBadge">ON</span></div>
+          <div class="settings-desc">Skip colors too similar to recent history</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="antiDupeToggle" checked onchange="syncBadge('antiDupeToggle','dupeBadge');saveFilters()"><div class="toggle-track"></div></label>
+      </div>
+      <div class="settings-sub" id="antiDupeSub">
+        <div class="settings-section-head">Sensitivity</div>
+        <div class="settings-slider-row">
+          <label>Hue range</label>
+          <input type="range" id="dupeHue" min="5" max="60" value="25" oninput="updSlider('dupeHueVal',this.value,'°');saveFilters()">
+          <span class="settings-slider-val" id="dupeHueVal">25°</span>
+        </div>
+        <div class="settings-slider-row">
+          <label>Lightness Δ</label>
+          <input type="range" id="dupeLightness" min="3" max="40" value="15" oninput="updSlider('dupeLightnessVal',this.value,'%');saveFilters()">
+          <span class="settings-slider-val" id="dupeLightnessVal">15%</span>
+        </div>
+        <div class="settings-slider-row">
+          <label>Check last N</label>
+          <input type="range" id="dupeN" min="1" max="20" value="8" oninput="updSlider('dupeNVal',this.value,'');saveFilters()">
+          <span class="settings-slider-val" id="dupeNVal">8</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Anti-Bright -->
+    <div class="settings-card">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Anti-Bright <span class="filter-badge off" id="brightBadge">OFF</span></div>
+          <div class="settings-desc">Block colors that are too light or over-saturated</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="antiBrightToggle" onchange="syncBadge('antiBrightToggle','brightBadge');saveFilters()"><div class="toggle-track"></div></label>
+      </div>
+      <div class="settings-sub" id="antiBrightSub">
+        <div class="settings-section-head">Thresholds — colors above these values are blocked</div>
+        <div class="settings-slider-row">
+          <label>Max lightness</label>
+          <input type="range" id="brightMaxL" min="50" max="95" value="82" oninput="updSlider('brightMaxLVal',this.value,'%');saveFilters()">
+          <span class="settings-slider-val" id="brightMaxLVal">82%</span>
+        </div>
+        <div class="settings-slider-row">
+          <label>Max saturation</label>
+          <input type="range" id="brightMaxS" min="40" max="100" value="90" oninput="updSlider('brightMaxSVal',this.value,'%');saveFilters()">
+          <span class="settings-slider-val" id="brightMaxSVal">90%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Anti-Dark -->
+    <div class="settings-card">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Anti-Dark <span class="filter-badge off" id="darkFilterBadge">OFF</span></div>
+          <div class="settings-desc">Block colors that are too dark or muddy</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="antiDarkToggle" onchange="syncBadge('antiDarkToggle','darkFilterBadge');saveFilters()"><div class="toggle-track"></div></label>
+      </div>
+      <div class="settings-sub" id="antiDarkSub">
+        <div class="settings-section-head">Thresholds — colors below these values are blocked</div>
+        <div class="settings-slider-row">
+          <label>Min lightness</label>
+          <input type="range" id="darkMinL" min="5" max="45" value="20" oninput="updSlider('darkMinLVal',this.value,'%');saveFilters()">
+          <span class="settings-slider-val" id="darkMinLVal">20%</span>
+        </div>
+        <div class="settings-slider-row">
+          <label>Min saturation</label>
+          <input type="range" id="darkMinS" min="0" max="30" value="5" oninput="updSlider('darkMinSVal',this.value,'%');saveFilters()">
+          <span class="settings-slider-val" id="darkMinSVal">5%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data -->
     <div class="settings-card">
       <div class="settings-row">
         <div><div class="settings-label">Clear History</div><div class="settings-desc">Remove all history entries</div></div>
@@ -508,6 +599,109 @@ const savePalette=()=>localStorage.setItem('chromia_palette',JSON.stringify(pale
 const saveHistory=()=>localStorage.setItem('chromia_history',JSON.stringify(history));
 
 // ══════════════════════════════════════════
+//  FILTER HELPERS
+// ══════════════════════════════════════════
+function getFilters() {
+  return {
+    dupe:    document.getElementById('antiDupeToggle').checked,
+    dupeHue: +document.getElementById('dupeHue').value,
+    dupeL:   +document.getElementById('dupeLightness').value,
+    dupeN:   +document.getElementById('dupeN').value,
+    bright:  document.getElementById('antiBrightToggle').checked,
+    brightMaxL: +document.getElementById('brightMaxL').value,
+    brightMaxS: +document.getElementById('brightMaxS').value,
+    dark:    document.getElementById('antiDarkToggle').checked,
+    darkMinL: +document.getElementById('darkMinL').value,
+    darkMinS: +document.getElementById('darkMinS').value,
+  };
+}
+
+// Hue distance (circular), 0-180
+function hueDist(a,b){ const d=Math.abs(a-b)%360; return d>180?360-d:d; }
+
+function passesFilters(hsl, skipDupe=false) {
+  const f=getFilters();
+  if (!skipDupe && f.dupe) {
+    const recent=history.slice(0,f.dupeN);
+    for (const h of recent) {
+      if (hueDist(hsl.h,h.hsl.h) < f.dupeHue &&
+          Math.abs(hsl.l - h.hsl.l) < f.dupeL) return false;
+    }
+  }
+  if (f.bright) {
+    if (hsl.l > f.brightMaxL || hsl.s > f.brightMaxS) return false;
+  }
+  if (f.dark) {
+    if (hsl.l < f.darkMinL || hsl.s < f.darkMinS) return false;
+  }
+  return true;
+}
+
+// Try building a random parsed color up to maxTries until it passes filters
+function randomParsedPassing(forceBase=null, maxTries=30) {
+  const keys=Object.keys(BASE_COLORS);
+  const modKeys=Object.keys(MODIFIERS);
+  for (let t=0;t<maxTries;t++) {
+    const base=forceBase || keys[Math.floor(Math.random()*keys.length)];
+    const n=Math.random()<.4?0:Math.random()<.6?1:2;
+    const mods=[];
+    for(let i=0;i<n;i++){const m=modKeys[Math.floor(Math.random()*modKeys.length)];if(!mods.includes(m))mods.push(m);}
+    const hsl=buildHSL({base,mods});
+    if (passesFilters(hsl)) return {base,mods};
+  }
+  // fallback: return without dupe check (don't block user forever)
+  const base=forceBase||keys[Math.floor(Math.random()*keys.length)];
+  return {base,mods:[]};
+}
+
+function syncBadge(toggleId,badgeId){
+  const on=document.getElementById(toggleId).checked;
+  const b=document.getElementById(badgeId);
+  b.textContent=on?'ON':'OFF';
+  b.classList.toggle('off',!on);
+}
+
+function saveFilters(){
+  const ids=['dupeHue','dupeLightness','dupeN','brightMaxL','brightMaxS','darkMinL','darkMinS'];
+  const checks=['antiDupeToggle','antiBrightToggle','antiDarkToggle'];
+  const obj={};
+  ids.forEach(id=>obj[id]=document.getElementById(id).value);
+  checks.forEach(id=>obj[id]=document.getElementById(id).checked);
+  localStorage.setItem('chromia_filters',JSON.stringify(obj));
+}
+
+function loadFilters(){
+  const raw=localStorage.getItem('chromia_filters');
+  if(!raw)return;
+  try{
+    const obj=JSON.parse(raw);
+    Object.entries(obj).forEach(([id,val])=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      if(typeof val==='boolean'||val==='true'||val==='false'){
+        el.checked=(val===true||val==='true');
+      } else {
+        el.value=val;
+      }
+    });
+    // Re-sync displayed values
+    [['dupeHue','dupeHueVal','°'],['dupeLightness','dupeLightnessVal','%'],['dupeN','dupeNVal',''],
+     ['brightMaxL','brightMaxLVal','%'],['brightMaxS','brightMaxSVal','%'],
+     ['darkMinL','darkMinLVal','%'],['darkMinS','darkMinSVal','%']
+    ].forEach(([sid,vid,u])=>updSlider(vid,document.getElementById(sid).value,u));
+    // badges
+    ['antiDupeToggle','antiBrightToggle','antiDarkToggle'].forEach(id=>{
+      const badges={'antiDupeToggle':'dupeBadge','antiBrightToggle':'brightBadge','antiDarkToggle':'darkFilterBadge'};
+      syncBadge(id,badges[id]);
+    });
+  }catch(e){}
+}
+
+function updSlider(valId, val, unit){
+  document.getElementById(valId).textContent = val+unit;
+}
+
+// ══════════════════════════════════════════
 //  APPLY / GENERATE
 // ══════════════════════════════════════════
 function applyColor(c) {
@@ -530,32 +724,29 @@ function generateColor() {
   const p=parseColorInput(raw);
   if (!p) { showError(`Couldn't find a color in "${raw}". Try "light blue" or "vivid coral".`); return; }
   clearError();
-  applyColor(buildColor(p));
+  const c=buildColor(p);
+  // For manual input: only warn if blocked by bright/dark (not dupe — user typed it deliberately)
+  const f=getFilters();
+  if (f.bright && (c.hsl.l>f.brightMaxL||c.hsl.s>f.brightMaxS)) showToast('⚠ Anti-Bright active — color is above threshold');
+  if (f.dark  && (c.hsl.l<f.darkMinL||c.hsl.s<f.darkMinS))  showToast('⚠ Anti-Dark active — color is below threshold');
+  applyColor(c);
 }
 
 function randomColor() {
-  const keys=Object.keys(BASE_COLORS);
-  const modKeys=Object.keys(MODIFIERS);
-  const base=keys[Math.floor(Math.random()*keys.length)];
-  const n=Math.random()<.4?0:Math.random()<.6?1:2;
-  const mods=[];
-  for(let i=0;i<n;i++){const m=modKeys[Math.floor(Math.random()*modKeys.length)];if(!mods.includes(m))mods.push(m);}
-  document.getElementById('colorInput').value=[...mods,base].join(' ');
+  const p=randomParsedPassing(null);
+  document.getElementById('colorInput').value=[...p.mods,p.base].join(' ');
   clearError();
-  applyColor(buildColor({base,mods}));
+  applyColor(buildColor(p));
 }
 
 function randomVariation() {
   const raw=document.getElementById('colorInput').value.trim();
-  const p=raw?parseColorInput(raw):null;
-  const base=p?p.base:Object.keys(BASE_COLORS)[Math.floor(Math.random()*Object.keys(BASE_COLORS).length)];
-  const modKeys=Object.keys(MODIFIERS);
-  const n=Math.random()<.3?0:Math.random()<.6?1:2;
-  const mods=[];
-  for(let i=0;i<n;i++){const m=modKeys[Math.floor(Math.random()*modKeys.length)];if(!mods.includes(m))mods.push(m);}
-  document.getElementById('colorInput').value=[...mods,base].join(' ');
+  const parsed=raw?parseColorInput(raw):null;
+  const forceBase=parsed?parsed.base:null;
+  const p=randomParsedPassing(forceBase);
+  document.getElementById('colorInput').value=[...p.mods,p.base].join(' ');
   clearError();
-  applyColor(buildColor({base,mods}));
+  applyColor(buildColor(p));
 }
 
 function copyValue(type) {
@@ -572,50 +763,69 @@ function generatePalette() {
   const mode=document.getElementById('palGenMode').value;
   const count=parseInt(document.getElementById('palCount').value);
 
-  let base={h:Math.random()*360, s:60+Math.random()*25, l:40+Math.random()*15};
+  // Always randomise starting point so each click is different
+  const entropy = Math.random();
+  let base;
   if (raw) {
     const p=parseColorInput(raw);
-    if (p) base=buildHSL(p);
-    else showToast('Unknown base color — using random');
+    if (p) {
+      base=buildHSL(p);
+      // Add a small random tint each time so same word gives variety
+      base={h:(base.h + entropy*22 - 11 + 360)%360, s:Math.max(15,Math.min(95,base.s+(entropy*14-7))), l:Math.max(18,Math.min(85,base.l+(entropy*12-6)))};
+    } else {
+      showToast('Unknown base color — using random');
+      base=null;
+    }
   }
+  if (!base) base={h:entropy*360, s:45+entropy*35, l:35+entropy*25};
 
-  const hues=[];
   const H=base.h;
+  const hues=[];
+
   if(mode==='analogous'){
-    const step=40/(count-1||1);
-    for(let i=0;i<count;i++)hues.push(H-20+i*step);
+    const spread=20+entropy*20;
+    const step=spread*2/(count-1||1);
+    for(let i=0;i<count;i++)hues.push(H-spread+i*step);
   }else if(mode==='complementary'){
     const h1=Math.ceil(count/2),h2=count-h1;
-    for(let i=0;i<h1;i++)hues.push(H+(i-Math.floor(h1/2))*18);
-    for(let i=0;i<h2;i++)hues.push((H+180)%360+(i-Math.floor(h2/2))*18);
+    const spread=entropy*12;
+    for(let i=0;i<h1;i++)hues.push(H+spread+(i-Math.floor(h1/2))*18);
+    for(let i=0;i<h2;i++)hues.push((H+180+spread)%360+(i-Math.floor(h2/2))*18);
   }else if(mode==='triadic'){
-    const a=[H,(H+120)%360,(H+240)%360];
-    for(let i=0;i<count;i++)hues.push(a[i%3]);
+    const rot=entropy*15;
+    const a=[(H+rot)%360,(H+120+rot)%360,(H+240+rot)%360];
+    for(let i=0;i<count;i++)hues.push(a[i%3]+(Math.random()*8-4));
   }else if(mode==='tetradic'){
-    const a=[H,(H+90)%360,(H+180)%360,(H+270)%360];
-    for(let i=0;i<count;i++)hues.push(a[i%4]);
+    const rot=entropy*20;
+    const a=[(H+rot)%360,(H+90+rot)%360,(H+180+rot)%360,(H+270+rot)%360];
+    for(let i=0;i<count;i++)hues.push(a[i%4]+(Math.random()*8-4));
   }else if(mode==='split'){
-    const a=[H,(H+150)%360,(H+210)%360];
-    for(let i=0;i<count;i++)hues.push(a[i%3]);
+    const spread=145+entropy*15;
+    const a=[H,(H+spread)%360,(H+360-spread)%360];
+    for(let i=0;i<count;i++)hues.push(a[i%3]+(Math.random()*10-5));
   }else{
-    for(let i=0;i<count;i++)hues.push(H);
+    for(let i=0;i<count;i++)hues.push(H+(Math.random()*10-5));
   }
 
   const colors=hues.map((hue,i)=>{
-    let s=base.s, l=base.l;
+    let s=base.s+Math.random()*12-6, l=base.l+Math.random()*12-6;
     if(mode==='monochromatic'){
-      s=Math.max(10,Math.min(90,20+i*(65/(count-1||1))));
-      l=Math.max(20,Math.min(88,20+i*(65/(count-1||1))));
+      const t=i/(count-1||1);
+      s=15+t*60+Math.random()*8;
+      l=18+t*62+Math.random()*8;
     }else if(mode==='shades'){
-      l=Math.max(10,Math.min(88,88-i*(72/(count-1||1))));
+      const t=i/(count-1||1);
+      l=Math.max(8,88-t*72+Math.random()*8-4);
+      s=Math.max(15,base.s+Math.random()*14-7);
     }else if(mode==='tints'){
-      l=Math.max(30,Math.min(95,30+i*(60/(count-1||1))));
+      const t=i/(count-1||1);
+      l=Math.min(95,30+t*58+Math.random()*8-4);
+      s=Math.max(15,base.s+Math.random()*14-7);
     }else if(mode==='random'){
-      hue=Math.random()*360; s=40+Math.random()*50; l=35+Math.random()*40;
-    }else{
-      s=Math.max(20,Math.min(90,s+(Math.random()*16-8)));
-      l=Math.max(25,Math.min(78,l+(Math.random()*16-8)));
+      hue=Math.random()*360; s=35+Math.random()*55; l=28+Math.random()*45;
     }
+    s=Math.max(10,Math.min(95,s));
+    l=Math.max(10,Math.min(93,l));
     const h=((hue%360)+360)%360;
     const hsl={h:Math.round(h),s:Math.round(s),l:Math.round(l)};
     const [r,g,b2]=hslToRgb(hsl.h,hsl.s,hsl.l);
@@ -639,7 +849,6 @@ function generatePalette() {
   colors.forEach(c=>{
     const card=document.createElement('div');
     card.className='color-card';
-    const cJson=JSON.stringify(c).replace(/"/g,"'");
     card.innerHTML=`<div class="card-swatch" style="background:${c.hex}"></div><div class="card-meta"><div class="card-name">${c.hex.toUpperCase()}</div><div class="card-hex">H:${c.hsl.h} S:${c.hsl.s}% L:${c.hsl.l}%</div><div class="card-actions"><button class="card-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${c.hex.toUpperCase()}').then(()=>showToast('Copied ${c.hex.toUpperCase()}'))">Copy</button><button class="card-btn" onclick="event.stopPropagation();quickSave(${JSON.stringify(c).replace(/</g,'\\u003c')})">Save</button></div></div>`;
     card.addEventListener('click',()=>{applyColor(c);switchTab('colors');});
     grid.appendChild(card);
@@ -767,6 +976,7 @@ document.getElementById('palGenInput').addEventListener('keydown',e=>{if(e.key==
   const saved=localStorage.getItem('chromia_theme')||'dark';
   document.documentElement.setAttribute('data-theme',saved);
   document.getElementById('darkModeToggle').checked=saved==='dark';
+  loadFilters();
   buildSuggestions(); renderPalette(); renderHistory();
   const seeds=['soft lavender','vivid coral','deep ocean','neon lime','dusty rose','electric indigo','warm amber','icy cyan'];
   document.getElementById('colorInput').value=seeds[Math.floor(Math.random()*seeds.length)];
