@@ -6,579 +6,120 @@
   <title>Chromia — Color Studio</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg: #0e0e11;
-      --bg2: #16161a;
-      --bg3: #1e1e24;
-      --border: rgba(255,255,255,0.08);
-      --text: #f0eff5;
-      --text2: #8b8a96;
-      --text3: #55545e;
-      --accent: #7c6af5;
-      --accent-glow: rgba(124,106,245,0.25);
-      --swatch: #7c6af5;
-      --swatch-rgb: 124, 106, 245;
-      --radius: 14px;
-      --radius-sm: 8px;
-      --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      --shadow: 0 8px 40px rgba(0,0,0,0.4);
-    }
-    [data-theme="light"] {
-      --bg: #f5f4f0;
-      --bg2: #eceae4;
-      --bg3: #e2e0da;
-      --border: rgba(0,0,0,0.08);
-      --text: #1a1920;
-      --text2: #6b6a75;
-      --text3: #aeadb8;
-      --accent: #5b4de0;
-      --accent-glow: rgba(91,77,224,0.18);
-      --shadow: 0 8px 40px rgba(0,0,0,0.12);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Instrument Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      transition: background var(--transition), color var(--transition);
-      overflow-x: hidden;
-    }
-
-    /* ── LAYOUT ── */
-    .app {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 36px 24px 80px;
-    }
-
-    /* ── HEADER ── */
-    .header {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-      margin-bottom: 40px;
-    }
-    .header h1 {
-      font-family: 'Fraunces', serif;
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: var(--text);
-      transition: color var(--transition);
-    }
-    .header h1 span {
-      color: var(--accent);
-      font-style: italic;
-      transition: color var(--transition);
-    }
-    .header-sub {
-      font-size: 0.8rem;
-      color: var(--text3);
-      font-family: 'DM Mono', monospace;
-      transition: color var(--transition);
-    }
-
-    /* ── TABS ── */
-    .tabs {
-      display: flex;
-      gap: 4px;
-      background: var(--bg2);
-      border-radius: calc(var(--radius) + 4px);
-      padding: 5px;
-      margin-bottom: 32px;
-      border: 1px solid var(--border);
-      transition: background var(--transition), border-color var(--transition);
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 10px 16px;
-      border: none;
-      background: transparent;
-      color: var(--text2);
-      font-family: 'Instrument Sans', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 500;
-      border-radius: calc(var(--radius));
-      cursor: pointer;
-      transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
-      position: relative;
-      white-space: nowrap;
-    }
-    .tab-btn:hover { color: var(--text); }
-    .tab-btn.active {
-      background: var(--bg);
-      color: var(--text);
-      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
-    }
-    [data-theme="light"] .tab-btn.active { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-
-    /* ── TAB PANELS ── */
-    .panel {
-      display: none;
-      animation: fadeSlideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .panel.active { display: block; }
-
-    @keyframes fadeSlideUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ── COLOR DISPLAY ── */
-    .color-stage {
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 28px;
-      border: 1px solid var(--border);
-      transition: border-color var(--transition);
-    }
-    .color-swatch {
-      height: 220px;
-      background: var(--swatch);
-      transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      display: flex;
-      align-items: flex-end;
-      padding: 20px;
-    }
-    .swatch-name {
-      font-family: 'Fraunces', serif;
-      font-size: 1.4rem;
-      font-weight: 500;
-      color: rgba(255,255,255,0.9);
-      text-shadow: 0 2px 8px rgba(0,0,0,0.35);
-      letter-spacing: -0.02em;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity 0.4s ease 0.2s, transform 0.4s ease 0.2s;
-    }
-    .swatch-name.visible { opacity: 1; transform: translateY(0); }
-
-    .color-info {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      background: var(--bg2);
-      transition: background var(--transition);
-    }
-    .color-value {
-      padding: 16px 20px;
-      border-right: 1px solid var(--border);
-      cursor: pointer;
-      transition: background 0.2s ease, border-color var(--transition);
-      position: relative;
-    }
-    .color-value:last-child { border-right: none; }
-    .color-value:hover { background: var(--bg3); }
-    .color-value:active { background: var(--bg); }
-    .color-value-label {
-      font-size: 0.65rem;
-      color: var(--text3);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-family: 'DM Mono', monospace;
-      margin-bottom: 4px;
-      transition: color var(--transition);
-    }
-    .color-value-code {
-      font-family: 'DM Mono', monospace;
-      font-size: 0.85rem;
-      color: var(--text);
-      font-weight: 500;
-      transition: color var(--transition);
-    }
-    .copy-hint {
-      position: absolute;
-      bottom: 6px;
-      right: 10px;
-      font-size: 0.62rem;
-      color: var(--text3);
-      font-family: 'DM Mono', monospace;
-      opacity: 0;
-      transition: opacity 0.2s ease, color var(--transition);
-    }
-    .color-value:hover .copy-hint { opacity: 1; }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--text);
-      color: var(--bg);
-      padding: 10px 20px;
-      border-radius: 100px;
-      font-size: 0.8rem;
-      font-family: 'DM Mono', monospace;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      z-index: 1000;
-    }
-    .toast.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-    }
-
-    /* ── INPUT AREA ── */
-    .input-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .color-input {
-      flex: 1;
-      padding: 14px 20px;
-      background: var(--bg2);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text);
-      font-family: 'Instrument Sans', sans-serif;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color 0.25s ease, background var(--transition), color var(--transition), box-shadow 0.25s ease;
-    }
-    .color-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-    .color-input::placeholder { color: var(--text3); }
-
-    .btn {
-      padding: 12px 22px;
-      border: none;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-family: 'Instrument Sans', sans-serif;
-      font-size: 0.88rem;
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-      box-shadow: 0 4px 16px var(--accent-glow);
-    }
-    .btn-primary:hover {
-      filter: brightness(1.1);
-      transform: translateY(-1px);
-      box-shadow: 0 6px 22px var(--accent-glow);
-    }
-    .btn-primary:active { transform: translateY(0); }
-
-    .btn-secondary {
-      background: var(--bg2);
-      color: var(--text2);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: var(--bg3); color: var(--text); }
-
-    /* ── ACTION ROW ── */
-    .action-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .btn-sm {
-      padding: 8px 16px;
-      font-size: 0.8rem;
-    }
-
-    /* ── SUGGESTIONS ── */
-    .suggestions {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
-    .chip {
-      padding: 5px 12px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      font-size: 0.75rem;
-      color: var(--text2);
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
-      font-family: 'DM Mono', monospace;
-    }
-    .chip:hover {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-      transform: translateY(-1px);
-    }
-
-    /* ── ERROR ── */
-    .error-msg {
-      background: rgba(239, 68, 68, 0.12);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #f87171;
-      padding: 12px 16px;
-      border-radius: var(--radius-sm);
-      font-size: 0.83rem;
-      margin-bottom: 16px;
-      display: none;
-      font-family: 'DM Mono', monospace;
-    }
-    .error-msg.visible { display: block; animation: fadeSlideUp 0.25s ease; }
-
-    /* ── SECTION LABEL ── */
-    .section-label {
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text3);
-      font-family: 'DM Mono', monospace;
-      margin-bottom: 12px;
-      transition: color var(--transition);
-    }
-
-    /* ── HISTORY / PALETTE GRID ── */
-    .color-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 12px;
-    }
-    .color-card {
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color var(--transition);
-      animation: fadeSlideUp 0.3s ease;
-    }
-    .color-card:hover {
-      transform: translateY(-3px);
-      box-shadow: var(--shadow);
-    }
-    .card-swatch {
-      height: 80px;
-      transition: background 0.3s ease;
-    }
-    .card-meta {
-      padding: 10px 12px;
-      background: var(--bg2);
-      transition: background var(--transition);
-    }
-    .card-name {
-      font-size: 0.78rem;
-      color: var(--text);
-      font-weight: 500;
-      margin-bottom: 2px;
-      transition: color var(--transition);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .card-hex {
-      font-size: 0.68rem;
-      color: var(--text3);
-      font-family: 'DM Mono', monospace;
-      transition: color var(--transition);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text3);
-      font-size: 0.9rem;
-    }
-    .empty-state .empty-icon {
-      font-size: 2.5rem;
-      margin-bottom: 12px;
-      display: block;
-      opacity: 0.5;
-    }
-
-    /* ── PALETTE HEADER ── */
-    .palette-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    /* ── SETTINGS ── */
-    .settings-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      margin-bottom: 16px;
-      transition: background var(--transition), border-color var(--transition);
-    }
-    .settings-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 22px;
-      border-bottom: 1px solid var(--border);
-      transition: border-color var(--transition);
-    }
-    .settings-row:last-child { border-bottom: none; }
-    .settings-label {
-      font-size: 0.9rem;
-      font-weight: 500;
-      color: var(--text);
-      transition: color var(--transition);
-    }
-    .settings-desc {
-      font-size: 0.75rem;
-      color: var(--text3);
-      margin-top: 2px;
-      transition: color var(--transition);
-    }
-
-    /* ── TOGGLE ── */
-    .toggle {
-      position: relative;
-      width: 48px;
-      height: 26px;
-      flex-shrink: 0;
-    }
-    .toggle input { opacity: 0; width: 0; height: 0; }
-    .toggle-track {
-      position: absolute;
-      inset: 0;
-      background: var(--bg3);
-      border-radius: 100px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      border: 1.5px solid var(--border);
-    }
-    .toggle input:checked + .toggle-track { background: var(--accent); border-color: var(--accent); }
-    .toggle-track::after {
-      content: '';
-      position: absolute;
-      width: 18px; height: 18px;
-      background: white;
-      border-radius: 50%;
-      top: 50%;
-      left: 3px;
-      transform: translateY(-50%);
-      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-    }
-    .toggle input:checked + .toggle-track::after { left: calc(100% - 21px); }
-
-    /* ── MODAL ── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(6px);
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-    }
-    .modal-overlay.open {
-      opacity: 1;
-      pointer-events: all;
-    }
-    .modal {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      width: 100%;
-      max-width: 600px;
-      max-height: 80vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      transform: scale(0.94) translateY(20px);
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background var(--transition), border-color var(--transition);
-    }
-    .modal-overlay.open .modal { transform: scale(1) translateY(0); }
-    .modal-header {
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: border-color var(--transition);
-    }
-    .modal-title {
-      font-family: 'Fraunces', serif;
-      font-size: 1.2rem;
-      font-weight: 500;
-      color: var(--text);
-      transition: color var(--transition);
-    }
-    .modal-close {
-      width: 30px; height: 30px;
-      border: none;
-      background: var(--bg3);
-      border-radius: 50%;
-      cursor: pointer;
-      color: var(--text2);
-      font-size: 1.1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, color 0.2s;
-    }
-    .modal-close:hover { background: var(--border); color: var(--text); }
-    .modal-body {
-      padding: 20px 24px;
-      overflow-y: auto;
-      flex: 1;
-    }
-
-    /* ── WORD GRID ── */
-    .word-section { margin-bottom: 24px; }
-    .word-section-title {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--accent);
-      font-family: 'DM Mono', monospace;
-      margin-bottom: 10px;
-    }
-    .word-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .word-tag {
-      padding: 4px 10px;
-      background: var(--bg3);
-      border-radius: 100px;
-      font-size: 0.75rem;
-      color: var(--text2);
-      font-family: 'DM Mono', monospace;
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s;
-      border: 1px solid var(--border);
-    }
-    .word-tag:hover { background: var(--accent); color: white; border-color: var(--accent); }
-
-    /* ── RANDOM BTN ── */
-    .btn-icon {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* ── SCROLLBAR ── */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 540px) {
-      .color-info { grid-template-columns: 1fr 1fr; }
-      .color-value:nth-child(3) { display: none; }
-      .tab-btn { padding: 10px 10px; font-size: 0.78rem; }
-    }
+    :root{--bg:#0e0e11;--bg2:#16161a;--bg3:#1e1e24;--border:rgba(255,255,255,0.08);--text:#f0eff5;--text2:#8b8a96;--text3:#55545e;--accent:#7c6af5;--accent-glow:rgba(124,106,245,0.25);--swatch:#7c6af5;--radius:14px;--radius-sm:8px;--transition:0.35s cubic-bezier(0.4,0,0.2,1);--shadow:0 8px 40px rgba(0,0,0,0.4)}
+    [data-theme="light"]{--bg:#f5f4f0;--bg2:#eceae4;--bg3:#e2e0da;--border:rgba(0,0,0,0.08);--text:#1a1920;--text2:#6b6a75;--text3:#aeadb8;--accent:#5b4de0;--accent-glow:rgba(91,77,224,0.18);--shadow:0 8px 40px rgba(0,0,0,0.12)}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Instrument Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background var(--transition),color var(--transition);overflow-x:hidden}
+    .app{max-width:880px;margin:0 auto;padding:36px 24px 80px}
+    .header{display:flex;align-items:baseline;gap:12px;margin-bottom:40px}
+    .header h1{font-family:'Fraunces',serif;font-size:2rem;font-weight:700;letter-spacing:-0.03em;color:var(--text);transition:color var(--transition)}
+    .header h1 span{color:var(--accent);font-style:italic;transition:color var(--transition)}
+    .header-sub{font-size:.8rem;color:var(--text3);font-family:'DM Mono',monospace;transition:color var(--transition)}
+    .tabs{display:flex;gap:4px;background:var(--bg2);border-radius:calc(var(--radius) + 4px);padding:5px;margin-bottom:32px;border:1px solid var(--border);transition:background var(--transition),border-color var(--transition)}
+    .tab-btn{flex:1;padding:10px 16px;border:none;background:transparent;color:var(--text2);font-family:'Instrument Sans',sans-serif;font-size:.85rem;font-weight:500;border-radius:var(--radius);cursor:pointer;transition:background .25s,color .25s,box-shadow .25s;white-space:nowrap}
+    .tab-btn:hover{color:var(--text)}
+    .tab-btn.active{background:var(--bg);color:var(--text);box-shadow:0 2px 12px rgba(0,0,0,.18)}
+    [data-theme="light"] .tab-btn.active{box-shadow:0 2px 12px rgba(0,0,0,.08)}
+    .panel{display:none;animation:fadeUp .3s cubic-bezier(0.4,0,0.2,1)}
+    .panel.active{display:block}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    .color-stage{border-radius:var(--radius);overflow:hidden;margin-bottom:28px;border:1px solid var(--border);transition:border-color var(--transition)}
+    .color-swatch{height:220px;background:var(--swatch);transition:background .6s cubic-bezier(0.4,0,0.2,1);display:flex;align-items:flex-end;padding:20px}
+    .swatch-name{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:500;color:rgba(255,255,255,.9);text-shadow:0 2px 8px rgba(0,0,0,.35);letter-spacing:-0.02em;opacity:0;transform:translateY(8px);transition:opacity .4s ease .2s,transform .4s ease .2s}
+    .swatch-name.visible{opacity:1;transform:translateY(0)}
+    .color-info{display:grid;grid-template-columns:repeat(3,1fr);background:var(--bg2);transition:background var(--transition)}
+    .color-value{padding:16px 20px;border-right:1px solid var(--border);cursor:pointer;transition:background .2s,border-color var(--transition);position:relative}
+    .color-value:last-child{border-right:none}
+    .color-value:hover{background:var(--bg3)}
+    .color-value-label{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-family:'DM Mono',monospace;margin-bottom:4px;transition:color var(--transition)}
+    .color-value-code{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--text);font-weight:500;transition:color var(--transition)}
+    .copy-hint{position:absolute;bottom:6px;right:10px;font-size:.62rem;color:var(--text3);font-family:'DM Mono',monospace;opacity:0;transition:opacity .2s}
+    .color-value:hover .copy-hint{opacity:1}
+    .toast{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 20px;border-radius:100px;font-size:.8rem;font-family:'DM Mono',monospace;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:1000}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .input-group{display:flex;gap:10px;margin-bottom:16px}
+    .color-input{flex:1;padding:14px 20px;background:var(--bg2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.95rem;outline:none;transition:border-color .25s,background var(--transition),color var(--transition),box-shadow .25s}
+    .color-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+    .color-input::placeholder{color:var(--text3)}
+    .btn{padding:12px 22px;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'Instrument Sans',sans-serif;font-size:.88rem;font-weight:600;transition:all .2s ease}
+    .btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 16px var(--accent-glow)}
+    .btn-primary:hover{filter:brightness(1.1);transform:translateY(-1px);box-shadow:0 6px 22px var(--accent-glow)}
+    .btn-primary:active{transform:translateY(0)}
+    .btn-secondary{background:var(--bg2);color:var(--text2);border:1px solid var(--border)}
+    .btn-secondary:hover{background:var(--bg3);color:var(--text)}
+    .btn-sm{padding:8px 16px;font-size:.8rem}
+    .btn-icon{display:flex;align-items:center;gap:6px}
+    .action-row{display:flex;gap:8px;flex-wrap:wrap}
+    .suggestions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+    .chip{padding:5px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:100px;font-size:.75rem;color:var(--text2);cursor:pointer;transition:background .2s,color .2s,border-color .2s,transform .15s;font-family:'DM Mono',monospace}
+    .chip:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:translateY(-1px)}
+    .error-msg{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#f87171;padding:12px 16px;border-radius:var(--radius-sm);font-size:.83rem;margin-bottom:16px;display:none;font-family:'DM Mono',monospace}
+    .error-msg.visible{display:block;animation:fadeUp .25s ease}
+    .section-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:12px;transition:color var(--transition)}
+    /* palette generator */
+    .palette-gen-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:24px;transition:background var(--transition),border-color var(--transition)}
+    .palette-gen-title{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:500;color:var(--text);margin-bottom:16px;transition:color var(--transition)}
+    .palette-gen-controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+    .gen-select{padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.85rem;outline:none;cursor:pointer;transition:background var(--transition),color var(--transition)}
+    .gen-select:focus{border-color:var(--accent)}
+    .gen-select option{background:var(--bg2)}
+    .count-row{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--text2)}
+    .count-row input[type=range]{accent-color:var(--accent);cursor:pointer;width:90px}
+    .count-val{font-family:'DM Mono',monospace;color:var(--accent);font-weight:600;min-width:16px}
+    .palette-gen-input{flex:1;min-width:160px;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'Instrument Sans',sans-serif;font-size:.85rem;outline:none;transition:border-color .25s,background var(--transition)}
+    .palette-gen-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+    .palette-gen-input::placeholder{color:var(--text3)}
+    .palette-strip{display:flex;border-radius:var(--radius-sm);overflow:hidden;height:60px;margin-bottom:8px}
+    .strip-seg{flex:1;cursor:pointer;transition:flex .4s cubic-bezier(0.4,0,0.2,1),filter .2s}
+    .strip-seg:hover{flex:2;filter:brightness(1.1)}
+    .palette-strip-hint{font-size:.7rem;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:16px}
+    /* grids */
+    .color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:12px}
+    .gen-palette-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(138px,1fr));gap:12px;margin-top:4px}
+    .color-card{border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .2s,box-shadow .2s,border-color var(--transition);animation:fadeUp .3s ease}
+    .color-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+    .card-swatch{height:80px}
+    .card-meta{padding:10px 12px;background:var(--bg2);transition:background var(--transition)}
+    .card-name{font-size:.78rem;color:var(--text);font-weight:500;margin-bottom:2px;transition:color var(--transition);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .card-hex{font-size:.68rem;color:var(--text3);font-family:'DM Mono',monospace;transition:color var(--transition)}
+    .card-actions{display:flex;gap:4px;margin-top:6px}
+    .card-btn{padding:3px 8px;font-size:.65rem;border:1px solid var(--border);border-radius:4px;background:transparent;color:var(--text3);cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s}
+    .card-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+    .palette-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-size:.9rem}
+    .empty-state .empty-icon{font-size:2.5rem;margin-bottom:12px;display:block;opacity:.5}
+    .divider{border:none;border-top:1px solid var(--border);margin:24px 0;transition:border-color var(--transition)}
+    /* settings */
+    .settings-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px;transition:background var(--transition),border-color var(--transition)}
+    .settings-row{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border);transition:border-color var(--transition)}
+    .settings-row:last-child{border-bottom:none}
+    .settings-label{font-size:.9rem;font-weight:500;color:var(--text);transition:color var(--transition)}
+    .settings-desc{font-size:.75rem;color:var(--text3);margin-top:2px;transition:color var(--transition)}
+    .toggle{position:relative;width:48px;height:26px;flex-shrink:0}
+    .toggle input{opacity:0;width:0;height:0}
+    .toggle-track{position:absolute;inset:0;background:var(--bg3);border-radius:100px;cursor:pointer;transition:background .3s;border:1.5px solid var(--border)}
+    .toggle input:checked+.toggle-track{background:var(--accent);border-color:var(--accent)}
+    .toggle-track::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:50%;left:3px;transform:translateY(-50%);transition:left .3s cubic-bezier(0.4,0,0.2,1);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+    .toggle input:checked+.toggle-track::after{left:calc(100% - 21px)}
+    /* modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+    .modal-overlay.open{opacity:1;pointer-events:all}
+    .modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);width:100%;max-width:640px;max-height:82vh;overflow:hidden;display:flex;flex-direction:column;transform:scale(.94) translateY(20px);transition:transform .3s cubic-bezier(0.4,0,0.2,1),background var(--transition),border-color var(--transition)}
+    .modal-overlay.open .modal{transform:scale(1) translateY(0)}
+    .modal-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .modal-title{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:500;color:var(--text)}
+    .modal-close{width:30px;height:30px;border:none;background:var(--bg3);border-radius:50%;cursor:pointer;color:var(--text2);font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s}
+    .modal-close:hover{background:var(--border);color:var(--text)}
+    .modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+    .word-section{margin-bottom:24px}
+    .word-section-title{font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);font-family:'DM Mono',monospace;margin-bottom:10px}
+    .word-tags{display:flex;flex-wrap:wrap;gap:6px}
+    .word-tag{padding:4px 10px;background:var(--bg3);border-radius:100px;font-size:.75rem;color:var(--text2);font-family:'DM Mono',monospace;cursor:pointer;transition:background .2s,color .2s;border:1px solid var(--border)}
+    .word-tag:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+    ::-webkit-scrollbar{width:6px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    @media(max-width:540px){.color-info{grid-template-columns:1fr 1fr}.color-value:nth-child(3){display:none}.tab-btn{padding:10px 8px;font-size:.76rem}.palette-gen-controls{flex-direction:column;align-items:stretch}}
   </style>
 </head>
 <body>
@@ -587,68 +128,86 @@
     <h1>Chrom<span>ia</span></h1>
     <span class="header-sub">color studio</span>
   </header>
-
-  <!-- TABS -->
   <div class="tabs" role="tablist">
-    <button class="tab-btn active" data-tab="colors" role="tab">Colors</button>
-    <button class="tab-btn" data-tab="palette" role="tab">Palette</button>
-    <button class="tab-btn" data-tab="history" role="tab">History</button>
-    <button class="tab-btn" data-tab="settings" role="tab">Settings</button>
+    <button class="tab-btn active" data-tab="colors">Colors</button>
+    <button class="tab-btn" data-tab="palette">Palette</button>
+    <button class="tab-btn" data-tab="history">History</button>
+    <button class="tab-btn" data-tab="settings">Settings</button>
   </div>
 
-  <!-- PANEL: COLORS -->
+  <!-- COLORS -->
   <div class="panel active" id="panel-colors">
     <div class="color-stage">
       <div class="color-swatch" id="mainSwatch">
         <span class="swatch-name" id="swatchName">—</span>
       </div>
       <div class="color-info">
-        <div class="color-value" id="hexVal" onclick="copyValue('hex')">
+        <div class="color-value" onclick="copyValue('hex')">
           <div class="color-value-label">HEX</div>
           <div class="color-value-code" id="hexCode">—</div>
           <span class="copy-hint">click to copy</span>
         </div>
-        <div class="color-value" id="rgbVal" onclick="copyValue('rgb')">
+        <div class="color-value" onclick="copyValue('rgb')">
           <div class="color-value-label">RGB</div>
           <div class="color-value-code" id="rgbCode">—</div>
           <span class="copy-hint">click to copy</span>
         </div>
-        <div class="color-value" id="hslVal" onclick="copyValue('hsl')">
+        <div class="color-value" onclick="copyValue('hsl')">
           <div class="color-value-label">HSL</div>
           <div class="color-value-code" id="hslCode">—</div>
           <span class="copy-hint">click to copy</span>
         </div>
       </div>
     </div>
-
     <div id="errorMsg" class="error-msg"></div>
-
     <div class="input-group">
-      <input
-        type="text"
-        class="color-input"
-        id="colorInput"
-        placeholder='Try "light blue", "vivid coral", "dark forest green"…'
-        autocomplete="off"
-        spellcheck="false"
-      />
+      <input type="text" class="color-input" id="colorInput" placeholder='Try "pale rose", "electric violet", "neon lime"…' autocomplete="off" spellcheck="false"/>
       <button class="btn btn-primary" onclick="generateColor()">Generate</button>
     </div>
-
     <div class="suggestions" id="suggestions"></div>
-
     <div class="action-row">
-      <button class="btn btn-secondary btn-sm btn-icon" onclick="randomColor()">
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="randomColor()" title="Fully random color">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         Random
       </button>
-      <button class="btn btn-secondary btn-sm" onclick="addToPalette()">+ Add to Palette</button>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="randomVariation()" title="Random variation of current color">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Variation
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="addToPalette()">+ Save to Palette</button>
       <button class="btn btn-secondary btn-sm" onclick="openWordsModal()">Supported Words ↗</button>
     </div>
   </div>
 
-  <!-- PANEL: PALETTE -->
+  <!-- PALETTE -->
   <div class="panel" id="panel-palette">
+    <div class="palette-gen-card">
+      <div class="palette-gen-title">Palette Generator</div>
+      <div class="palette-gen-controls">
+        <input type="text" class="palette-gen-input" id="palGenInput" placeholder='Base color (e.g. "deep teal") or leave blank for random'/>
+        <select class="gen-select" id="palGenMode">
+          <option value="analogous">Analogous</option>
+          <option value="complementary">Complementary</option>
+          <option value="triadic">Triadic</option>
+          <option value="tetradic">Tetradic</option>
+          <option value="split">Split-Complementary</option>
+          <option value="monochromatic">Monochromatic</option>
+          <option value="shades">Shades</option>
+          <option value="tints">Tints</option>
+          <option value="random">Full Random</option>
+        </select>
+        <div class="count-row">
+          <span>Colors:</span>
+          <input type="range" id="palCount" min="3" max="8" value="5" oninput="document.getElementById('palCountVal').textContent=this.value">
+          <span class="count-val" id="palCountVal">5</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="generatePalette()">Generate</button>
+      </div>
+      <div id="palStrip" class="palette-strip" style="display:none"></div>
+      <div id="palStripHint" class="palette-strip-hint" style="display:none">Hover to expand · Click a swatch to load it</div>
+      <div class="gen-palette-grid" id="genPaletteGrid"></div>
+    </div>
+    <hr class="divider">
     <div class="palette-header">
       <div class="section-label">Saved Colors</div>
       <button class="btn btn-secondary btn-sm" onclick="clearPalette()">Clear All</button>
@@ -656,11 +215,11 @@
     <div class="color-grid" id="paletteGrid"></div>
     <div class="empty-state" id="paletteEmpty" style="display:none">
       <span class="empty-icon">🎨</span>
-      No colors saved yet.<br>Generate one and hit <strong>"+ Add to Palette"</strong>
+      No colors saved yet.<br>Generate one and hit <strong>"Save to Palette"</strong>
     </div>
   </div>
 
-  <!-- PANEL: HISTORY -->
+  <!-- HISTORY -->
   <div class="panel" id="panel-history">
     <div class="palette-header">
       <div class="section-label">Recent Colors</div>
@@ -673,55 +232,30 @@
     </div>
   </div>
 
-  <!-- PANEL: SETTINGS -->
+  <!-- SETTINGS -->
   <div class="panel" id="panel-settings">
     <div class="settings-card">
       <div class="settings-row">
-        <div>
-          <div class="settings-label">Dark Mode</div>
-          <div class="settings-desc">Switch between dark and light themes</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="darkModeToggle" checked onchange="toggleTheme()">
-          <div class="toggle-track"></div>
-        </label>
+        <div><div class="settings-label">Dark Mode</div><div class="settings-desc">Switch between dark and light themes</div></div>
+        <label class="toggle"><input type="checkbox" id="darkModeToggle" checked onchange="toggleTheme()"><div class="toggle-track"></div></label>
       </div>
       <div class="settings-row">
-        <div>
-          <div class="settings-label">Show Suggestions</div>
-          <div class="settings-desc">Quick-example chips below the input</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="suggestionsToggle" checked onchange="toggleSuggestions()">
-          <div class="toggle-track"></div>
-        </label>
+        <div><div class="settings-label">Show Suggestions</div><div class="settings-desc">Quick-example chips below the input</div></div>
+        <label class="toggle"><input type="checkbox" id="suggestionsToggle" checked onchange="toggleSuggestions()"><div class="toggle-track"></div></label>
       </div>
       <div class="settings-row">
-        <div>
-          <div class="settings-label">Auto-Add to History</div>
-          <div class="settings-desc">Automatically save every generated color</div>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" id="autoHistoryToggle" checked>
-          <div class="toggle-track"></div>
-        </label>
+        <div><div class="settings-label">Auto-Add to History</div><div class="settings-desc">Automatically save every generated color</div></div>
+        <label class="toggle"><input type="checkbox" id="autoHistoryToggle" checked><div class="toggle-track"></div></label>
       </div>
     </div>
-
     <div class="settings-card">
       <div class="settings-row">
-        <div>
-          <div class="settings-label">Clear History</div>
-          <div class="settings-desc">Remove all history entries</div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="clearHistory(); showToast('History cleared')">Clear</button>
+        <div><div class="settings-label">Clear History</div><div class="settings-desc">Remove all history entries</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="clearHistory();showToast('History cleared')">Clear</button>
       </div>
       <div class="settings-row">
-        <div>
-          <div class="settings-label">Clear Palette</div>
-          <div class="settings-desc">Remove all saved palette colors</div>
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="clearPalette(); showToast('Palette cleared')">Clear</button>
+        <div><div class="settings-label">Clear Palette</div><div class="settings-desc">Remove all saved palette colors</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="clearPalette();showToast('Palette cleared')">Clear</button>
       </div>
     </div>
   </div>
@@ -738,654 +272,504 @@
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ════════════════════════════════════════════════
-//  COLOR DATABASE
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
+//  BASE COLORS  (~200+)
+// ══════════════════════════════════════════
 const BASE_COLORS = {
-  red:        { h: 0,   s: 85, l: 50 },
-  orange:     { h: 25,  s: 90, l: 55 },
-  amber:      { h: 38,  s: 95, l: 50 },
-  yellow:     { h: 52,  s: 95, l: 55 },
-  lime:       { h: 80,  s: 80, l: 45 },
-  green:      { h: 130, s: 75, l: 40 },
-  teal:       { h: 175, s: 70, l: 40 },
-  cyan:       { h: 190, s: 85, l: 50 },
-  sky:        { h: 205, s: 80, l: 55 },
-  blue:       { h: 220, s: 80, l: 50 },
-  indigo:     { h: 245, s: 70, l: 45 },
-  violet:     { h: 270, s: 65, l: 50 },
-  purple:     { h: 285, s: 70, l: 45 },
-  magenta:    { h: 300, s: 80, l: 50 },
-  pink:       { h: 330, s: 80, l: 65 },
-  rose:       { h: 345, s: 75, l: 55 },
-  white:      { h: 0,   s: 0,  l: 97 },
-  black:      { h: 0,   s: 0,  l: 5  },
-  gray:       { h: 220, s: 8,  l: 55 },
-  grey:       { h: 220, s: 8,  l: 55 },
-  brown:      { h: 25,  s: 50, l: 35 },
-  tan:        { h: 35,  s: 45, l: 65 },
-  beige:      { h: 40,  s: 40, l: 80 },
-  cream:      { h: 45,  s: 50, l: 90 },
-  gold:       { h: 45,  s: 90, l: 50 },
-  silver:     { h: 0,   s: 5,  l: 75 },
-  coral:      { h: 10,  s: 85, l: 65 },
-  salmon:     { h: 5,   s: 70, l: 68 },
-  peach:      { h: 20,  s: 80, l: 75 },
-  turquoise:  { h: 175, s: 75, l: 48 },
-  mint:       { h: 155, s: 65, l: 70 },
-  lavender:   { h: 265, s: 55, l: 75 },
-  lilac:      { h: 280, s: 45, l: 78 },
-  maroon:     { h: 0,   s: 70, l: 25 },
-  crimson:    { h: 350, s: 85, l: 40 },
-  scarlet:    { h: 5,   s: 90, l: 45 },
-  olive:      { h: 70,  s: 50, l: 35 },
-  sage:       { h: 130, s: 35, l: 55 },
-  forest:     { h: 125, s: 60, l: 28 },
-  navy:       { h: 225, s: 70, l: 25 },
-  azure:      { h: 210, s: 80, l: 60 },
-  cobalt:     { h: 215, s: 80, l: 40 },
-  periwinkle: { h: 235, s: 60, l: 70 },
-  mauve:      { h: 300, s: 30, l: 60 },
-  plum:       { h: 290, s: 55, l: 35 },
-  fuchsia:    { h: 300, s: 85, l: 55 },
-  hotpink:    { h: 330, s: 90, l: 55 },
-  burgundy:   { h: 345, s: 65, l: 28 },
-  wine:       { h: 340, s: 60, l: 30 },
-  rust:       { h: 15,  s: 75, l: 40 },
-  terracotta: { h: 15,  s: 65, l: 50 },
-  sienna:     { h: 20,  s: 65, l: 40 },
-  chocolate:  { h: 25,  s: 55, l: 30 },
-  caramel:    { h: 30,  s: 70, l: 45 },
-  sunflower:  { h: 48,  s: 95, l: 55 },
-  mustard:    { h: 42,  s: 80, l: 45 },
-  chartreuse: { h: 90,  s: 85, l: 45 },
-  emerald:    { h: 145, s: 75, l: 38 },
-  jade:       { h: 160, s: 60, l: 40 },
-  seafoam:    { h: 165, s: 55, l: 65 },
-  aqua:       { h: 185, s: 75, l: 50 },
-  cerulean:   { h: 200, s: 75, l: 50 },
-  sapphire:   { h: 225, s: 75, l: 40 },
-  midnight:   { h: 230, s: 65, l: 18 },
-  slate:      { h: 215, s: 25, l: 45 },
-  steel:      { h: 210, s: 30, l: 55 },
-  charcoal:   { h: 210, s: 10, l: 22 },
-  ivory:      { h: 50,  s: 40, l: 93 },
-  snow:       { h: 200, s: 20, l: 97 },
-  linen:      { h: 30,  s: 40, l: 90 },
-  khaki:      { h: 50,  s: 45, l: 65 },
-  denim:      { h: 215, s: 55, l: 45 },
-  ultramarine:{ h: 235, s: 80, l: 40 },
-  orchid:     { h: 300, s: 60, l: 65 },
-  flamingo:   { h: 340, s: 75, l: 72 },
-  blush:      { h: 345, s: 60, l: 80 },
-  ruby:       { h: 350, s: 85, l: 38 },
-  garnet:     { h: 350, s: 75, l: 32 },
-  copper:     { h: 20,  s: 65, l: 48 },
-  bronze:     { h: 28,  s: 55, l: 38 },
-  mahogany:   { h: 10,  s: 65, l: 28 },
-  wheat:      { h: 38,  s: 60, l: 78 },
-  champagne:  { h: 43,  s: 50, l: 85 },
-  saffron:    { h: 40,  s: 95, l: 55 },
-  tangerine:  { h: 20,  s: 95, l: 58 },
-  pumpkin:    { h: 25,  s: 90, l: 50 },
-  clover:     { h: 120, s: 55, l: 38 },
-  moss:       { h: 100, s: 45, l: 32 },
-  pine:       { h: 140, s: 55, l: 25 },
-  fern:       { h: 125, s: 55, l: 42 },
-  ocean:      { h: 205, s: 80, l: 42 },
-  lagoon:     { h: 185, s: 70, l: 38 },
-  tropics:    { h: 175, s: 75, l: 45 },
-  glacier:    { h: 195, s: 50, l: 78 },
-  storm:      { h: 215, s: 25, l: 35 },
-  thunder:    { h: 225, s: 20, l: 22 },
-  fog:        { h: 210, s: 12, l: 75 },
-  ash:        { h: 210, s: 8,  l: 65 },
-  smoke:      { h: 215, s: 6,  l: 58 },
-  graphite:   { h: 215, s: 12, l: 32 },
-  onyx:       { h: 220, s: 10, l: 12 },
-  obsidian:   { h: 230, s: 20, l: 10 },
-  pearl:      { h: 45,  s: 25, l: 92 },
-  bone:       { h: 38,  s: 30, l: 85 },
-  sand:       { h: 40,  s: 45, l: 72 },
-  dune:       { h: 38,  s: 40, l: 62 },
-  taupe:      { h: 35,  s: 25, l: 55 },
-  ecru:       { h: 42,  s: 35, l: 82 },
-  blond:      { h: 45,  s: 65, l: 78 },
-  auburn:     { h: 15,  s: 70, l: 35 },
-  chestnut:   { h: 18,  s: 58, l: 32 },
-  walnut:     { h: 22,  s: 48, l: 28 },
-  espresso:   { h: 20,  s: 40, l: 20 },
-  mocha:      { h: 25,  s: 42, l: 30 },
-  latte:      { h: 30,  s: 45, l: 68 },
-  vanilla:    { h: 47,  s: 55, l: 88 },
-  honeydew:   { h: 120, s: 40, l: 88 },
-  melon:      { h: 15,  s: 80, l: 72 },
-  berry:      { h: 320, s: 65, l: 38 },
-  grape:      { h: 280, s: 55, l: 35 },
-  mulberry:   { h: 310, s: 55, l: 38 },
-  currant:    { h: 350, s: 60, l: 30 },
-  cherry:     { h: 350, s: 80, l: 38 },
-  raspberry:  { h: 335, s: 80, l: 42 },
-  strawberry: { h: 5,   s: 85, l: 55 },
-  watermelon: { h: 0,   s: 80, l: 58 },
-  mango:      { h: 32,  s: 95, l: 60 },
-  papaya:     { h: 22,  s: 90, l: 68 },
-  lemon:      { h: 53,  s: 95, l: 62 },
-  lime2:      { h: 88,  s: 85, l: 48 },
-  pistachio:  { h: 95,  s: 50, l: 60 },
-  avocado:    { h: 85,  s: 50, l: 40 },
-  pea:        { h: 110, s: 55, l: 50 },
-  seagreen:   { h: 155, s: 55, l: 42 },
-  honeybee:   { h: 48,  s: 90, l: 55 },
-  butter:     { h: 50,  s: 85, l: 80 },
-  flax:       { h: 50,  s: 55, l: 70 },
-  straw:      { h: 48,  s: 65, l: 72 },
-  topaz:      { h: 195, s: 70, l: 60 },
-  amethyst:   { h: 270, s: 60, l: 55 },
-  emeraldgreen:{ h: 150, s: 75, l: 38 },
-  tanzanite:  { h: 250, s: 65, l: 42 },
-  malachite:  { h: 150, s: 70, l: 35 },
-  lapis:      { h: 215, s: 75, l: 38 },
-  jasper:     { h: 15,  s: 60, l: 45 },
+  red:{h:0,s:85,l:50},crimson:{h:350,s:85,l:40},scarlet:{h:5,s:90,l:45},
+  ruby:{h:350,s:85,l:38},garnet:{h:350,s:75,l:32},maroon:{h:0,s:70,l:25},
+  burgundy:{h:345,s:65,l:28},wine:{h:340,s:60,l:30},cherry:{h:350,s:80,l:38},
+  blood:{h:0,s:80,l:30},carmine:{h:355,s:80,l:42},rose:{h:345,s:75,l:55},
+  raspberry:{h:335,s:80,l:42},strawberry:{h:5,s:85,l:55},watermelon:{h:0,s:80,l:58},
+  currant:{h:350,s:60,l:30},mulberry:{h:310,s:55,l:38},cranberry:{h:348,s:72,l:35},
+  orange:{h:25,s:90,l:55},tangerine:{h:20,s:95,l:58},rust:{h:15,s:75,l:40},
+  terracotta:{h:15,s:65,l:50},sienna:{h:20,s:65,l:40},amber:{h:38,s:95,l:50},
+  coral:{h:10,s:85,l:65},salmon:{h:5,s:70,l:68},peach:{h:20,s:80,l:75},
+  pumpkin:{h:25,s:90,l:50},papaya:{h:22,s:90,l:68},melon:{h:15,s:80,l:72},
+  apricot:{h:22,s:80,l:72},blaze:{h:18,s:95,l:55},cider:{h:28,s:80,l:48},
+  yellow:{h:52,s:95,l:55},gold:{h:45,s:90,l:50},sunflower:{h:48,s:95,l:55},
+  mustard:{h:42,s:80,l:45},saffron:{h:40,s:95,l:55},butter:{h:50,s:85,l:80},
+  lemon:{h:53,s:95,l:62},honey:{h:44,s:90,l:58},straw:{h:48,s:65,l:72},
+  wheat:{h:38,s:60,l:78},champagne:{h:43,s:50,l:85},vanilla:{h:47,s:55,l:88},
+  cream:{h:45,s:50,l:90},ivory:{h:50,s:40,l:93},flax:{h:50,s:55,l:70},
+  goldenrod:{h:43,s:88,l:52},sunbeam:{h:49,s:92,l:60},
+  green:{h:130,s:75,l:40},lime:{h:80,s:80,l:45},olive:{h:70,s:50,l:35},
+  sage:{h:130,s:35,l:55},forest:{h:125,s:60,l:28},emerald:{h:145,s:75,l:38},
+  jade:{h:160,s:60,l:40},teal:{h:175,s:70,l:40},mint:{h:155,s:65,l:70},
+  seafoam:{h:165,s:55,l:65},moss:{h:100,s:45,l:32},pine:{h:140,s:55,l:25},
+  fern:{h:125,s:55,l:42},clover:{h:120,s:55,l:38},chartreuse:{h:90,s:85,l:45},
+  avocado:{h:85,s:50,l:40},pistachio:{h:95,s:50,l:60},malachite:{h:150,s:70,l:35},
+  seagreen:{h:155,s:55,l:42},pea:{h:110,s:55,l:50},hunter:{h:128,s:58,l:22},
+  basil:{h:135,s:60,l:28},cactus:{h:100,s:55,l:38},lawn:{h:85,s:75,l:42},
+  matcha:{h:95,s:50,l:45},shamrock:{h:145,s:70,l:38},
+  cyan:{h:190,s:85,l:50},aqua:{h:185,s:75,l:50},turquoise:{h:175,s:75,l:48},
+  lagoon:{h:185,s:70,l:38},tropics:{h:175,s:75,l:45},ocean:{h:205,s:80,l:42},
+  topaz:{h:195,s:70,l:60},glacier:{h:195,s:50,l:78},
+  blue:{h:220,s:80,l:50},sky:{h:205,s:80,l:55},azure:{h:210,s:80,l:60},
+  cobalt:{h:215,s:80,l:40},navy:{h:225,s:70,l:25},denim:{h:215,s:55,l:45},
+  cerulean:{h:200,s:75,l:50},sapphire:{h:225,s:75,l:40},midnight:{h:230,s:65,l:18},
+  slate:{h:215,s:25,l:45},steel:{h:210,s:30,l:55},periwinkle:{h:235,s:60,l:70},
+  ultramarine:{h:235,s:80,l:40},lapis:{h:215,s:75,l:38},cornflower:{h:219,s:70,l:63},
+  powder:{h:208,s:60,l:74},wedgwood:{h:210,s:50,l:52},storm:{h:215,s:25,l:35},
+  thunder:{h:225,s:20,l:22},ocean2:{h:210,s:72,l:38},
+  violet:{h:270,s:65,l:50},purple:{h:285,s:70,l:45},indigo:{h:245,s:70,l:45},
+  lavender:{h:265,s:55,l:75},lilac:{h:280,s:45,l:78},mauve:{h:300,s:30,l:60},
+  plum:{h:290,s:55,l:35},amethyst:{h:270,s:60,l:55},orchid:{h:300,s:60,l:65},
+  grape:{h:280,s:55,l:35},wisteria:{h:280,s:42,l:70},heather:{h:270,s:32,l:65},
+  thistle:{h:285,s:38,l:78},iris:{h:260,s:65,l:58},tanzanite:{h:250,s:65,l:42},
+  byzantium:{h:290,s:60,l:28},eggplant:{h:300,s:45,l:22},
+  pink:{h:330,s:80,l:65},magenta:{h:300,s:80,l:50},fuchsia:{h:300,s:85,l:55},
+  hotpink:{h:330,s:90,l:55},blush:{h:345,s:60,l:80},flamingo:{h:340,s:75,l:72},
+  bubblegum:{h:325,s:85,l:70},candy:{h:335,s:90,l:65},petal:{h:340,s:55,l:80},
+  rouge:{h:340,s:70,l:50},carnation:{h:335,s:65,l:68},
+  white:{h:0,s:0,l:97},black:{h:0,s:0,l:5},gray:{h:220,s:8,l:55},
+  grey:{h:220,s:8,l:55},charcoal:{h:210,s:10,l:22},graphite:{h:215,s:12,l:32},
+  onyx:{h:220,s:10,l:12},obsidian:{h:230,s:20,l:10},ash:{h:210,s:8,l:65},
+  smoke:{h:215,s:6,l:58},fog:{h:210,s:12,l:75},silver:{h:0,s:5,l:75},
+  pearl:{h:45,s:25,l:92},snow:{h:200,s:20,l:97},linen:{h:30,s:40,l:90},
+  bone:{h:38,s:30,l:85},ecru:{h:42,s:35,l:82},taupe:{h:35,s:25,l:55},
+  dune:{h:38,s:40,l:62},sand:{h:40,s:45,l:72},pebble:{h:35,s:15,l:65},
+  stone:{h:30,s:12,l:58},flint:{h:220,s:8,l:45},chalk:{h:55,s:12,l:92},
+  brown:{h:25,s:50,l:35},tan:{h:35,s:45,l:65},beige:{h:40,s:40,l:80},
+  chocolate:{h:25,s:55,l:30},caramel:{h:30,s:70,l:45},mocha:{h:25,s:42,l:30},
+  espresso:{h:20,s:40,l:20},walnut:{h:22,s:48,l:28},mahogany:{h:10,s:65,l:28},
+  auburn:{h:15,s:70,l:35},chestnut:{h:18,s:58,l:32},copper:{h:20,s:65,l:48},
+  bronze:{h:28,s:55,l:38},clay:{h:18,s:55,l:45},cinnamon:{h:22,s:75,l:42},
+  ginger:{h:28,s:80,l:48},nutmeg:{h:20,s:55,l:35},toffee:{h:30,s:65,l:40},
+  praline:{h:28,s:58,l:42},latte:{h:30,s:45,l:68},nougat:{h:32,s:50,l:65},
+  khaki:{h:50,s:45,l:65},blond:{h:45,s:65,l:78},mango:{h:32,s:95,l:60},
+  berry:{h:320,s:65,l:38},honeydew:{h:120,s:40,l:88},
+  dawn:{h:28,s:70,l:75},dusk:{h:255,s:45,l:55},twilight:{h:260,s:50,l:35},
+  aurora:{h:155,s:75,l:55},nebula:{h:270,s:65,l:42},cosmic:{h:250,s:60,l:28},
+  solar:{h:40,s:95,l:62},lunar:{h:220,s:15,l:80},arctic:{h:200,s:35,l:88},
+  desert:{h:38,s:55,l:62},canyon:{h:18,s:65,l:48},prairie:{h:75,s:45,l:52},
+  meadow:{h:120,s:50,l:50},bloom:{h:340,s:65,l:70},blossom:{h:330,s:55,l:78},
+  dew:{h:165,s:40,l:82},bark:{h:22,s:42,l:32},peat:{h:30,s:35,l:22},
+  tide:{h:195,s:55,l:55},reef:{h:180,s:65,l:45},drift:{h:205,s:20,l:82},
+  opal:{h:195,s:40,l:82},tourmaline:{h:155,s:65,l:42},peridot:{h:85,s:65,l:48},
+  moonstone:{h:225,s:25,l:85},sunstone:{h:30,s:75,l:60},aquamarine:{h:175,s:65,l:60},
+  citrine:{h:42,s:85,l:55},carnelian:{h:15,s:75,l:48},jasper:{h:15,s:60,l:45},
+  hematite:{h:0,s:15,l:30},
+  nimbus:{h:215,s:15,l:45},mist:{h:210,s:15,l:78},haze:{h:215,s:10,l:82},
+  overcast:{h:215,s:8,l:60},lightning:{h:52,s:90,l:70},
+  velvet:{h:280,s:55,l:35},silk:{h:330,s:30,l:85},satin:{h:48,s:35,l:88},
+  canvas:{h:42,s:30,l:75},suede:{h:25,s:35,l:55},felt:{h:20,s:45,l:42},
+  chai:{h:28,s:55,l:52},miso:{h:38,s:45,l:62},sorbet:{h:5,s:80,l:75},
+  custard:{h:47,s:65,l:80},truffle:{h:25,s:38,l:28},
 };
 
+// ══════════════════════════════════════════
+//  MODIFIERS (~65)
+// ══════════════════════════════════════════
 const MODIFIERS = {
-  light:       { lDelta: +22, sMult: 0.75 },
-  pale:        { lDelta: +28, sMult: 0.50 },
-  pastel:      { lDelta: +24, sMult: 0.50 },
-  soft:        { lDelta: +16, sMult: 0.70 },
-  muted:       { lDelta: +8,  sMult: 0.50 },
-  dusty:       { lDelta: +8,  sMult: 0.48 },
-  faded:       { lDelta: +20, sMult: 0.42 },
-  washed:      { lDelta: +25, sMult: 0.38 },
-  powdery:     { lDelta: +26, sMult: 0.42 },
-  delicate:    { lDelta: +22, sMult: 0.55 },
-  subtle:      { lDelta: +18, sMult: 0.48 },
-  misty:       { lDelta: +24, sMult: 0.40 },
-  airy:        { lDelta: +28, sMult: 0.42 },
-
-  dark:        { lDelta: -20, sMult: 1.10 },
-  deep:        { lDelta: -18, sMult: 1.10 },
-  rich:        { lDelta: -10, sMult: 1.20 },
-  bold:        { lDelta: -5,  sMult: 1.30 },
-  strong:      { lDelta: -8,  sMult: 1.20 },
-  deep2:       { lDelta: -22, sMult: 1.05 },
-  moody:       { lDelta: -15, sMult: 0.90 },
-  shadowy:     { lDelta: -25, sMult: 0.85 },
-  inky:        { lDelta: -30, sMult: 0.80 },
-  midnight2:   { lDelta: -32, sMult: 0.75 },
-  smoky:       { lDelta: -12, sMult: 0.60 },
-  burnt:       { lDelta: -16, sMult: 1.15 },
-
-  bright:      { lDelta: +5,  sMult: 1.30 },
-  vivid:       { lDelta: +3,  sMult: 1.40 },
-  vibrant:     { lDelta: 0,   sMult: 1.50 },
-  saturated:   { lDelta: 0,   sMult: 1.45 },
-  intense:     { lDelta: -4,  sMult: 1.40 },
-  electric:    { lDelta: +8,  sMult: 1.55 },
-  neon:        { lDelta: +12, sMult: 1.60 },
-  fluorescent: { lDelta: +10, sMult: 1.55 },
-  glowing:     { lDelta: +8,  sMult: 1.50 },
-  radiant:     { lDelta: +6,  sMult: 1.35 },
-  brilliant:   { lDelta: +4,  sMult: 1.45 },
-  dazzling:    { lDelta: +6,  sMult: 1.50 },
-  blazing:     { lDelta: +2,  sMult: 1.55 },
-  fiery:       { lDelta: 0,   sMult: 1.45 },
-
-  warm:        { hDelta: -10, sMult: 1.05 },
-  cool:        { hDelta: +10, sMult: 1.00 },
-  icy:         { hDelta: +12, sMult: 0.80, lDelta: +15 },
-  frigid:      { hDelta: +14, sMult: 0.75, lDelta: +10 },
-  frosty:      { hDelta: +10, sMult: 0.70, lDelta: +18 },
-  sunny:       { hDelta: -8,  sMult: 1.30, lDelta: +8 },
-  tropical:    { hDelta: -5,  sMult: 1.40 },
-  earthy:      { hDelta: +5,  sMult: 0.65, lDelta: -8 },
-  natural:     { hDelta: +5,  sMult: 0.70 },
-  stony:       { sMult: 0.40, lDelta: +2 },
-  metallic:    { sMult: 0.50, lDelta: +5 },
+  light:{lDelta:+22,sMult:.75},pale:{lDelta:+28,sMult:.50},
+  pastel:{lDelta:+24,sMult:.50},soft:{lDelta:+16,sMult:.70},
+  muted:{lDelta:+8,sMult:.50},dusty:{lDelta:+8,sMult:.48},
+  faded:{lDelta:+20,sMult:.42},washed:{lDelta:+25,sMult:.38},
+  powdery:{lDelta:+26,sMult:.42},delicate:{lDelta:+22,sMult:.55},
+  subtle:{lDelta:+18,sMult:.48},misty:{lDelta:+24,sMult:.40},
+  airy:{lDelta:+28,sMult:.42},wispy:{lDelta:+26,sMult:.38},
+  gentle:{lDelta:+18,sMult:.55},dreamy:{lDelta:+22,sMult:.45},
+  hazy:{lDelta:+20,sMult:.38},frosted:{lDelta:+18,sMult:.52},
+  cloudy:{lDelta:+22,sMult:.35},milky:{lDelta:+25,sMult:.30},
+  dark:{lDelta:-20,sMult:1.10},deep:{lDelta:-18,sMult:1.10},
+  rich:{lDelta:-10,sMult:1.20},bold:{lDelta:-5,sMult:1.30},
+  strong:{lDelta:-8,sMult:1.20},moody:{lDelta:-15,sMult:.90},
+  shadowy:{lDelta:-25,sMult:.85},inky:{lDelta:-30,sMult:.80},
+  smoky:{lDelta:-12,sMult:.60},burnt:{lDelta:-16,sMult:1.15},
+  muddy:{lDelta:-14,sMult:.65},dim:{lDelta:-18,sMult:.70},
+  murky:{lDelta:-16,sMult:.55},gloomy:{lDelta:-22,sMult:.60},
+  antique:{lDelta:-6,sMult:.60},vintage:{lDelta:-4,sMult:.55},
+  aged:{lDelta:-8,sMult:.52},weathered:{lDelta:-10,sMult:.50},
+  bright:{lDelta:+5,sMult:1.30},vivid:{lDelta:+3,sMult:1.40},
+  vibrant:{lDelta:0,sMult:1.50},saturated:{lDelta:0,sMult:1.45},
+  intense:{lDelta:-4,sMult:1.40},electric:{lDelta:+8,sMult:1.55},
+  neon:{lDelta:+12,sMult:1.60},fluorescent:{lDelta:+10,sMult:1.55},
+  glowing:{lDelta:+8,sMult:1.50},radiant:{lDelta:+6,sMult:1.35},
+  brilliant:{lDelta:+4,sMult:1.45},dazzling:{lDelta:+6,sMult:1.50},
+  blazing:{lDelta:+2,sMult:1.55},fiery:{lDelta:0,sMult:1.45},
+  punchy:{lDelta:+4,sMult:1.42},popping:{lDelta:+6,sMult:1.48},
+  juicy:{lDelta:+5,sMult:1.44},
+  warm:{hDelta:-10,sMult:1.05},cool:{hDelta:+10,sMult:1.00},
+  icy:{hDelta:+12,sMult:.80,lDelta:+15},frigid:{hDelta:+14,sMult:.75,lDelta:+10},
+  frosty:{hDelta:+10,sMult:.70,lDelta:+18},sunny:{hDelta:-8,sMult:1.30,lDelta:+8},
+  tropical:{hDelta:-5,sMult:1.40},earthy:{hDelta:+5,sMult:.65,lDelta:-8},
+  natural:{hDelta:+5,sMult:.70},stony:{sMult:.40,lDelta:+2},
+  metallic:{sMult:.50,lDelta:+5},gilded:{hDelta:-8,sMult:1.15,lDelta:+3},
+  iridescent:{sMult:1.20,lDelta:+8},pearlescent:{sMult:.60,lDelta:+15},
+  crystalline:{sMult:.65,lDelta:+18},
 };
 
-// Synonyms / aliases mapping
+// ══════════════════════════════════════════
+//  ALIASES
+// ══════════════════════════════════════════
 const ALIASES = {
-  'hot pink': 'hotpink',
-  'sea foam': 'seafoam',
-  'sea green': 'seagreen',
-  'ultra marine': 'ultramarine',
-  'sea blue': 'cerulean',
-  'sky blue': 'sky',
-  'forest green': 'forest',
-  'lime green': 'lime',
-  'olive green': 'olive',
-  'sage green': 'sage',
-  'moss green': 'moss',
-  'pine green': 'pine',
-  'fern green': 'fern',
-  'midnight blue': 'midnight',
-  'navy blue': 'navy',
-  'cobalt blue': 'cobalt',
-  'slate blue': 'slate',
-  'steel blue': 'steel',
-  'denim blue': 'denim',
-  'ocean blue': 'ocean',
-  'golden yellow': 'gold',
-  'hot coral': 'coral',
-  'rose gold': 'rose',
-  'burnt orange': 'rust',
-  'burnt red': 'maroon',
-  'burnt sienna': 'sienna',
-  'deep red': 'crimson',
-  'bright red': 'red',
-  'dark red': 'maroon',
-  'deep blue': 'navy',
-  'ice blue': 'glacier',
-  'emerald green': 'emerald',
-  'jade green': 'jade',
-  'teal blue': 'teal',
-  'cyan blue': 'cyan',
-  'violet purple': 'violet',
-  'hot orange': 'tangerine',
-  'warm orange': 'orange',
-  'cool blue': 'cerulean',
-  'wine red': 'wine',
-  'blood red': 'crimson',
-  'fire red': 'scarlet',
-  'fire orange': 'tangerine',
-  'grass green': 'green',
-  'sea teal': 'teal',
-  'aqua blue': 'aqua',
-  'rose pink': 'rose',
-  'baby blue': 'sky',
-  'baby pink': 'blush',
-  'nude': 'sand',
-  'blond': 'blond',
-  'auburn hair': 'auburn',
-  'chestnut hair': 'chestnut',
+  'hot pink':'hotpink','sea foam':'seafoam','sea green':'seagreen',
+  'ultra marine':'ultramarine','sea blue':'cerulean','sky blue':'sky',
+  'forest green':'forest','lime green':'lime','olive green':'olive',
+  'sage green':'sage','moss green':'moss','pine green':'pine',
+  'fern green':'fern','midnight blue':'midnight','navy blue':'navy',
+  'cobalt blue':'cobalt','slate blue':'slate','steel blue':'steel',
+  'denim blue':'denim','ocean blue':'ocean','golden yellow':'gold',
+  'hot coral':'coral','rose gold':'rose','burnt orange':'rust',
+  'burnt red':'maroon','burnt sienna':'sienna','deep red':'crimson',
+  'dark red':'maroon','deep blue':'navy','ice blue':'glacier',
+  'emerald green':'emerald','jade green':'jade','teal blue':'teal',
+  'cyan blue':'cyan','fire red':'scarlet','grass green':'green',
+  'aqua blue':'aqua','rose pink':'rose','baby blue':'sky',
+  'baby pink':'blush','nude':'sand','mint green':'mint',
+  'electric blue':'cobalt','blood red':'crimson','candy pink':'bubblegum',
+  'pastel blue':'sky','pastel green':'mint','pastel pink':'blush',
+  'pastel purple':'lavender','pastel yellow':'vanilla','pastel orange':'peach',
+  'warm white':'cream','cool white':'snow','off white':'ivory',
+  'pale gold':'champagne','dark purple':'plum','light purple':'lavender',
+  'gunmetal':'graphite','space gray':'charcoal','matte black':'onyx',
+  'ash gray':'ash','warm gray':'taupe','cool gray':'slate',
+  'cloud gray':'fog','pearl white':'pearl','antique white':'bone',
+  'duck egg':'seafoam','eucalyptus':'sage','rainforest':'forest',
+  'sea glass':'glacier','parchment':'linen','ochre':'mustard',
+  'raw umber':'sienna','burnt umber':'rust','wine red':'wine',
+  'fire orange':'tangerine','deep green':'forest','light green':'mint',
+  'dark green':'pine','bright green':'lawn','forest blue':'cobalt',
+  'sunset orange':'tangerine','sunrise pink':'flamingo','midnight green':'hunter',
+  'hot orange':'tangerine','ice pink':'blush','neon green':'lime',
+  'electric green':'lime','army green':'olive','khaki green':'sage',
+  'pale blue':'powder','light pink':'flamingo','dark pink':'rouge',
+  'warm red':'scarlet','cool red':'crimson','deep purple':'byzantium',
 };
 
 const SUGGESTIONS = [
-  'light blue', 'vivid coral', 'dark forest green', 'neon pink',
-  'pale lavender', 'bright orange', 'deep navy', 'soft sage',
-  'electric violet', 'dusty rose', 'burnt sienna', 'icy cyan',
+  'light blue','vivid coral','dark forest','neon pink',
+  'pale lavender','bright orange','deep navy','soft sage',
+  'electric violet','dusty rose','burnt sienna','icy cyan',
+  'warm amber','frosty mint','moody indigo','glowing lime',
 ];
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  COLOR ENGINE
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 function parseColorInput(raw) {
-  let input = raw.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
-
-  // Check multi-word aliases first
-  for (const [alias, target] of Object.entries(ALIASES)) {
-    if (input.includes(alias)) {
-      input = input.replace(alias, target);
-      break;
-    }
+  let input = raw.toLowerCase().trim().replace(/[^a-z0-9\s]/g,'');
+  for (const [alias,target] of Object.entries(ALIASES)) {
+    if (input.includes(alias)) { input = input.replace(alias,target); break; }
   }
-
   const words = input.split(/\s+/);
   let base = null;
-  let appliedMods = [];
-
-  // Find base color
-  for (const w of words) {
-    if (BASE_COLORS[w]) { base = w; break; }
-  }
+  for (const w of words) { if (BASE_COLORS[w]) { base=w; break; } }
   if (!base) {
-    // Try partial match
     for (const w of words) {
-      const match = Object.keys(BASE_COLORS).find(k => k.startsWith(w) && w.length >= 3);
-      if (match) { base = match; break; }
+      const m = Object.keys(BASE_COLORS).find(k => k.startsWith(w) && w.length >= 3);
+      if (m) { base=m; break; }
     }
   }
   if (!base) return null;
-
-  // Find modifiers
-  for (const w of words) {
-    if (w !== base && MODIFIERS[w]) appliedMods.push(w);
-  }
-
-  return { base, mods: appliedMods };
+  const mods = words.filter(w => w!==base && MODIFIERS[w]);
+  return { base, mods };
 }
 
-function buildHSL(parsed) {
-  const bc = { ...BASE_COLORS[parsed.base] };
-  let { h, s, l } = bc;
-
-  for (const mod of parsed.mods) {
+function buildHSL(p) {
+  const bc = BASE_COLORS[p.base];
+  let h=bc.h, s=bc.s, l=bc.l;
+  for (const mod of p.mods) {
     const m = MODIFIERS[mod];
-    if (m.hDelta) h = (h + m.hDelta + 360) % 360;
-    if (m.lDelta) l = Math.max(5, Math.min(95, l + m.lDelta));
-    if (m.sMult)  s = Math.max(2, Math.min(100, Math.round(s * m.sMult)));
+    if (m.hDelta) h=(h+m.hDelta+360)%360;
+    if (m.lDelta) l=Math.max(5,Math.min(95,l+m.lDelta));
+    if (m.sMult)  s=Math.max(2,Math.min(100,Math.round(s*m.sMult)));
   }
-
-  return { h: Math.round(h), s: Math.round(s), l: Math.round(l) };
+  return { h:Math.round(h), s:Math.round(s), l:Math.round(l) };
 }
 
-function hslToRgb(h, s, l) {
-  s /= 100; l /= 100;
-  const k = n => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+function hslToRgb(h,s,l) {
+  s/=100; l/=100;
+  const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)];
+}
+function rgbToHex(r,g,b){'#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('')}
+function toHex(r,g,b){ return '#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join(''); }
+function buildColor(p) {
+  const hsl=buildHSL(p);
+  const [r,g,b]=hslToRgb(hsl.h,hsl.s,hsl.l);
+  const hex=toHex(r,g,b);
+  const name=[...p.mods,p.base].map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+  return { name, hex, hsl, rgb:[r,g,b] };
 }
 
-function rgbToHex(r, g, b) {
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
-}
-
-function formatName(parsed) {
-  const parts = [...parsed.mods, parsed.base];
-  return parts.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-}
-
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  STATE
-// ════════════════════════════════════════════════
-let currentColor = null;
-let palette = JSON.parse(localStorage.getItem('chromia_palette') || '[]');
-let history  = JSON.parse(localStorage.getItem('chromia_history')  || '[]');
+// ══════════════════════════════════════════
+let currentColor=null;
+let palette=JSON.parse(localStorage.getItem('chromia_palette')||'[]');
+let history=JSON.parse(localStorage.getItem('chromia_history')||'[]');
+const savePalette=()=>localStorage.setItem('chromia_palette',JSON.stringify(palette));
+const saveHistory=()=>localStorage.setItem('chromia_history',JSON.stringify(history));
 
-function savePalette()  { localStorage.setItem('chromia_palette', JSON.stringify(palette)); }
-function saveHistory()  { localStorage.setItem('chromia_history',  JSON.stringify(history));  }
+// ══════════════════════════════════════════
+//  APPLY / GENERATE
+// ══════════════════════════════════════════
+function applyColor(c) {
+  currentColor=c;
+  const sw=document.getElementById('mainSwatch');
+  const nm=document.getElementById('swatchName');
+  sw.style.background=c.hex;
+  nm.classList.remove('visible');
+  setTimeout(()=>{nm.textContent=c.name;nm.classList.add('visible');},80);
+  document.getElementById('hexCode').textContent=c.hex.toUpperCase();
+  document.getElementById('rgbCode').textContent=`${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]}`;
+  document.getElementById('hslCode').textContent=`${c.hsl.h}° ${c.hsl.s}% ${c.hsl.l}%`;
+  document.documentElement.style.setProperty('--swatch',c.hex);
+  if (document.getElementById('autoHistoryToggle').checked) addToHistory(c);
+}
 
-// ════════════════════════════════════════════════
-//  UI FUNCTIONS
-// ════════════════════════════════════════════════
 function generateColor() {
-  const raw = document.getElementById('colorInput').value.trim();
+  const raw=document.getElementById('colorInput').value.trim();
   if (!raw) { showError('Please enter a color description'); return; }
-
-  const parsed = parseColorInput(raw);
-  if (!parsed) {
-    showError(`Couldn't recognize a color in "${raw}". Try words like "light blue" or "vivid coral".`);
-    return;
-  }
-
+  const p=parseColorInput(raw);
+  if (!p) { showError(`Couldn't find a color in "${raw}". Try "light blue" or "vivid coral".`); return; }
   clearError();
-  const hsl = buildHSL(parsed);
-  const [r, g, b] = hslToRgb(hsl.h, hsl.s, hsl.l);
-  const hex = rgbToHex(r, g, b);
-  const name = formatName(parsed);
-
-  currentColor = { name, hex, hsl, rgb: [r, g, b] };
-  updateSwatch(currentColor);
-
-  if (document.getElementById('autoHistoryToggle').checked) {
-    addToHistory(currentColor);
-  }
+  applyColor(buildColor(p));
 }
 
 function randomColor() {
-  const keys = Object.keys(BASE_COLORS);
-  const modKeys = Object.keys(MODIFIERS);
-  const base = keys[Math.floor(Math.random() * keys.length)];
-  const numMods = Math.random() < 0.5 ? 1 : (Math.random() < 0.7 ? 2 : 0);
-  const mods = [];
-  for (let i = 0; i < numMods; i++) {
-    const m = modKeys[Math.floor(Math.random() * modKeys.length)];
-    if (!mods.includes(m)) mods.push(m);
-  }
-  const name = [...mods, base].map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  document.getElementById('colorInput').value = [...mods, base].join(' ');
-
-  const hsl = buildHSL({ base, mods });
-  const [r, g, b] = hslToRgb(hsl.h, hsl.s, hsl.l);
-  const hex = rgbToHex(r, g, b);
-  currentColor = { name, hex, hsl, rgb: [r, g, b] };
+  const keys=Object.keys(BASE_COLORS);
+  const modKeys=Object.keys(MODIFIERS);
+  const base=keys[Math.floor(Math.random()*keys.length)];
+  const n=Math.random()<.4?0:Math.random()<.6?1:2;
+  const mods=[];
+  for(let i=0;i<n;i++){const m=modKeys[Math.floor(Math.random()*modKeys.length)];if(!mods.includes(m))mods.push(m);}
+  document.getElementById('colorInput').value=[...mods,base].join(' ');
   clearError();
-  updateSwatch(currentColor);
-
-  if (document.getElementById('autoHistoryToggle').checked) {
-    addToHistory(currentColor);
-  }
+  applyColor(buildColor({base,mods}));
 }
 
-function updateSwatch(c) {
-  const swatch = document.getElementById('mainSwatch');
-  const nameEl = document.getElementById('swatchName');
-
-  swatch.style.background = c.hex;
-  nameEl.classList.remove('visible');
-  setTimeout(() => {
-    nameEl.textContent = c.name;
-    nameEl.classList.add('visible');
-  }, 80);
-
-  document.getElementById('hexCode').textContent = c.hex.toUpperCase();
-  document.getElementById('rgbCode').textContent = `${c.rgb[0]}, ${c.rgb[1]}, ${c.rgb[2]}`;
-  document.getElementById('hslCode').textContent = `${c.hsl.h}° ${c.hsl.s}% ${c.hsl.l}%`;
-
-  // Update CSS accent to generated color
-  document.documentElement.style.setProperty('--swatch', c.hex);
+function randomVariation() {
+  const raw=document.getElementById('colorInput').value.trim();
+  const p=raw?parseColorInput(raw):null;
+  const base=p?p.base:Object.keys(BASE_COLORS)[Math.floor(Math.random()*Object.keys(BASE_COLORS).length)];
+  const modKeys=Object.keys(MODIFIERS);
+  const n=Math.random()<.3?0:Math.random()<.6?1:2;
+  const mods=[];
+  for(let i=0;i<n;i++){const m=modKeys[Math.floor(Math.random()*modKeys.length)];if(!mods.includes(m))mods.push(m);}
+  document.getElementById('colorInput').value=[...mods,base].join(' ');
+  clearError();
+  applyColor(buildColor({base,mods}));
 }
 
 function copyValue(type) {
   if (!currentColor) return;
-  const texts = {
-    hex: currentColor.hex.toUpperCase(),
-    rgb: `rgb(${currentColor.rgb.join(', ')})`,
-    hsl: `hsl(${currentColor.hsl.h}, ${currentColor.hsl.s}%, ${currentColor.hsl.l}%)`,
-  };
-  navigator.clipboard.writeText(texts[type]).then(() => {
-    showToast(`Copied ${texts[type]}`);
-  });
+  const t={hex:currentColor.hex.toUpperCase(),rgb:`rgb(${currentColor.rgb.join(', ')})`,hsl:`hsl(${currentColor.hsl.h}, ${currentColor.hsl.s}%, ${currentColor.hsl.l}%)`};
+  navigator.clipboard.writeText(t[type]).then(()=>showToast(`Copied ${t[type]}`));
 }
 
-function addToPalette() {
-  if (!currentColor) { showToast('Generate a color first!'); return; }
-  if (palette.find(c => c.hex === currentColor.hex)) { showToast('Already in palette'); return; }
-  palette.unshift({ ...currentColor });
-  savePalette();
-  renderPalette();
-  showToast('Added to palette ✓');
-}
+// ══════════════════════════════════════════
+//  PALETTE GENERATOR
+// ══════════════════════════════════════════
+function generatePalette() {
+  const raw=document.getElementById('palGenInput').value.trim();
+  const mode=document.getElementById('palGenMode').value;
+  const count=parseInt(document.getElementById('palCount').value);
 
-function addToHistory(c) {
-  if (history[0]?.hex === c.hex) return;
-  history.unshift({ ...c });
-  if (history.length > 60) history.pop();
-  saveHistory();
-  renderHistory();
-}
-
-function clearPalette() {
-  palette = [];
-  savePalette();
-  renderPalette();
-}
-
-function clearHistory() {
-  history = [];
-  saveHistory();
-  renderHistory();
-}
-
-function loadColor(c) {
-  currentColor = c;
-  document.getElementById('colorInput').value = c.name.toLowerCase();
-  updateSwatch(c);
-  clearError();
-  switchTab('colors');
-}
-
-function renderGrid(data, gridId, emptyId) {
-  const grid = document.getElementById(gridId);
-  const empty = document.getElementById(emptyId);
-  grid.innerHTML = '';
-  if (data.length === 0) {
-    empty.style.display = 'block';
-    return;
+  let base={h:Math.random()*360, s:60+Math.random()*25, l:40+Math.random()*15};
+  if (raw) {
+    const p=parseColorInput(raw);
+    if (p) base=buildHSL(p);
+    else showToast('Unknown base color — using random');
   }
-  empty.style.display = 'none';
-  data.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'color-card';
-    card.innerHTML = `
-      <div class="card-swatch" style="background:${c.hex}"></div>
-      <div class="card-meta">
-        <div class="card-name">${c.name}</div>
-        <div class="card-hex">${c.hex.toUpperCase()}</div>
-      </div>`;
-    card.addEventListener('click', () => loadColor(c));
+
+  const hues=[];
+  const H=base.h;
+  if(mode==='analogous'){
+    const step=40/(count-1||1);
+    for(let i=0;i<count;i++)hues.push(H-20+i*step);
+  }else if(mode==='complementary'){
+    const h1=Math.ceil(count/2),h2=count-h1;
+    for(let i=0;i<h1;i++)hues.push(H+(i-Math.floor(h1/2))*18);
+    for(let i=0;i<h2;i++)hues.push((H+180)%360+(i-Math.floor(h2/2))*18);
+  }else if(mode==='triadic'){
+    const a=[H,(H+120)%360,(H+240)%360];
+    for(let i=0;i<count;i++)hues.push(a[i%3]);
+  }else if(mode==='tetradic'){
+    const a=[H,(H+90)%360,(H+180)%360,(H+270)%360];
+    for(let i=0;i<count;i++)hues.push(a[i%4]);
+  }else if(mode==='split'){
+    const a=[H,(H+150)%360,(H+210)%360];
+    for(let i=0;i<count;i++)hues.push(a[i%3]);
+  }else{
+    for(let i=0;i<count;i++)hues.push(H);
+  }
+
+  const colors=hues.map((hue,i)=>{
+    let s=base.s, l=base.l;
+    if(mode==='monochromatic'){
+      s=Math.max(10,Math.min(90,20+i*(65/(count-1||1))));
+      l=Math.max(20,Math.min(88,20+i*(65/(count-1||1))));
+    }else if(mode==='shades'){
+      l=Math.max(10,Math.min(88,88-i*(72/(count-1||1))));
+    }else if(mode==='tints'){
+      l=Math.max(30,Math.min(95,30+i*(60/(count-1||1))));
+    }else if(mode==='random'){
+      hue=Math.random()*360; s=40+Math.random()*50; l=35+Math.random()*40;
+    }else{
+      s=Math.max(20,Math.min(90,s+(Math.random()*16-8)));
+      l=Math.max(25,Math.min(78,l+(Math.random()*16-8)));
+    }
+    const h=((hue%360)+360)%360;
+    const hsl={h:Math.round(h),s:Math.round(s),l:Math.round(l)};
+    const [r,g,b2]=hslToRgb(hsl.h,hsl.s,hsl.l);
+    const hex=toHex(r,g,b2);
+    return {name:`Color ${i+1}`,hex,hsl,rgb:[r,g,b2]};
+  });
+
+  const strip=document.getElementById('palStrip');
+  const hint=document.getElementById('palStripHint');
+  strip.style.display='flex'; hint.style.display='block';
+  strip.innerHTML='';
+  colors.forEach(c=>{
+    const seg=document.createElement('div');
+    seg.className='strip-seg'; seg.style.background=c.hex; seg.title=c.hex.toUpperCase();
+    seg.addEventListener('click',()=>{applyColor(c);switchTab('colors');showToast('Loaded '+c.hex.toUpperCase());});
+    strip.appendChild(seg);
+  });
+
+  const grid=document.getElementById('genPaletteGrid');
+  grid.innerHTML='';
+  colors.forEach(c=>{
+    const card=document.createElement('div');
+    card.className='color-card';
+    const cJson=JSON.stringify(c).replace(/"/g,"'");
+    card.innerHTML=`<div class="card-swatch" style="background:${c.hex}"></div><div class="card-meta"><div class="card-name">${c.hex.toUpperCase()}</div><div class="card-hex">H:${c.hsl.h} S:${c.hsl.s}% L:${c.hsl.l}%</div><div class="card-actions"><button class="card-btn" onclick="event.stopPropagation();navigator.clipboard.writeText('${c.hex.toUpperCase()}').then(()=>showToast('Copied ${c.hex.toUpperCase()}'))">Copy</button><button class="card-btn" onclick="event.stopPropagation();quickSave(${JSON.stringify(c).replace(/</g,'\\u003c')})">Save</button></div></div>`;
+    card.addEventListener('click',()=>{applyColor(c);switchTab('colors');});
     grid.appendChild(card);
   });
 }
 
-function renderPalette() { renderGrid(palette, 'paletteGrid', 'paletteEmpty'); }
-function renderHistory()  { renderGrid(history, 'historyGrid', 'historyEmpty'); }
-
-// ════════════════════════════════════════════════
-//  TABS
-// ════════════════════════════════════════════════
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+function quickSave(c) {
+  if (palette.find(p=>p.hex===c.hex)) { showToast('Already saved'); return; }
+  palette.unshift(c); savePalette(); renderPalette(); showToast('Saved ✓');
 }
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-});
+// ══════════════════════════════════════════
+//  PALETTE / HISTORY MANAGEMENT
+// ══════════════════════════════════════════
+function addToPalette() {
+  if (!currentColor) { showToast('Generate a color first!'); return; }
+  if (palette.find(c=>c.hex===currentColor.hex)) { showToast('Already in palette'); return; }
+  palette.unshift({...currentColor}); savePalette(); renderPalette(); showToast('Saved to palette ✓');
+}
+function addToHistory(c) {
+  if (history[0]?.hex===c.hex) return;
+  history.unshift({...c});
+  if(history.length>60)history.pop();
+  saveHistory(); renderHistory();
+}
+function clearPalette(){palette=[];savePalette();renderPalette();}
+function clearHistory(){history=[];saveHistory();renderHistory();}
+function loadColor(c){applyColor(c);document.getElementById('colorInput').value=c.name.toLowerCase();clearError();switchTab('colors');}
 
-// ════════════════════════════════════════════════
-//  SUGGESTIONS
-// ════════════════════════════════════════════════
-function buildSuggestions() {
-  const cont = document.getElementById('suggestions');
-  SUGGESTIONS.forEach(s => {
-    const chip = document.createElement('button');
-    chip.className = 'chip';
-    chip.textContent = s;
-    chip.addEventListener('click', () => {
-      document.getElementById('colorInput').value = s;
-      generateColor();
-    });
+function renderGrid(data,gridId,emptyId){
+  const grid=document.getElementById(gridId);
+  const empty=document.getElementById(emptyId);
+  grid.innerHTML='';
+  if(!data.length){empty.style.display='block';return;}
+  empty.style.display='none';
+  data.forEach(c=>{
+    const card=document.createElement('div');
+    card.className='color-card';
+    card.innerHTML=`<div class="card-swatch" style="background:${c.hex}"></div><div class="card-meta"><div class="card-name">${c.name}</div><div class="card-hex">${c.hex.toUpperCase()}</div></div>`;
+    card.addEventListener('click',()=>loadColor(c));
+    grid.appendChild(card);
+  });
+}
+function renderPalette(){renderGrid(palette,'paletteGrid','paletteEmpty');}
+function renderHistory(){renderGrid(history,'historyGrid','historyEmpty');}
+
+// ══════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.dataset.tab)));
+
+// ══════════════════════════════════════════
+//  SUGGESTIONS / THEME
+// ══════════════════════════════════════════
+function buildSuggestions(){
+  const cont=document.getElementById('suggestions');
+  SUGGESTIONS.forEach(s=>{
+    const chip=document.createElement('button');
+    chip.className='chip'; chip.textContent=s;
+    chip.addEventListener('click',()=>{document.getElementById('colorInput').value=s;generateColor();});
     cont.appendChild(chip);
   });
 }
-
-function toggleSuggestions() {
-  const show = document.getElementById('suggestionsToggle').checked;
-  document.getElementById('suggestions').style.display = show ? 'flex' : 'none';
+function toggleSuggestions(){
+  document.getElementById('suggestions').style.display=document.getElementById('suggestionsToggle').checked?'flex':'none';
+}
+function toggleTheme(){
+  const dark=document.getElementById('darkModeToggle').checked;
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  localStorage.setItem('chromia_theme',dark?'dark':'light');
 }
 
-// ════════════════════════════════════════════════
-//  THEME
-// ════════════════════════════════════════════════
-function toggleTheme() {
-  const dark = document.getElementById('darkModeToggle').checked;
-  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-  localStorage.setItem('chromia_theme', dark ? 'dark' : 'light');
-}
-
-// ════════════════════════════════════════════════
-//  MODAL
-// ════════════════════════════════════════════════
-function openWordsModal() {
-  const body = document.getElementById('modalBody');
-  body.innerHTML = '';
-
-  const sections = [
-    {
-      title: 'Base Colors',
-      words: Object.keys(BASE_COLORS),
-    },
-    {
-      title: 'Lightness Modifiers (lighter / softer)',
-      words: ['light', 'pale', 'pastel', 'soft', 'muted', 'dusty', 'faded', 'washed', 'powdery', 'delicate', 'subtle', 'misty', 'airy'],
-    },
-    {
-      title: 'Darkness Modifiers (darker / deeper)',
-      words: ['dark', 'deep', 'rich', 'bold', 'strong', 'moody', 'shadowy', 'inky', 'smoky', 'burnt'],
-    },
-    {
-      title: 'Intensity Modifiers (more saturated)',
-      words: ['bright', 'vivid', 'vibrant', 'saturated', 'intense', 'electric', 'neon', 'fluorescent', 'glowing', 'radiant', 'brilliant', 'dazzling', 'blazing', 'fiery'],
-    },
-    {
-      title: 'Temperature Modifiers',
-      words: ['warm', 'cool', 'icy', 'frigid', 'frosty', 'sunny', 'tropical', 'earthy', 'natural', 'metallic'],
-    },
-    {
-      title: 'Multi-word Phrases',
-      words: Object.keys(ALIASES),
-    },
+// ══════════════════════════════════════════
+//  WORDS MODAL
+// ══════════════════════════════════════════
+function openWordsModal(){
+  const body=document.getElementById('modalBody');
+  body.innerHTML='';
+  const sections=[
+    {title:'Base Colors',words:Object.keys(BASE_COLORS)},
+    {title:'Lightness Modifiers (softer / lighter)',words:['light','pale','pastel','soft','muted','dusty','faded','washed','powdery','delicate','subtle','misty','airy','wispy','gentle','dreamy','hazy','frosted','cloudy','milky']},
+    {title:'Darkness Modifiers (deeper / darker)',words:['dark','deep','rich','bold','strong','moody','shadowy','inky','smoky','burnt','muddy','dim','murky','gloomy','antique','vintage','aged','weathered']},
+    {title:'Intensity Modifiers (more saturated)',words:['bright','vivid','vibrant','saturated','intense','electric','neon','fluorescent','glowing','radiant','brilliant','dazzling','blazing','fiery','punchy','popping','juicy']},
+    {title:'Temperature & Texture',words:['warm','cool','icy','frigid','frosty','sunny','tropical','earthy','natural','stony','metallic','gilded','iridescent','pearlescent','crystalline']},
+    {title:'Multi-word Phrases',words:Object.keys(ALIASES)},
   ];
-
-  sections.forEach(sec => {
-    const div = document.createElement('div');
-    div.className = 'word-section';
-    div.innerHTML = `<div class="word-section-title">${sec.title} (${sec.words.length})</div><div class="word-tags" id="tags-${sec.title.replace(/\s/g,'')}"></div>`;
+  sections.forEach(sec=>{
+    const div=document.createElement('div');
+    div.className='word-section';
+    div.innerHTML=`<div class="word-section-title">${sec.title} (${sec.words.length})</div><div class="word-tags"></div>`;
     body.appendChild(div);
-    const tagsCont = div.querySelector('.word-tags');
-    sec.words.forEach(w => {
-      const tag = document.createElement('span');
-      tag.className = 'word-tag';
-      tag.textContent = w;
-      tag.addEventListener('click', () => {
-        document.getElementById('colorInput').value = w;
-        closeWordsModal();
-        generateColor();
-      });
-      tagsCont.appendChild(tag);
+    const tc=div.querySelector('.word-tags');
+    sec.words.forEach(w=>{
+      const tag=document.createElement('span');
+      tag.className='word-tag'; tag.textContent=w;
+      tag.addEventListener('click',()=>{document.getElementById('colorInput').value=w;closeWordsModal();generateColor();});
+      tc.appendChild(tag);
     });
   });
-
   document.getElementById('wordsModal').classList.add('open');
 }
-
-function closeWordsModal(e) {
-  if (!e || e.target === document.getElementById('wordsModal')) {
+function closeWordsModal(e){
+  if(!e||e.target===document.getElementById('wordsModal'))
     document.getElementById('wordsModal').classList.remove('open');
-  }
 }
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  HELPERS
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 let toastTimer;
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);}
+function showError(msg){const el=document.getElementById('errorMsg');el.textContent=msg;el.classList.add('visible');}
+function clearError(){document.getElementById('errorMsg').classList.remove('visible');}
+document.getElementById('colorInput').addEventListener('keydown',e=>{if(e.key==='Enter')generateColor();});
+document.getElementById('palGenInput').addEventListener('keydown',e=>{if(e.key==='Enter')generatePalette();});
 
-function showError(msg) {
-  const el = document.getElementById('errorMsg');
-  el.textContent = msg;
-  el.classList.add('visible');
-}
-function clearError() {
-  document.getElementById('errorMsg').classList.remove('visible');
-}
-
-// Enter key
-document.getElementById('colorInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') generateColor();
-});
-
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════
 //  INIT
-// ════════════════════════════════════════════════
-(function init() {
-  // Restore theme
-  const saved = localStorage.getItem('chromia_theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', saved);
-  document.getElementById('darkModeToggle').checked = saved === 'dark';
-
-  buildSuggestions();
-  renderPalette();
-  renderHistory();
-
-  // Seed with a color
-  const seeds = ['soft lavender', 'vivid coral', 'deep ocean', 'neon lime', 'dusty rose'];
-  const seed = seeds[Math.floor(Math.random() * seeds.length)];
-  document.getElementById('colorInput').value = seed;
+// ══════════════════════════════════════════
+(function init(){
+  const saved=localStorage.getItem('chromia_theme')||'dark';
+  document.documentElement.setAttribute('data-theme',saved);
+  document.getElementById('darkModeToggle').checked=saved==='dark';
+  buildSuggestions(); renderPalette(); renderHistory();
+  const seeds=['soft lavender','vivid coral','deep ocean','neon lime','dusty rose','electric indigo','warm amber','icy cyan'];
+  document.getElementById('colorInput').value=seeds[Math.floor(Math.random()*seeds.length)];
   generateColor();
 })();
 </script>
