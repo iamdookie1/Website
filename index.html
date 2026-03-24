@@ -1,4 +1,4 @@
-a<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
@@ -126,6 +126,18 @@ a<!DOCTYPE html>
     .settings-section-head{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:8px;padding-top:4px;transition:color var(--transition)}
     .filter-badge{display:inline-block;padding:2px 7px;border-radius:100px;font-size:.62rem;font-family:'DM Mono',monospace;font-weight:600;margin-left:8px;vertical-align:middle;background:rgba(124,106,245,.18);color:var(--accent);transition:background .3s,color .3s}
     .filter-badge.off{background:var(--bg3);color:var(--text3)}
+    .settings-group-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);font-family:'DM Mono',monospace;margin:20px 0 8px 2px;transition:color var(--transition)}
+    .settings-group-label:first-child{margin-top:0}
+    /* compact mode */
+    body.compact .app{padding-top:20px;padding-bottom:40px}
+    body.compact .header{margin-bottom:22px}
+    body.compact .color-swatch{height:150px}
+    body.compact .color-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+    body.compact .color-card .card-swatch{height:56px}
+    body.compact .settings-row{padding:12px 18px}
+    /* nsfw tag */
+    .nsfw-tag{border-color:rgba(248,113,113,.3)!important;color:#f87171!important}
+    .nsfw-tag:hover{background:#f87171!important;color:#fff!important;border-color:#f87171!important}
     ::-webkit-scrollbar{width:6px}
     ::-webkit-scrollbar-track{background:transparent}
     ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
@@ -245,23 +257,73 @@ a<!DOCTYPE html>
   <!-- SETTINGS -->
   <div class="panel" id="panel-settings">
 
-    <!-- General -->
+    <!-- ── APPEARANCE ── -->
+    <div class="settings-group-label">Appearance</div>
     <div class="settings-card">
       <div class="settings-row">
         <div><div class="settings-label">Dark Mode</div><div class="settings-desc">Switch between dark and light themes</div></div>
         <label class="toggle"><input type="checkbox" id="darkModeToggle" checked onchange="toggleTheme()"><div class="toggle-track"></div></label>
       </div>
       <div class="settings-row">
-        <div><div class="settings-label">Show Suggestions</div><div class="settings-desc">Quick-example chips below the input</div></div>
-        <label class="toggle"><input type="checkbox" id="suggestionsToggle" checked onchange="toggleSuggestions()"><div class="toggle-track"></div></label>
+        <div><div class="settings-label">Compact Mode</div><div class="settings-desc">Reduce spacing and card sizes</div></div>
+        <label class="toggle"><input type="checkbox" id="compactModeToggle" onchange="applyCompactMode();saveFilters()"><div class="toggle-track"></div></label>
       </div>
       <div class="settings-row">
-        <div><div class="settings-label">Auto-Add to History</div><div class="settings-desc">Automatically save every generated color</div></div>
-        <label class="toggle"><input type="checkbox" id="autoHistoryToggle" checked><div class="toggle-track"></div></label>
+        <div><div class="settings-label">Animation Speed</div><div class="settings-desc">How fast UI transitions play</div></div>
+        <select class="gen-select" id="animSpeed" onchange="applyAnimSpeed();saveFilters()" style="padding:7px 12px;font-size:.8rem">
+          <option value="fast">Fast</option>
+          <option value="normal" selected>Normal</option>
+          <option value="slow">Slow</option>
+        </select>
       </div>
     </div>
 
-    <!-- Anti-Dupe -->
+    <!-- ── BEHAVIOR ── -->
+    <div class="settings-group-label">Behavior</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div><div class="settings-label">Show Suggestions</div><div class="settings-desc">Quick-example chips below the input</div></div>
+        <label class="toggle"><input type="checkbox" id="suggestionsToggle" checked onchange="toggleSuggestions();saveFilters()"><div class="toggle-track"></div></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Auto-Add to History</div><div class="settings-desc">Automatically save every generated color</div></div>
+        <label class="toggle"><input type="checkbox" id="autoHistoryToggle" checked onchange="saveFilters()"><div class="toggle-track"></div></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">History Limit</div><div class="settings-desc">Max colors kept in history</div></div>
+        <div class="settings-slider-row" style="width:200px">
+          <input type="range" id="historyLimit" min="10" max="100" value="60" oninput="updSlider('historyLimitVal',this.value,'');saveFilters()">
+          <span class="settings-slider-val" id="historyLimitVal">60</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GLOBAL COLOR NUDGE ── -->
+    <div class="settings-group-label">Global Color Nudge</div>
+    <div class="settings-card">
+      <div class="settings-row" style="padding-bottom:4px">
+        <div><div class="settings-label">Saturation Shift</div><div class="settings-desc">Push all generated colors more/less saturated</div></div>
+      </div>
+      <div class="settings-sub" style="border-bottom:1px solid var(--border)">
+        <div class="settings-slider-row">
+          <label>Sat offset</label>
+          <input type="range" id="globalSatNudge" min="-40" max="40" value="0" oninput="updSliderSigned('globalSatNudgeVal',this.value,'');saveFilters()">
+          <span class="settings-slider-val" id="globalSatNudgeVal">0</span>
+        </div>
+        <div class="settings-slider-row">
+          <label>Light offset</label>
+          <input type="range" id="globalLightNudge" min="-30" max="30" value="0" oninput="updSliderSigned('globalLightNudgeVal',this.value,'');saveFilters()">
+          <span class="settings-slider-val" id="globalLightNudgeVal">0</span>
+        </div>
+      </div>
+      <div class="settings-row" style="padding-top:10px;padding-bottom:10px">
+        <div class="settings-desc" style="font-size:.75rem;color:var(--text3)">Positive = more vibrant/lighter · Negative = more muted/darker</div>
+        <button class="btn btn-secondary btn-sm" onclick="resetNudge()">Reset</button>
+      </div>
+    </div>
+
+    <!-- ── ANTI-DUPE ── -->
+    <div class="settings-group-label">Filters</div>
     <div class="settings-card">
       <div class="settings-row">
         <div>
@@ -290,7 +352,6 @@ a<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Anti-Bright -->
     <div class="settings-card">
       <div class="settings-row">
         <div>
@@ -300,7 +361,7 @@ a<!DOCTYPE html>
         <label class="toggle"><input type="checkbox" id="antiBrightToggle" onchange="syncBadge('antiBrightToggle','brightBadge');saveFilters()"><div class="toggle-track"></div></label>
       </div>
       <div class="settings-sub" id="antiBrightSub">
-        <div class="settings-section-head">Thresholds — colors above these values are blocked</div>
+        <div class="settings-section-head">Thresholds — colors above these are blocked</div>
         <div class="settings-slider-row">
           <label>Max lightness</label>
           <input type="range" id="brightMaxL" min="50" max="95" value="82" oninput="updSlider('brightMaxLVal',this.value,'%');saveFilters()">
@@ -314,7 +375,6 @@ a<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Anti-Dark -->
     <div class="settings-card">
       <div class="settings-row">
         <div>
@@ -324,7 +384,7 @@ a<!DOCTYPE html>
         <label class="toggle"><input type="checkbox" id="antiDarkToggle" onchange="syncBadge('antiDarkToggle','darkFilterBadge');saveFilters()"><div class="toggle-track"></div></label>
       </div>
       <div class="settings-sub" id="antiDarkSub">
-        <div class="settings-section-head">Thresholds — colors below these values are blocked</div>
+        <div class="settings-section-head">Thresholds — colors below these are blocked</div>
         <div class="settings-slider-row">
           <label>Min lightness</label>
           <input type="range" id="darkMinL" min="5" max="45" value="20" oninput="updSlider('darkMinLVal',this.value,'%');saveFilters()">
@@ -338,7 +398,36 @@ a<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- Data -->
+    <!-- ── CONTENT ── -->
+    <div class="settings-group-label">Content</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">NSFW Mode <span class="filter-badge off" id="nsfwBadge">OFF</span></div>
+          <div class="settings-desc">Unlocks adult-themed paint-style color names (e.g. "sultry", "temptation")</div>
+        </div>
+        <label class="toggle"><input type="checkbox" id="nsfwToggle" onchange="syncBadge('nsfwToggle','nsfwBadge');saveFilters()"><div class="toggle-track"></div></label>
+      </div>
+    </div>
+
+    <!-- ── EXPORT ── -->
+    <div class="settings-group-label">Export</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div><div class="settings-label">Export Palette</div><div class="settings-desc">Copy saved palette in your chosen format</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="gen-select" id="exportFormat" style="padding:7px 12px;font-size:.8rem">
+            <option value="css">CSS Vars</option>
+            <option value="json">JSON</option>
+            <option value="hex">HEX list</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="exportPalette()">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DATA ── -->
+    <div class="settings-group-label">Data</div>
     <div class="settings-card">
       <div class="settings-row">
         <div><div class="settings-label">Clear History</div><div class="settings-desc">Remove all history entries</div></div>
@@ -347,6 +436,10 @@ a<!DOCTYPE html>
       <div class="settings-row">
         <div><div class="settings-label">Clear Palette</div><div class="settings-desc">Remove all saved palette colors</div></div>
         <button class="btn btn-secondary btn-sm" onclick="clearPalette();showToast('Palette cleared')">Clear</button>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Reset All Settings</div><div class="settings-desc">Restore every setting to its default</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="resetAllSettings()">Reset</button>
       </div>
     </div>
   </div>
@@ -450,6 +543,68 @@ const BASE_COLORS = {
   canvas:{h:42,s:30,l:75},suede:{h:25,s:35,l:55},felt:{h:20,s:45,l:42},
   chai:{h:28,s:55,l:52},miso:{h:38,s:45,l:62},sorbet:{h:5,s:80,l:75},
   custard:{h:47,s:65,l:80},truffle:{h:25,s:38,l:28},
+  // ── NEW BATCH ──
+  vermilion:{h:8,s:90,l:50},cerise:{h:348,s:82,l:48},amaranth:{h:342,s:78,l:52},
+  viridian:{h:170,s:68,l:38},celadon:{h:145,s:32,l:70},glaucous:{h:200,s:30,l:60},
+  tawny:{h:28,s:72,l:45},russet:{h:18,s:65,l:38},cordovan:{h:10,s:60,l:30},
+  puce:{h:330,s:30,l:48},merlot:{h:345,s:55,l:28},tamarind:{h:20,s:58,l:25},
+  persimmon:{h:18,s:88,l:56},clementine:{h:22,s:92,l:58},mandarin:{h:25,s:88,l:58},
+  kumquat:{h:30,s:90,l:60},zinnia:{h:15,s:90,l:55},sanguine:{h:5,s:75,l:40},
+  gamboge:{h:38,s:88,l:52},aureolin:{h:50,s:92,l:60},
+  prussian:{h:215,s:85,l:22},zaffre:{h:225,s:80,l:30},wenge:{h:25,s:25,l:18},
+  ebony:{h:20,s:12,l:12},flaxen:{h:48,s:70,l:78},isabelline:{h:45,s:20,l:87},
+  feldgrau:{h:195,s:15,l:40},mikado:{h:42,s:88,l:48},palatinate:{h:265,s:72,l:32},
+  purpure:{h:290,s:68,l:38},murrey:{h:322,s:58,l:32},
+  incarnadine:{h:352,s:68,l:62},sarcoline:{h:20,s:48,l:74},gules:{h:0,s:80,l:42},
+  verdigris:{h:170,s:55,l:48},tenné:{h:22,s:78,l:40},
+  spruce:{h:185,s:52,l:28},fjord:{h:215,s:28,l:42},nordic:{h:210,s:22,l:52},
+  celeste:{h:195,s:55,l:78},peri:{h:235,s:55,l:68},
+  razzmatazz:{h:322,s:85,l:52},cottoncandy:{h:330,s:65,l:82},
+  stardust:{h:260,s:30,l:80},galactic:{h:250,s:58,l:38},
+  iceberg:{h:198,s:48,l:80},snowdrop:{h:200,s:20,l:92},
+  cardinal:{h:2,s:80,l:40},tansy:{h:55,s:85,l:50},
+  dragon:{h:5,s:88,l:42},venom:{h:90,s:80,l:35},
+  hellion:{h:15,s:85,l:38},wistful:{h:235,s:38,l:72},
+  melancholy:{h:238,s:32,l:45},reverie:{h:265,s:35,l:72},
+  solstice:{h:38,s:80,l:58},equinox:{h:195,s:55,l:48},
+  whimsy:{h:285,s:50,l:72},gossamer:{h:220,s:28,l:88},
+  titian:{h:18,s:72,l:52},tyrian:{h:310,s:68,l:28},
+  watchet:{h:205,s:45,l:65},xanadu:{h:142,s:22,l:52},
+  zinnober:{h:8,s:88,l:48},amaretto:{h:22,s:58,l:44},
+  absinthe:{h:80,s:62,l:42},quartz:{h:340,s:20,l:82},
+  moonmist:{h:210,s:18,l:85},driftwood:{h:30,s:35,l:48},
+  heliotrope:{h:278,s:68,l:62},magnolia:{h:55,s:30,l:90},
+  wax:{h:45,s:35,l:86},tarn:{h:200,s:38,l:32},
+  gunpowder:{h:225,s:12,l:35},ironwood:{h:22,s:28,l:28},
+};
+
+// ══════════════════════════════════════════
+//  NSFW COLOR WORDS (adult-themed paint-style names)
+//  Only active when NSFW toggle is ON
+// ══════════════════════════════════════════
+const NSFW_COLORS = {
+  seduction:{h:350,s:70,l:42},temptation:{h:330,s:65,l:38},
+  sultry:{h:340,s:58,l:40},allure:{h:320,s:48,l:45},
+  desire:{h:345,s:72,l:38},passion:{h:355,s:80,l:38},
+  bare:{h:28,s:42,l:75},flesh:{h:22,s:55,l:72},
+  intimate:{h:338,s:38,l:72},forbidden:{h:8,s:75,l:32},
+  naughty:{h:12,s:80,l:48},wicked:{h:285,s:62,l:28},
+  sinful:{h:355,s:78,l:32},lusty:{h:5,s:82,l:42},
+  brazen:{h:15,s:85,l:50},scandalous:{h:320,s:80,l:55},
+  steamy:{h:350,s:20,l:65},provocative:{h:340,s:78,l:48},
+  racy:{h:2,s:88,l:52},saucy:{h:8,s:82,l:52},
+  cheeky:{h:335,s:65,l:68},carnal:{h:10,s:68,l:38},
+  bawdy:{h:18,s:60,l:45},smoldering:{h:5,s:55,l:35},
+  salacious:{h:345,s:65,l:42},risque:{h:322,s:75,l:52},
+  devilish:{h:0,s:82,l:32},lust:{h:5,s:85,l:38},
+  vixen:{h:10,s:78,l:45},scarlet2:{h:4,s:86,l:46},
+};
+
+const NSFW_ALIASES = {
+  'barely there':'bare','skin tone':'flesh','forbidden fruit':'forbidden',
+  'red hot':'racy','devil red':'devilish','deep desire':'desire',
+  'dark temptation':'temptation','burning desire':'lusty',
+  'kiss me':'scandalous','smoky desire':'smoldering',
 };
 
 // ══════════════════════════════════════════
@@ -542,17 +697,33 @@ const SUGGESTIONS = [
 // ══════════════════════════════════════════
 //  COLOR ENGINE
 // ══════════════════════════════════════════
+function isNsfwOn(){ return document.getElementById('nsfwToggle')?.checked||false; }
+
+function getAllColors(){ return isNsfwOn() ? {...BASE_COLORS,...NSFW_COLORS} : BASE_COLORS; }
+function getAllAliases(){ return isNsfwOn() ? {...ALIASES,...NSFW_ALIASES} : ALIASES; }
+
 function parseColorInput(raw) {
+  const allColors = getAllColors();
+  const allAliases = getAllAliases();
   let input = raw.toLowerCase().trim().replace(/[^a-z0-9\s]/g,'');
-  for (const [alias,target] of Object.entries(ALIASES)) {
+
+  // Check if input contains an NSFW word but NSFW is off → silently ignore NSFW part
+  if (!isNsfwOn()) {
+    const nsfwKeys = [...Object.keys(NSFW_COLORS), ...Object.keys(NSFW_ALIASES)];
+    const words = input.split(/\s+/);
+    const hasNsfw = words.some(w => NSFW_COLORS[w]) || nsfwKeys.some(k => input.includes(k));
+    if (hasNsfw) return null; // block with error in caller
+  }
+
+  for (const [alias,target] of Object.entries(allAliases)) {
     if (input.includes(alias)) { input = input.replace(alias,target); break; }
   }
   const words = input.split(/\s+/);
   let base = null;
-  for (const w of words) { if (BASE_COLORS[w]) { base=w; break; } }
+  for (const w of words) { if (allColors[w]) { base=w; break; } }
   if (!base) {
     for (const w of words) {
-      const m = Object.keys(BASE_COLORS).find(k => k.startsWith(w) && w.length >= 3);
+      const m = Object.keys(allColors).find(k => k.startsWith(w) && w.length >= 3);
       if (m) { base=m; break; }
     }
   }
@@ -562,7 +733,8 @@ function parseColorInput(raw) {
 }
 
 function buildHSL(p) {
-  const bc = BASE_COLORS[p.base];
+  const allColors = getAllColors();
+  const bc = allColors[p.base];
   let h=bc.h, s=bc.s, l=bc.l;
   for (const mod of p.mods) {
     const m = MODIFIERS[mod];
@@ -639,7 +811,8 @@ function passesFilters(hsl, skipDupe=false) {
 
 // Try building a random parsed color up to maxTries until it passes filters
 function randomParsedPassing(forceBase=null, maxTries=30) {
-  const keys=Object.keys(BASE_COLORS);
+  const allColors = getAllColors();
+  const keys=Object.keys(allColors);
   const modKeys=Object.keys(MODIFIERS);
   for (let t=0;t<maxTries;t++) {
     const base=forceBase || keys[Math.floor(Math.random()*keys.length)];
@@ -649,7 +822,6 @@ function randomParsedPassing(forceBase=null, maxTries=30) {
     const hsl=buildHSL({base,mods});
     if (passesFilters(hsl)) return {base,mods};
   }
-  // fallback: return without dupe check (don't block user forever)
   const base=forceBase||keys[Math.floor(Math.random()*keys.length)];
   return {base,mods:[]};
 }
@@ -662,11 +834,11 @@ function syncBadge(toggleId,badgeId){
 }
 
 function saveFilters(){
-  const ids=['dupeHue','dupeLightness','dupeN','brightMaxL','brightMaxS','darkMinL','darkMinS'];
-  const checks=['antiDupeToggle','antiBrightToggle','antiDarkToggle'];
+  const ids=['dupeHue','dupeLightness','dupeN','brightMaxL','brightMaxS','darkMinL','darkMinS','globalSatNudge','globalLightNudge','historyLimit','animSpeed'];
+  const checks=['antiDupeToggle','antiBrightToggle','antiDarkToggle','nsfwToggle','autoHistoryToggle','suggestionsToggle','compactModeToggle','showHexSwatchToggle'];
   const obj={};
-  ids.forEach(id=>obj[id]=document.getElementById(id).value);
-  checks.forEach(id=>obj[id]=document.getElementById(id).checked);
+  ids.forEach(id=>{const el=document.getElementById(id);if(el)obj[id]=el.value;});
+  checks.forEach(id=>{const el=document.getElementById(id);if(el)obj[id]=el.checked;});
   localStorage.setItem('chromia_filters',JSON.stringify(obj));
 }
 
@@ -684,21 +856,19 @@ function loadFilters(){
         el.value=val;
       }
     });
-    // Re-sync displayed values
     [['dupeHue','dupeHueVal','°'],['dupeLightness','dupeLightnessVal','%'],['dupeN','dupeNVal',''],
      ['brightMaxL','brightMaxLVal','%'],['brightMaxS','brightMaxSVal','%'],
-     ['darkMinL','darkMinLVal','%'],['darkMinS','darkMinSVal','%']
-    ].forEach(([sid,vid,u])=>updSlider(vid,document.getElementById(sid).value,u));
-    // badges
+     ['darkMinL','darkMinLVal','%'],['darkMinS','darkMinSVal','%'],
+     ['globalSatNudge','globalSatNudgeVal',''],['globalLightNudge','globalLightNudgeVal',''],
+     ['historyLimit','historyLimitVal',''],
+    ].forEach(([sid,vid,u])=>{const el=document.getElementById(sid);if(el)updSlider(vid,el.value,u);});
     ['antiDupeToggle','antiBrightToggle','antiDarkToggle'].forEach(id=>{
       const badges={'antiDupeToggle':'dupeBadge','antiBrightToggle':'brightBadge','antiDarkToggle':'darkFilterBadge'};
       syncBadge(id,badges[id]);
     });
+    applyCompactMode();
+    applyAnimSpeed();
   }catch(e){}
-}
-
-function updSlider(valId, val, unit){
-  document.getElementById(valId).textContent = val+unit;
 }
 
 // ══════════════════════════════════════════
@@ -718,17 +888,35 @@ function applyColor(c) {
   if (document.getElementById('autoHistoryToggle').checked) addToHistory(c);
 }
 
+// Global saturation/lightness nudge from settings sliders
+function applyGlobalNudge(c) {
+  const sNudge = +(document.getElementById('globalSatNudge')?.value||0);
+  const lNudge = +(document.getElementById('globalLightNudge')?.value||0);
+  if (sNudge===0 && lNudge===0) return c;
+  const newS = Math.max(2, Math.min(100, c.hsl.s + sNudge));
+  const newL = Math.max(3, Math.min(96, c.hsl.l + lNudge));
+  const hsl = {h:c.hsl.h, s:newS, l:newL};
+  const [r,g,b]=hslToRgb(hsl.h,hsl.s,hsl.l);
+  const hex=toHex(r,g,b);
+  return {...c, hex, hsl, rgb:[r,g,b]};
+}
+
 function generateColor() {
   const raw=document.getElementById('colorInput').value.trim();
   if (!raw) { showError('Please enter a color description'); return; }
+  // NSFW gate
+  if (!isNsfwOn()) {
+    const lw=raw.toLowerCase();
+    const isNsfw=Object.keys(NSFW_COLORS).some(k=>lw.includes(k))||Object.keys(NSFW_ALIASES).some(k=>lw.includes(k));
+    if (isNsfw) { showError('🔒 NSFW words are disabled. Enable "NSFW Mode" in Settings → Content.'); return; }
+  }
   const p=parseColorInput(raw);
   if (!p) { showError(`Couldn't find a color in "${raw}". Try "light blue" or "vivid coral".`); return; }
   clearError();
-  const c=buildColor(p);
-  // For manual input: only warn if blocked by bright/dark (not dupe — user typed it deliberately)
+  let c=applyGlobalNudge(buildColor(p));
   const f=getFilters();
-  if (f.bright && (c.hsl.l>f.brightMaxL||c.hsl.s>f.brightMaxS)) showToast('⚠ Anti-Bright active — color is above threshold');
-  if (f.dark  && (c.hsl.l<f.darkMinL||c.hsl.s<f.darkMinS))  showToast('⚠ Anti-Dark active — color is below threshold');
+  if (f.bright && (c.hsl.l>f.brightMaxL||c.hsl.s>f.brightMaxS)) showToast('⚠ Anti-Bright — color above threshold');
+  if (f.dark  && (c.hsl.l<f.darkMinL||c.hsl.s<f.darkMinS))  showToast('⚠ Anti-Dark — color below threshold');
   applyColor(c);
 }
 
@@ -736,7 +924,7 @@ function randomColor() {
   const p=randomParsedPassing(null);
   document.getElementById('colorInput').value=[...p.mods,p.base].join(' ');
   clearError();
-  applyColor(buildColor(p));
+  applyColor(applyGlobalNudge(buildColor(p)));
 }
 
 function randomVariation() {
@@ -746,7 +934,7 @@ function randomVariation() {
   const p=randomParsedPassing(forceBase);
   document.getElementById('colorInput').value=[...p.mods,p.base].join(' ');
   clearError();
-  applyColor(buildColor(p));
+  applyColor(applyGlobalNudge(buildColor(p)));
 }
 
 function copyValue(type) {
@@ -871,7 +1059,8 @@ function addToPalette() {
 function addToHistory(c) {
   if (history[0]?.hex===c.hex) return;
   history.unshift({...c});
-  if(history.length>60)history.pop();
+  const limit = +(document.getElementById('historyLimit')?.value||60);
+  if(history.length>limit) history.length=limit;
   saveHistory(); renderHistory();
 }
 function clearPalette(){palette=[];savePalette();renderPalette();}
@@ -932,22 +1121,26 @@ function openWordsModal(){
   const body=document.getElementById('modalBody');
   body.innerHTML='';
   const sections=[
-    {title:'Base Colors',words:Object.keys(BASE_COLORS)},
-    {title:'Lightness Modifiers (softer / lighter)',words:['light','pale','pastel','soft','muted','dusty','faded','washed','powdery','delicate','subtle','misty','airy','wispy','gentle','dreamy','hazy','frosted','cloudy','milky']},
-    {title:'Darkness Modifiers (deeper / darker)',words:['dark','deep','rich','bold','strong','moody','shadowy','inky','smoky','burnt','muddy','dim','murky','gloomy','antique','vintage','aged','weathered']},
-    {title:'Intensity Modifiers (more saturated)',words:['bright','vivid','vibrant','saturated','intense','electric','neon','fluorescent','glowing','radiant','brilliant','dazzling','blazing','fiery','punchy','popping','juicy']},
-    {title:'Temperature & Texture',words:['warm','cool','icy','frigid','frosty','sunny','tropical','earthy','natural','stony','metallic','gilded','iridescent','pearlescent','crystalline']},
-    {title:'Multi-word Phrases',words:Object.keys(ALIASES)},
+    {title:'Base Colors',words:Object.keys(BASE_COLORS),nsfw:false},
+    {title:'Lightness Modifiers',words:['light','pale','pastel','soft','muted','dusty','faded','washed','powdery','delicate','subtle','misty','airy','wispy','gentle','dreamy','hazy','frosted','cloudy','milky'],nsfw:false},
+    {title:'Darkness Modifiers',words:['dark','deep','rich','bold','strong','moody','shadowy','inky','smoky','burnt','muddy','dim','murky','gloomy','antique','vintage','aged','weathered'],nsfw:false},
+    {title:'Intensity Modifiers',words:['bright','vivid','vibrant','saturated','intense','electric','neon','fluorescent','glowing','radiant','brilliant','dazzling','blazing','fiery','punchy','popping','juicy'],nsfw:false},
+    {title:'Temperature & Texture',words:['warm','cool','icy','frigid','frosty','sunny','tropical','earthy','natural','stony','metallic','gilded','iridescent','pearlescent','crystalline'],nsfw:false},
+    {title:'Multi-word Phrases',words:Object.keys(ALIASES),nsfw:false},
+    {title:'🔞 NSFW Color Names',words:Object.keys(NSFW_COLORS),nsfw:true},
+    {title:'🔞 NSFW Phrases',words:Object.keys(NSFW_ALIASES),nsfw:true},
   ];
   sections.forEach(sec=>{
+    if(sec.nsfw && !isNsfwOn()) return;
     const div=document.createElement('div');
     div.className='word-section';
-    div.innerHTML=`<div class="word-section-title">${sec.title} (${sec.words.length})</div><div class="word-tags"></div>`;
+    const titleHtml=sec.nsfw?`<span style="color:#f87171">${sec.title}</span>`:`${sec.title}`;
+    div.innerHTML=`<div class="word-section-title">${titleHtml} (${sec.words.length})</div><div class="word-tags"></div>`;
     body.appendChild(div);
     const tc=div.querySelector('.word-tags');
     sec.words.forEach(w=>{
       const tag=document.createElement('span');
-      tag.className='word-tag'; tag.textContent=w;
+      tag.className='word-tag'+(sec.nsfw?' nsfw-tag':''); tag.textContent=w;
       tag.addEventListener('click',()=>{document.getElementById('colorInput').value=w;closeWordsModal();generateColor();});
       tc.appendChild(tag);
     });
@@ -966,17 +1159,52 @@ let toastTimer;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2200);}
 function showError(msg){const el=document.getElementById('errorMsg');el.textContent=msg;el.classList.add('visible');}
 function clearError(){document.getElementById('errorMsg').classList.remove('visible');}
+function updSlider(valId,val,unit){const el=document.getElementById(valId);if(el)el.textContent=val+unit;}
+function updSliderSigned(valId,val,unit){const n=+val;const el=document.getElementById(valId);if(el)el.textContent=(n>0?'+':'')+n+unit;}
+function resetNudge(){
+  document.getElementById('globalSatNudge').value=0;
+  document.getElementById('globalLightNudge').value=0;
+  updSliderSigned('globalSatNudgeVal',0,'');
+  updSliderSigned('globalLightNudgeVal',0,'');
+  saveFilters(); showToast('Nudge reset');
+}
+function resetAllSettings(){
+  localStorage.removeItem('chromia_filters');
+  localStorage.removeItem('chromia_theme');
+  location.reload();
+}
 document.getElementById('colorInput').addEventListener('keydown',e=>{if(e.key==='Enter')generateColor();});
 document.getElementById('palGenInput').addEventListener('keydown',e=>{if(e.key==='Enter')generatePalette();});
 
-// ══════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════
+function applyCompactMode(){
+  const on=document.getElementById('compactModeToggle')?.checked;
+  document.body.classList.toggle('compact',!!on);
+}
+function applyAnimSpeed(){
+  const v=document.getElementById('animSpeed')?.value||'normal';
+  const map={fast:'0.15s',normal:'0.35s',slow:'0.65s'};
+  document.documentElement.style.setProperty('--transition',map[v]||'0.35s cubic-bezier(0.4,0,0.2,1)');
+}
+function exportPalette(){
+  if(!palette.length){showToast('Palette is empty');return;}
+  const fmt=document.getElementById('exportFormat')?.value||'css';
+  let out='';
+  if(fmt==='css'){
+    out=':root {\n'+palette.map((c,i)=>`  --color-${i+1}: ${c.hex.toUpperCase()}; /* ${c.name} */`).join('\n')+'\n}';
+  } else if(fmt==='json'){
+    out=JSON.stringify(palette.map(c=>({name:c.name,hex:c.hex.toUpperCase(),hsl:c.hsl,rgb:c.rgb})),null,2);
+  } else {
+    out=palette.map(c=>c.hex.toUpperCase()).join('\n');
+  }
+  navigator.clipboard.writeText(out).then(()=>showToast('Copied as '+fmt.toUpperCase()+' ✓'));
+}
 (function init(){
   const saved=localStorage.getItem('chromia_theme')||'dark';
   document.documentElement.setAttribute('data-theme',saved);
   document.getElementById('darkModeToggle').checked=saved==='dark';
   loadFilters();
+  applyCompactMode();
+  applyAnimSpeed();
   buildSuggestions(); renderPalette(); renderHistory();
   const seeds=['soft lavender','vivid coral','deep ocean','neon lime','dusty rose','electric indigo','warm amber','icy cyan'];
   document.getElementById('colorInput').value=seeds[Math.floor(Math.random()*seeds.length)];
