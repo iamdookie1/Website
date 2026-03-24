@@ -583,28 +583,87 @@ const BASE_COLORS = {
 //  Only active when NSFW toggle is ON
 // ══════════════════════════════════════════
 const NSFW_COLORS = {
+  // ── warm skin / nude tones ──
+  bare:{h:28,s:42,l:75},flesh:{h:22,s:55,l:72},nude:{h:25,s:38,l:76},
+  skin:{h:24,s:48,l:74},blush2:{h:18,s:50,l:80},beige2:{h:30,s:35,l:80},
+  fawn:{h:32,s:45,l:70},peaches:{h:20,s:65,l:78},cream2:{h:40,s:38,l:88},
+  cum:{h:46,s:48,l:87},
+
+  // ── reds / passions ──
   seduction:{h:350,s:70,l:42},temptation:{h:330,s:65,l:38},
-  sultry:{h:340,s:58,l:40},allure:{h:320,s:48,l:45},
   desire:{h:345,s:72,l:38},passion:{h:355,s:80,l:38},
-  bare:{h:28,s:42,l:75},flesh:{h:22,s:55,l:72},
-  intimate:{h:338,s:38,l:72},forbidden:{h:8,s:75,l:32},
-  naughty:{h:12,s:80,l:48},wicked:{h:285,s:62,l:28},
-  sinful:{h:355,s:78,l:32},lusty:{h:5,s:82,l:42},
-  brazen:{h:15,s:85,l:50},scandalous:{h:320,s:80,l:55},
-  steamy:{h:350,s:20,l:65},provocative:{h:340,s:78,l:48},
-  racy:{h:2,s:88,l:52},saucy:{h:8,s:82,l:52},
-  cheeky:{h:335,s:65,l:68},carnal:{h:10,s:68,l:38},
-  bawdy:{h:18,s:60,l:45},smoldering:{h:5,s:55,l:35},
-  salacious:{h:345,s:65,l:42},risque:{h:322,s:75,l:52},
-  devilish:{h:0,s:82,l:32},lust:{h:5,s:85,l:38},
-  vixen:{h:10,s:78,l:45},scarlet2:{h:4,s:86,l:46},
+  lust:{h:5,s:85,l:38},lusty:{h:5,s:82,l:42},
+  forbidden:{h:8,s:75,l:32},sinful:{h:355,s:78,l:32},
+  carnal:{h:10,s:68,l:38},racy:{h:2,s:88,l:52},
+  brazen:{h:15,s:85,l:50},firebrand:{h:4,s:90,l:44},
+  hellfire:{h:6,s:92,l:38},brimstone:{h:18,s:80,l:35},
+  diablo:{h:3,s:88,l:30},scarlett:{h:4,s:86,l:46},
+
+  // ── pinks / roses ──
+  sultry:{h:340,s:58,l:40},allure:{h:320,s:48,l:45},
+  intimate:{h:338,s:38,l:72},scandalous:{h:320,s:80,l:55},
+  cheeky:{h:335,s:65,l:68},risque:{h:322,s:75,l:52},
+  naughty:{h:12,s:80,l:48},provocative:{h:340,s:78,l:48},
+  saucy:{h:8,s:82,l:52},brazen2:{h:328,s:72,l:52},
+  flirty:{h:335,s:70,l:62},tease:{h:345,s:60,l:58},
+  pinup:{h:342,s:68,l:55},cherry2:{h:348,s:80,l:42},
+  rouge2:{h:338,s:75,l:45},lipstick:{h:346,s:82,l:48},
+
+  // ── purples / darks ──
+  wicked:{h:285,s:62,l:28},devilish:{h:0,s:82,l:32},
+  vixen:{h:10,s:78,l:45},bawdy:{h:18,s:60,l:45},
+  smoldering:{h:5,s:55,l:35},salacious:{h:345,s:65,l:42},
+  damnation:{h:290,s:68,l:22},heresy:{h:278,s:62,l:30},
+  purgatory:{h:265,s:52,l:28},abyss:{h:250,s:45,l:18},
+
+  // ── steamy / muted ──
+  steamy:{h:350,s:20,l:65},afterglow:{h:20,s:45,l:72},
+  breathless:{h:345,s:30,l:68},flushed:{h:8,s:55,l:70},
+  smitten:{h:330,s:52,l:65},aroused:{h:5,s:62,l:55},
+  sweltering:{h:18,s:58,l:48},torrid:{h:10,s:70,l:42},
+};
+
+// NSFW modifiers — can be combined with any base color
+// e.g. "sultry blue", "naughty green", "bare coral", "seductive violet"
+const NSFW_MODIFIERS = {
+  sultry:{lDelta:-8,sMult:.85,hDelta:-5},
+  seductive:{lDelta:-6,sMult:1.10,hDelta:-8},
+  naughty:{lDelta:+2,sMult:1.20},
+  sinful:{lDelta:-12,sMult:1.15},
+  wicked:{lDelta:-18,sMult:1.05},
+  lusty:{lDelta:-4,sMult:1.25},
+  steamy:{lDelta:+10,sMult:.55},
+  bare:{lDelta:+22,sMult:.45},
+  naked:{lDelta:+24,sMult:.40},
+  brazen:{sMult:1.35,lDelta:+3},
+  forbidden:{lDelta:-15,sMult:1.20},
+  carnal:{lDelta:-10,sMult:1.18},
+  smoldering:{lDelta:-14,sMult:.80},
+  intimate:{lDelta:+14,sMult:.55},
+  racy:{sMult:1.40,lDelta:+4},
+  risque:{sMult:1.30,lDelta:+2},
+  flirty:{lDelta:+8,sMult:1.15},
+  cheeky:{lDelta:+10,sMult:1.08},
+  provocative:{sMult:1.32,lDelta:-2},
+  torrid:{lDelta:-8,sMult:1.22},
+  scandalous:{sMult:1.28,lDelta:+5},
+  saucy:{lDelta:+4,sMult:1.18},
 };
 
 const NSFW_ALIASES = {
-  'barely there':'bare','skin tone':'flesh','forbidden fruit':'forbidden',
+  'barely there':'bare','skin tone':'skin','forbidden fruit':'forbidden',
   'red hot':'racy','devil red':'devilish','deep desire':'desire',
   'dark temptation':'temptation','burning desire':'lusty',
   'kiss me':'scandalous','smoky desire':'smoldering',
+  'after dark':'wicked','in the nude':'nude','bare skin':'bare',
+  'guilty pleasure':'sinful','walk of shame':'flushed',
+  'morning after':'afterglow','between the sheets':'intimate',
+  'lipstick stain':'lipstick','little black dress':'abyss',
+  'red room':'diablo','velvet rope':'purgatory',
+  'secret affair':'seduction','hot mess':'torrid',
+  'sugar and sin':'saucy','the devil wears':'diablo',
+  'french kiss':'rouge2','lover boy':'pinup',
+  'hot under the collar':'sweltering','caught in the act':'racy',
 };
 
 // ══════════════════════════════════════════
@@ -701,18 +760,23 @@ function isNsfwOn(){ return document.getElementById('nsfwToggle')?.checked||fals
 
 function getAllColors(){ return isNsfwOn() ? {...BASE_COLORS,...NSFW_COLORS} : BASE_COLORS; }
 function getAllAliases(){ return isNsfwOn() ? {...ALIASES,...NSFW_ALIASES} : ALIASES; }
+function getAllModifiers(){ return isNsfwOn() ? {...MODIFIERS,...NSFW_MODIFIERS} : MODIFIERS; }
 
 function parseColorInput(raw) {
   const allColors = getAllColors();
   const allAliases = getAllAliases();
+  const allMods = getAllModifiers();
   let input = raw.toLowerCase().trim().replace(/[^a-z0-9\s]/g,'');
 
-  // Check if input contains an NSFW word but NSFW is off → silently ignore NSFW part
+  // NSFW gate — if NSFW is off and input contains an NSFW word, block it
   if (!isNsfwOn()) {
-    const nsfwKeys = [...Object.keys(NSFW_COLORS), ...Object.keys(NSFW_ALIASES)];
+    const nsfwColorKeys = Object.keys(NSFW_COLORS);
+    const nsfwModKeys = Object.keys(NSFW_MODIFIERS);
+    const nsfwAliasKeys = Object.keys(NSFW_ALIASES);
     const words = input.split(/\s+/);
-    const hasNsfw = words.some(w => NSFW_COLORS[w]) || nsfwKeys.some(k => input.includes(k));
-    if (hasNsfw) return null; // block with error in caller
+    const hasNsfwColor = words.some(w => NSFW_COLORS[w] || NSFW_MODIFIERS[w]);
+    const hasNsfwAlias = nsfwAliasKeys.some(k => input.includes(k));
+    if (hasNsfwColor || hasNsfwAlias) return 'NSFW_BLOCKED';
   }
 
   for (const [alias,target] of Object.entries(allAliases)) {
@@ -728,16 +792,18 @@ function parseColorInput(raw) {
     }
   }
   if (!base) return null;
-  const mods = words.filter(w => w!==base && MODIFIERS[w]);
+  const mods = words.filter(w => w!==base && allMods[w]);
   return { base, mods };
 }
 
 function buildHSL(p) {
   const allColors = getAllColors();
+  const allMods = getAllModifiers();
   const bc = allColors[p.base];
   let h=bc.h, s=bc.s, l=bc.l;
   for (const mod of p.mods) {
-    const m = MODIFIERS[mod];
+    const m = allMods[mod];
+    if (!m) continue;
     if (m.hDelta) h=(h+m.hDelta+360)%360;
     if (m.lDelta) l=Math.max(5,Math.min(95,l+m.lDelta));
     if (m.sMult)  s=Math.max(2,Math.min(100,Math.round(s*m.sMult)));
@@ -812,8 +878,9 @@ function passesFilters(hsl, skipDupe=false) {
 // Try building a random parsed color up to maxTries until it passes filters
 function randomParsedPassing(forceBase=null, maxTries=30) {
   const allColors = getAllColors();
+  const allMods = getAllModifiers();
   const keys=Object.keys(allColors);
-  const modKeys=Object.keys(MODIFIERS);
+  const modKeys=Object.keys(allMods);
   for (let t=0;t<maxTries;t++) {
     const base=forceBase || keys[Math.floor(Math.random()*keys.length)];
     const n=Math.random()<.4?0:Math.random()<.6?1:2;
@@ -904,13 +971,12 @@ function applyGlobalNudge(c) {
 function generateColor() {
   const raw=document.getElementById('colorInput').value.trim();
   if (!raw) { showError('Please enter a color description'); return; }
-  // NSFW gate
-  if (!isNsfwOn()) {
-    const lw=raw.toLowerCase();
-    const isNsfw=Object.keys(NSFW_COLORS).some(k=>lw.includes(k))||Object.keys(NSFW_ALIASES).some(k=>lw.includes(k));
-    if (isNsfw) { showError('🔒 NSFW words are disabled. Enable "NSFW Mode" in Settings → Content.'); return; }
-  }
+
   const p=parseColorInput(raw);
+  if (p==='NSFW_BLOCKED') {
+    showError('🔒 NSFW words are disabled. Enable "NSFW Mode" in Settings → Content.');
+    return;
+  }
   if (!p) { showError(`Couldn't find a color in "${raw}". Try "light blue" or "vivid coral".`); return; }
   clearError();
   let c=applyGlobalNudge(buildColor(p));
@@ -1128,6 +1194,7 @@ function openWordsModal(){
     {title:'Temperature & Texture',words:['warm','cool','icy','frigid','frosty','sunny','tropical','earthy','natural','stony','metallic','gilded','iridescent','pearlescent','crystalline'],nsfw:false},
     {title:'Multi-word Phrases',words:Object.keys(ALIASES),nsfw:false},
     {title:'🔞 NSFW Color Names',words:Object.keys(NSFW_COLORS),nsfw:true},
+    {title:'🔞 NSFW Modifiers (combine with any color)',words:Object.keys(NSFW_MODIFIERS),nsfw:true},
     {title:'🔞 NSFW Phrases',words:Object.keys(NSFW_ALIASES),nsfw:true},
   ];
   sections.forEach(sec=>{
